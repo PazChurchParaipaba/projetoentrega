@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="description" content="LogiMóveis - O maior marketplace de logística de móveis e montagem.">
+    <title>LogiMóveis | Sistema Integrado</title>
+   
+    <link rel="manifest" id="dynamic-manifest">
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/2563eb/white?text=LM">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- 1. CORE VARIABLES & RESET --- */
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --primary-light: #eff6ff;
+            --secondary: #64748b;
+            --surface: #ffffff;
+            --background: #f8fafc;
+            --border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --success: #10b981;
+            --success-bg: #dcfce7;
+            --warning: #f59e0b;
+            --warning-bg: #fef3c7;
+            --danger: #ef4444;
+            --danger-bg: #fee2e2;
+            --info: #0ea5e9;
+            --info-bg: #e0f2fe;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --nav-height: 70px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+       
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding-bottom: 80px; 
+            overflow-x: hidden;
+        }
+
+        /* --- UI COMPONENTS --- */
+        h1, h2, h3, h4 { font-weight: 700; letter-spacing: -0.025em; line-height: 1.2; margin-bottom: 0.5rem; }
+        p { color: var(--text-muted); line-height: 1.6; margin-bottom: 1rem; }
+        .text-sm { font-size: 0.875rem; }
+        .text-xs { font-size: 0.75rem; }
+        .font-bold { font-weight: 700; }
+
+        .btn {
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+            padding: 0.75rem 1.5rem; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.95rem;
+            cursor: pointer; transition: var(--transition); border: none; outline: none; position: relative; overflow: hidden;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-secondary { background: white; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-secondary:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-full { width: 100%; }
+        .btn-sm { padding: 0.5rem 1rem; font-size: 0.85rem; }
+
+        .input-wrapper { margin-bottom: 1.25rem; text-align: left; }
+        .input-wrapper label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 600; color: var(--text-main); }
+        .input-field {
+            width: 100%; padding: 0.875rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm);
+            background: white; font-size: 1rem; transition: var(--transition); font-family: inherit;
+        }
+        .input-field:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); outline: none; }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+        .card {
+            background: var(--surface); border-radius: var(--radius-md); padding: 1.5rem;
+            border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: var(--transition);
+            position: relative; overflow: hidden;
+        }
+        .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: #cbd5e1; }
+       
+        .grid { display: grid; gap: 1.5rem; }
+        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); }
+        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+       
+        .badge {
+            display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 99px;
+            font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        .status-pendente { background: var(--warning-bg); color: #b45309; }
+        .status-aceito { background: var(--info-bg); color: #0369a1; }
+        .status-em_rota { background: #dbeafe; color: #1e40af; animation: pulse 2s infinite; }
+        .status-concluido { background: var(--success-bg); color: #15803d; }
+       
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); } }
+
+        /* HEADER */
+        header {
+            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border); padding: 0 5%; height: var(--nav-height);
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 100;
+        }
+        .brand { font-size: 1.5rem; font-weight: 800; color: var(--primary); display: flex; align-items: center; gap: 0.5rem; }
+        .brand i { font-size: 1.75rem; }
+
+        /* MOBILE NAV */
+        .bottom-nav {
+            display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: white;
+            border-top: 1px solid var(--border); padding: 0.5rem 0; z-index: 90;
+            justify-content: space-around; align-items: center;
+        }
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center; gap: 2px;
+            font-size: 0.7rem; color: var(--text-muted); padding: 0.5rem; cursor: pointer;
+        }
+        .nav-item i { font-size: 1.25rem; margin-bottom: 2px; }
+        .nav-item.active { color: var(--primary); font-weight: 600; }
+        @media (max-width: 768px) {
+            .bottom-nav { display: flex; }
+            .desktop-only { display: none !important; }
+        }
+
+        /* SPA VIEWS */
+        .view-section { display: none; animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .view-section.active { display: block; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* AUTH & SPECIALS */
+        .auth-card { max-width: 420px; margin: 3rem auto; text-align: center; padding: 2.5rem; }
+        .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem; }
+        .role-card {
+            border: 2px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem;
+            cursor: pointer; transition: var(--transition); display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+        }
+        .role-card:hover { border-color: var(--primary); background: var(--primary-light); }
+        .role-card.selected { border-color: var(--primary); background: #dbeafe; ring: 2px solid var(--primary); }
+        .role-card i { font-size: 2rem; color: var(--primary); }
+
+        .camera-container {
+            background: #000; border-radius: var(--radius-md); overflow: hidden; position: relative;
+            aspect-ratio: 4/3; margin-bottom: 1rem; display: none;
+        }
+        .camera-container video { width: 100%; height: 100%; object-fit: cover; }
+        .camera-overlay {
+            position: absolute; bottom: 0; left: 0; width: 100%; padding: 1rem;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); color: white; text-align: center;
+        }
+       
+        .map-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000;
+            display: none; flex-direction: column;
+        }
+        #map { flex: 1; width: 100%; background: #e2e8f0; }
+        .map-header { padding: 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .map-footer { padding: 1rem; border-top: 1px solid var(--border); background: white; }
+
+        .toast-container { position: fixed; bottom: 90px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast {
+            background: white; padding: 1rem 1.5rem; border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 12px;
+            animation: slideInRight 0.3s forwards; pointer-events: auto; min-width: 300px;
+            border-left: 4px solid var(--primary);
+        }
+        .toast.error { border-left-color: var(--danger); }
+        .toast.success { border-left-color: var(--success); }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        .pwa-banner {
+            position: fixed; top: 80px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px;
+            background: var(--text-main); color: white; padding: 1rem; border-radius: var(--radius-md);
+            z-index: 999; display: none; align-items: center; justify-content: space-between; box-shadow: var(--shadow-lg);
+        }
+    </style>
+</head>
+<body>
+    <div class="toast-container" id="toast-container"></div>
+   
+    <div id="pwa-banner" class="pwa-banner">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <i class="ri-download-cloud-2-line" style="font-size:1.5rem"></i>
+            <div>
+                <div style="font-weight:bold">Instalar App</div>
+                <div style="font-size:0.8rem; opacity:0.8">Acesso rápido na tela inicial</div>
+            </div>
+        </div>
+        <button class="btn btn-sm btn-primary" onclick="App.pwa.install()">Instalar</button>
+    </div>
+
+    <header>
+        <div class="brand">
+            <i class="ri-truck-fill"></i> LogiMóveis
+        </div>
+        <div id="header-actions" class="desktop-only"></div>
+    </header>
+
+    <main>
+        <section id="view-home" class="view-section active">
+            <div style="background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); padding: 4rem 1.5rem; text-align: center; margin-bottom: 2rem;">
+                <div class="container">
+                    <h1 style="font-size: 2.5rem; margin-bottom: 1rem; color: var(--text-main);">Logística de Móveis <br><span style="color:var(--primary)">Sem Fronteiras</span></h1>
+                    <p style="max-width: 600px; margin: 0 auto 2rem auto; font-size: 1.1rem;">
+                        Conectando grandes lojas a motoristas parceiros e montadores especializados.
+                        A solução completa para entregar e montar sonhos.
+                    </p>
+                    <div style="display: flex; gap: 1rem; justify-content: center;">
+                        <button class="btn btn-primary" onclick="App.router.go('auth')">Acessar Plataforma</button>
+                        <button class="btn btn-secondary" onclick="document.getElementById('catalog-anchor').scrollIntoView({behavior:'smooth'})">Ver Ofertas</button>
+                    </div>
+                </div>
+            </div>
+            <div class="container" id="catalog-anchor">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+                    <h3>Destaques das Lojas</h3>
+                    <span class="badge status-aceito">Ofertas Atualizadas</span>
+                </div>
+                <div id="public-catalog" class="grid grid-3">
+                    <div class="card" style="text-align:center; padding:3rem;">
+                        <i class="ri-loader-4-line" style="font-size:2rem; animation:spin 1s linear infinite"></i>
+                        <p>Carregando catálogo...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-auth" class="view-section container">
+            <div class="card auth-card">
+                <div id="auth-state-login">
+                    <h2 style="color:var(--primary); margin-bottom:0.5rem;">Bem-vindo</h2>
+                    <p>Entre para gerenciar seus pedidos</p>
+                    <div class="input-wrapper">
+                        <label>Email</label>
+                        <input type="email" id="login-email" class="input-field" placeholder="seu@email.com">
+                    </div>
+                    <div class="input-wrapper">
+                        <label>Senha</label>
+                        <input type="password" id="login-pass" class="input-field" placeholder="••••••">
+                    </div>
+                    <button class="btn btn-primary btn-full" onclick="App.auth.login()">Entrar no Sistema</button>
+                    <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px solid var(--border);">
+                        <p class="text-xs">Não possui conta?</p>
+                        <button class="btn btn-secondary btn-full" onclick="App.auth.switchView('roles')">Criar Nova Conta</button>
+                    </div>
+                </div>
+                <div id="auth-state-roles" style="display:none;">
+                    <h3>Qual o seu perfil?</h3>
+                    <p>Selecione como deseja usar a plataforma</p>
+                    <div class="role-grid">
+                        <div class="role-card" onclick="App.auth.startReg('cliente')">
+                            <i class="ri-user-smile-line"></i>
+                            <span class="font-bold">Cliente</span>
+                        </div>
+                        <div class="role-card" onclick="App.auth.startReg('loja_admin')">
+                            <i class="ri-store-2-line"></i>
+                            <span class="font-bold">Lojista</span>
+                        </div>
+                        <div class="role-card" onclick="App.auth.startReg('motorista')">
+                            <i class="ri-truck-line"></i>
+                            <span class="font-bold">Motorista</span>
+                        </div>
+                        <div class="role-card" onclick="App.auth.startReg('montador')">
+                            <i class="ri-tools-line"></i>
+                            <span class="font-bold">Montador</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary btn-full" style="margin-top:1.5rem" onclick="App.auth.switchView('login')">Voltar</button>
+                </div>
+                <div id="auth-state-register" style="display:none;">
+                    <h3 id="reg-title">Cadastro</h3>
+                    <p>Preencha seus dados para continuar</p>
+                    <div class="input-wrapper"><label>Nome Completo</label><input type="text" id="reg-name" class="input-field"></div>
+                    <div class="input-wrapper"><label>Email</label><input type="email" id="reg-email" class="input-field"></div>
+                    <div class="input-wrapper"><label>Senha</label><input type="password" id="reg-pass" class="input-field"></div>
+                    <div id="reg-dynamic-fields"></div>
+                    <button class="btn btn-primary btn-full" onclick="App.auth.register()">Finalizar Cadastro</button>
+                    <button class="btn btn-secondary btn-full" style="margin-top:0.5rem" onclick="App.auth.switchView('roles')">Voltar</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-loja" class="view-section container">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+                <div>
+                    <h2>Gestão da Loja</h2>
+                    <p>Controle de produtos e despachos</p>
+                </div>
+                <button class="btn btn-primary" onclick="App.store.addProductModal()">
+                    <i class="ri-add-line"></i> Novo Produto
+                </button>
+            </div>
+            <div class="grid grid-2">
+                <div class="card">
+                    <h4 style="margin-bottom:1rem; color:var(--primary)">Pedidos Pendentes</h4>
+                    <div id="store-orders-list">
+                        <p class="text-sm">Nenhum pedido pendente.</p>
+                    </div>
+                </div>
+                <div class="card">
+                    <h4 style="margin-bottom:1rem; color:var(--text-muted)">Histórico de Vendas</h4>
+                    <div id="store-history-list"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-cliente" class="view-section container">
+            <div style="margin-bottom:2rem;">
+                <h2>Meus Pedidos</h2>
+                <p>Acompanhe suas compras e serviços contratados</p>
+            </div>
+            <div id="client-orders-list" class="grid grid-2"></div>
+            <div style="margin-top:2rem; text-align:center;">
+                <button class="btn btn-secondary" onclick="App.router.go('home')">Ir para o Catálogo de Compras</button>
+            </div>
+        </section>
+
+        <section id="view-provider" class="view-section container">
+            <div class="card" style="background:var(--text-main); color:white; margin-bottom:2rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <h3 style="color:white; margin-bottom:0.2rem;">Painel de Serviços</h3>
+                        <p style="color:rgba(255,255,255,0.7); margin:0;" id="provider-role-label">Parceiro</p>
+                    </div>
+                    <div class="badge status-aceito">Online</div>
+                </div>
+            </div>
+            <h3>Oportunidades Disponíveis</h3>
+            <p>Serviços próximos aguardando aceite.</p>
+            <div id="provider-jobs-list" class="grid grid-2"></div>
+        </section>
+    </main>
+
+    <nav class="bottom-nav" id="mobile-nav"></nav>
+
+    <div id="map-modal" class="map-modal-overlay">
+        <div class="map-header">
+            <h3>Navegação em Tempo Real</h3>
+            <button class="btn btn-secondary btn-sm" onclick="App.map.close()">Fechar</button>
+        </div>
+        <div id="map"></div>
+        <div class="map-footer" id="map-footer">
+            <div style="display:flex; gap:1rem; align-items:center;">
+                <div class="badge status-aceito" id="map-status-badge">Conectado</div>
+                <p style="margin:0; font-size:0.9rem;" id="map-status-text">Aguardando dados...</p>
+            </div>
+            <button id="btn-start-gps" class="btn btn-success btn-full" style="margin-top:1rem; display:none;" onclick="App.map.startGPS()">
+                <i class="ri-navigation-line"></i> Iniciar Rota (GPS)
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. CONFIGURAÇÃO ---
+        const CONFIG = {
+            sbUrl: 'https://djxcvgrunadpkzwpxtom.supabase.co', // INSIRA AQUI
+            sbKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRqeGN2Z3J1bmFkcGt6d3B4dG9tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI0NjczOTYsImV4cCI6MjA3ODA0MzM5Nn0.CRTsAj-yIqXJwrx1CGh6dhTjvsgyazHidOseJQwyRpI'     // INSIRA AQUI
+        };
+        const _sb = supabase.createClient(CONFIG.sbUrl, CONFIG.sbKey);
+
+        const App = {
+            state: {
+                user: null,
+                profile: null,
+                tempRole: null,
+                deferredPrompt: null,
+                mapInstance: null,
+                marker: null,
+                watchId: null,
+                activeOrder: null,
+                storeId: null
+            },
+            
+            init: async () => {
+                App.utils.setupPWA();
+                const { data } = await _sb.auth.getSession();
+                if(data.session) {
+                    App.state.user = data.session.user;
+                    await App.auth.loadProfile();
+                } else {
+                    App.router.renderNav();
+                    App.catalog.fetchPublic();
+                }
+            },
+
+            pwa: {
+                install: () => {
+                    if (App.state.deferredPrompt) {
+                        App.state.deferredPrompt.prompt();
+                        App.state.deferredPrompt.userChoice.then(() => {
+                            App.state.deferredPrompt = null;
+                            document.getElementById('pwa-banner').style.display = 'none';
+                        });
+                    }
+                }
+            },
+
+            router: {
+                go: (viewId) => {
+                    document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+                    document.getElementById(`view-${viewId}`).classList.add('active');
+                    window.scrollTo(0,0);
+                    App.router.renderNav();
+                },
+                renderNav: () => {
+                    const header = document.getElementById('header-actions');
+                    const mobile = document.getElementById('mobile-nav');
+                   
+                    if(App.state.user && App.state.profile) {
+                        header.innerHTML = `
+                            <div style="display:flex; align-items:center; gap:1rem;">
+                                <div class="text-xs text-muted desktop-only">${App.state.profile.nome_completo || 'Usuário'}</div>
+                                <button class="btn btn-secondary btn-sm" onclick="App.router.goDashboard()">Painel</button>
+                                <button class="btn btn-danger btn-sm" onclick="App.auth.logout()">Sair</button>
+                            </div>
+                        `;
+                        mobile.innerHTML = `
+                            <div class="nav-item" onclick="App.router.go('home')"><i class="ri-store-line"></i><span>Loja</span></div>
+                            <div class="nav-item active" onclick="App.router.goDashboard()"><i class="ri-dashboard-line"></i><span>Painel</span></div>
+                            <div class="nav-item" onclick="App.auth.logout()"><i class="ri-logout-box-line"></i><span>Sair</span></div>
+                        `;
+                    } else {
+                        header.innerHTML = `<button class="btn btn-primary btn-sm" onclick="App.router.go('auth')">Entrar / Cadastrar</button>`;
+                        mobile.innerHTML = `
+                            <div class="nav-item active" onclick="App.router.go('home')"><i class="ri-store-line"></i><span>Início</span></div>
+                            <div class="nav-item" onclick="App.router.go('auth')"><i class="ri-user-line"></i><span>Conta</span></div>
+                        `;
+                    }
+                },
+                goDashboard: () => {
+                    const role = App.state.profile?.role;
+                    if(role === 'loja_admin') { App.store.init(); App.router.go('loja'); }
+                    else if(role === 'cliente') { App.client.init(); App.router.go('cliente'); }
+                    else if(role === 'motorista' || role === 'montador') { App.provider.init(); App.router.go('provider'); }
+                    else App.router.go('home');
+                }
+            },
+
+            auth: {
+                switchView: (view) => {
+                    ['login', 'roles', 'register'].forEach(v =>
+                        document.getElementById(`auth-state-${v}`).style.display = 'none');
+                    document.getElementById(`auth-state-${view}`).style.display = 'block';
+                },
+                startReg: (role) => {
+                    App.state.tempRole = role;
+                    document.getElementById('reg-title').innerText = `Cadastro - ${role === 'loja_admin' ? 'Lojista' : role.charAt(0).toUpperCase() + role.slice(1)}`;
+                    App.auth.switchView('register');
+                    
+                    const container = document.getElementById('reg-dynamic-fields');
+                    let html = '';
+                    
+                    if(role === 'loja_admin') {
+                        html = `
+                            <div class="input-wrapper"><label>Nome da Loja</label><input id="reg-store-name" class="input-field" placeholder="Ex: Móveis Center"></div>
+                            <div class="input-wrapper"><label>CNPJ</label><input id="reg-cnpj" class="input-field" placeholder="00.000.000/0000-00"></div>
+                        `;
+                    } else if (role === 'motorista') {
+                        html = `
+                            <div class="input-wrapper"><label>CPF</label><input id="reg-cpf" class="input-field" placeholder="000.000.000-00"></div>
+                            <div class="camera-container" id="cam-box"><video id="cam-video" autoplay playsinline></video><div class="camera-overlay">Selfie com capacete (validação facial)</div></div>
+                            <div id="verified-msg" style="display:none; color:var(--success); font-weight:bold; margin-bottom:1rem;">✅ Identidade Confirmada</div>
+                            <button class="btn btn-secondary btn-full" id="btn-cam" onclick="App.auth.runCamera()">Validar Identidade (Obrigatório)</button>
+                        `;
+                    }
+                    container.innerHTML = html;
+                },
+                runCamera: async () => {
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                        const video = document.getElementById('cam-video');
+                        document.getElementById('cam-box').style.display = 'block';
+                        video.srcObject = stream;
+                        
+                        const btn = document.getElementById('btn-cam');
+                        btn.innerText = "Analisando rosto...";
+                        btn.disabled = true;
+                        setTimeout(() => {
+                            stream.getTracks().forEach(t => t.stop());
+                            document.getElementById('cam-box').style.display = 'none';
+                            document.getElementById('verified-msg').style.display = 'block';
+                            btn.style.display = 'none';
+                            App.utils.toast('Verificação facial concluída!', 'success');
+                        }, 4000);
+                    } catch(e) { 
+                        App.utils.toast('Erro: Permita acesso à câmera', 'error'); 
+                    }
+                },
+                register: async () => {
+                    const email = document.getElementById('reg-email').value.trim();
+                    const pass = document.getElementById('reg-pass').value;
+                    const name = document.getElementById('reg-name').value.trim();
+                    const role = App.state.tempRole;
+
+                    if(!email || !pass || !name || pass.length < 6) return App.utils.toast('Preencha os campos corretamente', 'error');
+
+                    // Capturar campos extras ANTES de enviar
+                    let storeName = null, cnpj = null, cpf = null, isVerified = false;
+
+                    if(role === 'loja_admin') {
+                        storeName = document.getElementById('reg-store-name')?.value.trim();
+                        cnpj = document.getElementById('reg-cnpj')?.value.trim();
+                        if(!storeName || !cnpj) return App.utils.toast('Preencha os dados da loja', 'error');
+                    }
+                    if(role === 'motorista') {
+                        cpf = document.getElementById('reg-cpf')?.value.trim();
+                        isVerified = document.getElementById('verified-msg').style.display === 'block';
+                    }
+
+                    try {
+                        // IMPORTANTE: Enviando TUDO no metadata para o Trigger do SQL capturar
+                        const { data, error } = await _sb.auth.signUp({ 
+                            email, 
+                            password: pass,
+                            options: { 
+                                data: { 
+                                    full_name: name, 
+                                    role: role,
+                                    cpf: cpf,
+                                    cnpj: cnpj,
+                                    is_verified: isVerified
+                                } 
+                            } 
+                        });
+                        
+                        if(error) throw error;
+                        
+                        // O Trigger já cria o perfil. Só precisamos criar a Loja se for Admin
+                        if(role === 'loja_admin' && data.user) {
+                             const { error: storeErr } = await _sb.from('stores').insert({
+                                admin_id: data.user.id,
+                                nome_loja: storeName,
+                                cnpj: cnpj
+                            });
+                            if(storeErr) throw storeErr;
+                        }
+
+                        App.utils.toast('Cadastro realizado com sucesso!', 'success');
+                        App.auth.switchView('login');
+                    } catch(e) { 
+                        console.error(e);
+                        App.utils.toast('Erro: ' + (e.message || 'Falha no registro'), 'error'); 
+                    }
+                },
+                login: async () => {
+                    const email = document.getElementById('login-email').value.trim();
+                    const pass = document.getElementById('login-pass').value;
+                    if(!email || !pass) return App.utils.toast('Preencha email e senha', 'error');
+
+                    const { error } = await _sb.auth.signInWithPassword({email, password: pass});
+                    if(error) App.utils.toast('Erro no login: ' + error.message, 'error');
+                    else window.location.reload();
+                },
+                logout: async () => {
+                    await _sb.auth.signOut();
+                    window.location.reload();
+                },
+                loadProfile: async () => {
+                    // Busca direto da tabela profiles
+                    const { data, error } = await _sb.from('profiles').select('*').eq('id', App.state.user.id).single();
+                    if(error || !data) {
+                        App.utils.toast('Erro ao carregar perfil', 'error');
+                        await App.auth.logout();
+                        return;
+                    }
+                    App.state.profile = data;
+                    App.router.renderNav();
+                    App.router.goDashboard();
+                }
+            },
+
+            store: {
+                init: async () => {
+                    const { data: store } = await _sb.from('stores').select('id').eq('admin_id', App.state.user.id).single();
+                    if(!store) return App.utils.toast('Loja não encontrada', 'error');
+                    App.state.storeId = store.id;
+                   
+                    const { data: orders } = await _sb.from('orders').select('*, products(nome), profiles!cliente_id(nome_completo)').eq('store_id', store.id);
+                    const pending = orders?.filter(o => o.status === 'pendente') || [];
+                   
+                    document.getElementById('store-orders-list').innerHTML = pending.length ? pending.map(o => `
+                        <div class="card" style="margin-bottom:1rem;">
+                            <div class="badge status-pendente">Pendente</div>
+                            <h4>${o.products.nome}</h4>
+                            <p>Cliente: ${o.profiles?.nome_completo || 'Anônimo'}</p>
+                            <p class="text-xs text-muted">Destino: ${o.endereco_destino}</p>
+                            <div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-top:10px;">
+                                <label class="text-xs font-bold">Agendar Despacho:</label>
+                                <input type="datetime-local" id="date-${o.id}" class="input-field" style="padding:5px;">
+                                <button class="btn btn-primary btn-sm btn-full" style="margin-top:5px;" onclick="App.store.dispatch('${o.id}')">Confirmar e Solicitar Motorista</button>
+                            </div>
+                        </div>
+                    `).join('') : '<p>Sem novos pedidos.</p>';
+                },
+                addProductModal: () => {
+                    const nome = prompt("Nome do Produto:");
+                    const preco = prompt("Preço (R$):");
+                    if(nome && preco && !isNaN(preco)) App.store.saveProduct(nome, parseFloat(preco));
+                },
+                saveProduct: async (nome, preco) => {
+                    const { error } = await _sb.from('products').insert({ store_id: App.state.storeId, nome, preco });
+                    if(error) App.utils.toast('Erro ao salvar', 'error');
+                    else App.utils.toast('Produto adicionado!', 'success');
+                },
+                dispatch: async (id) => {
+                    const date = document.getElementById(`date-${id}`).value;
+                    if(!date) return App.utils.toast('Selecione uma data', 'error');
+                    const { error } = await _sb.from('orders').update({
+                        status: 'aguardando_prestador',
+                        data_agendada: new Date(date).toISOString()
+                    }).eq('id', id);
+                    if(error) App.utils.toast('Erro ao despachar', 'error');
+                    else {
+                        App.utils.toast('Pedido despachado!', 'success');
+                        App.store.init();
+                    }
+                }
+            },
+
+            client: {
+                init: async () => {
+                    const { data: orders } = await _sb.from('orders').select('*, products(nome)').eq('cliente_id', App.state.user.id).order('created_at', {ascending:false});
+                    if (!orders || orders.length === 0) {
+                        document.getElementById('client-orders-list').innerHTML = '<p>Nenhum pedido encontrado.</p>';
+                        return;
+                    }
+                    document.getElementById('client-orders-list').innerHTML = orders.map(o => `
+                        <div class="card">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
+                                <strong>${o.products.nome}</strong>
+                                <span class="badge status-${o.status}">${o.status.replace('_', ' ')}</span>
+                            </div>
+                            <p class="text-sm">Entrega em: ${o.endereco_destino}</p>
+                            <p class="text-sm">Montagem inclusa: <strong>${o.requer_montagem ? 'Sim' : 'Não'}</strong></p>
+                            ${['em_rota', 'aceito', 'concluido'].includes(o.status) ?
+                                `<button class="btn btn-success btn-full btn-sm" onclick="App.map.open('${o.id}', false)">📍 Rastrear Entrega</button>` : ''}
+                        </div>
+                    `).join('');
+                },
+                confirmOrder: async (pid, sid, price) => {
+                    if(!App.state.user) { App.router.go('auth'); return; }
+                    const address = prompt("Endereço Completo de Entrega:");
+                    if(!address) return;
+                    const wantMontagem = confirm("Deseja adicionar montagem profissional? (+15% do valor)");
+                    let taxa = price * 0.10;
+                    if(wantMontagem) taxa += (price * 0.15);
+                    const { error } = await _sb.from('orders').insert({
+                        cliente_id: App.state.user.id,
+                        product_id: pid, store_id: sid,
+                        endereco_destino: address,
+                        requer_montagem: wantMontagem,
+                        taxa_servico: taxa,
+                        status: 'pendente'
+                    });
+                    if(error) App.utils.toast('Erro ao criar pedido', 'error');
+                    else {
+                        App.utils.toast('Pedido realizado!', 'success');
+                        App.router.go('cliente');
+                    }
+                }
+            },
+
+            provider: {
+                init: async () => {
+                    const role = App.state.profile.role;
+                    document.getElementById('provider-role-label').innerText = role.toUpperCase();
+                    const { data: jobs } = await _sb.from('orders')
+                        .select('*, products(nome), stores(nome_loja, cidade)')
+                        .or(`status.eq.aguardando_prestador,prestador_id.eq.${App.state.user.id}`);
+                   
+                    const filtered = (jobs || []).filter(j => {
+                        if(j.prestador_id === App.state.user.id) return true;
+                        if(j.status !== 'aguardando_prestador') return false;
+                        if(role === 'montador' && !j.requer_montagem) return false;
+                        return true;
+                    });
+
+                    document.getElementById('provider-jobs-list').innerHTML = filtered.map(j => {
+                        const isMine = j.prestador_id === App.state.user.id;
+                        return `
+                            <div class="card" style="${isMine ? 'border-color:var(--success);' : ''}">
+                                <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                                    <span class="badge ${isMine ? 'status-aceito' : 'status-pendente'}">${isMine ? 'ACEITO POR VOCÊ' : 'DISPONÍVEL'}</span>
+                                    <strong style="color:var(--success)">R$ ${j.taxa_servico.toFixed(2)}</strong>
+                                </div>
+                                <h4>${j.products.nome}</h4>
+                                <p class="text-sm">Loja: ${j.stores.nome_loja}</p>
+                                <p class="text-sm">Destino: ${j.endereco_destino}</p>
+                                <hr style="margin:10px 0; border:0; border-top:1px solid #eee;">
+                                ${!isMine ?
+                                    `<button class="btn btn-primary btn-full" onclick="App.provider.accept('${j.id}')">Aceitar Serviço</button>`
+                                    :
+                                    `<button class="btn btn-success btn-full" onclick="App.map.open('${j.id}', true)">
+                                        <i class="ri-navigation-line"></i> Iniciar Navegação
+                                     </button>`
+                                }
+                            </div>
+                        `;
+                    }).join('') || '<p>Nenhuma oportunidade.</p>';
+                },
+                accept: async (id) => {
+                    const { error } = await _sb.from('orders').update({ prestador_id: App.state.user.id, status: 'aceito' }).eq('id', id);
+                    if(error) App.utils.toast('Erro ao aceitar', 'error');
+                    else {
+                        App.utils.toast('Serviço aceito!', 'success');
+                        App.provider.init();
+                    }
+                }
+            },
+
+            catalog: {
+                fetchPublic: async () => {
+                    const { data, error } = await _sb.from('products').select('*, stores(nome_loja)');
+                    if(error || !data || data.length === 0) {
+                        document.getElementById('public-catalog').innerHTML = `<p style="text-align:center; padding:2rem;">Nenhum produto disponível.</p>`;
+                        return;
+                    }
+                    document.getElementById('public-catalog').innerHTML = data.map(p => `
+                        <div class="card">
+                            <div style="height:140px; background:#f1f5f9; border-radius:8px; display:flex; align-items:center; justify-content:center; margin-bottom:1rem;">
+                                <i class="ri-archive-line" style="font-size:3rem; color:#cbd5e1"></i>
+                            </div>
+                            <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores.nome_loja || 'Loja'}</div>
+                            <h4>${p.nome}</h4>
+                            <h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
+                            <button class="btn btn-secondary btn-full" style="margin-top:1rem" onclick="App.client.confirmOrder('${p.id}', '${p.store_id}', ${p.preco})">Solicitar Entrega</button>
+                        </div>
+                    `).join('');
+                }
+            },
+
+            map: {
+                open: (orderId, isDriver) => {
+                    App.state.activeOrder = orderId;
+                    document.getElementById('map-modal').style.display = 'flex';
+                    document.getElementById('btn-start-gps').style.display = isDriver ? 'block' : 'none';
+
+                    setTimeout(() => {
+                        if (!App.state.mapInstance) {
+                            App.state.mapInstance = L.map('map').setView([-23.5505, -46.6333], 13);
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(App.state.mapInstance);
+                        }
+                        if (!isDriver) App.map.watchOrder(orderId);
+                    }, 500);
+                },
+                watchOrder: (orderId) => {
+                    _sb.channel(`track-${orderId}`)
+                        .on('postgres_changes', { 
+                            event: 'UPDATE', 
+                            schema: 'public', 
+                            table: 'orders', 
+                            filter: `id=eq.${orderId}` 
+                        }, (payload) => {
+                            const { lat_atual, lng_atual, status } = payload.new;
+                            if (lat_atual && lng_atual) {
+                                App.map.updatePin(lat_atual, lng_atual);
+                                document.getElementById('map-status-text').innerText = `Status: ${status}`;
+                            }
+                        })
+                        .subscribe();
+                },
+                startGPS: () => {
+                    if (!navigator.geolocation) return App.utils.toast('GPS não suportado', 'error');
+                    document.getElementById('map-status-badge').innerText = "EM ROTA";
+                    document.getElementById('map-status-badge').classList.add('status-em_rota');
+                    _sb.from('orders').update({ status: 'em_rota' }).eq('id', App.state.activeOrder);
+
+                    App.state.watchId = navigator.geolocation.watchPosition(async (pos) => {
+                        const { latitude, longitude } = pos.coords;
+                        App.map.updatePin(latitude, longitude);
+                        await _sb.from('orders').update({ lat_atual: latitude, lng_atual: longitude }).eq('id', App.state.activeOrder);
+                    }, err => console.error(err), { enableHighAccuracy: true });
+                },
+                updatePin: (lat, lng) => {
+                    if (App.state.marker) App.state.marker.setLatLng([lat, lng]);
+                    else App.state.marker = L.marker([lat, lng]).addTo(App.state.mapInstance);
+                    App.state.mapInstance.setView([lat, lng], 16);
+                },
+                close: () => {
+                    document.getElementById('map-modal').style.display = 'none';
+                    if (App.state.watchId) {
+                        navigator.geolocation.clearWatch(App.state.watchId);
+                        App.state.watchId = null;
+                    }
+                    _sb.removeAllChannels();
+                }
+            },
+
+            utils: {
+                toast: (msg, type='success') => {
+                    const container = document.getElementById('toast-container');
+                    const el = document.createElement('div');
+                    el.className = `toast ${type}`;
+                    el.innerHTML = `<i class="ri-${type === 'success' ? 'checkbox-circle' : 'close-circle'}-line"></i> <span>${msg}</span>`;
+                    container.appendChild(el);
+                    setTimeout(() => el.remove(), 5000);
+                },
+                setupPWA: () => {
+                    const manifest = {
+                        "name": "LogiMóveis",
+                        "short_name": "LogiMóveis",
+                        "start_url": window.location.href, // Correction for Manifest Error
+                        "display": "standalone",
+                        "background_color": "#ffffff",
+                        "theme_color": "#2563eb",
+                        "icons": [{ "src": "https://placehold.co/192x192/2563eb/white?text=LM", "sizes": "192x192", "type": "image/png" }]
+                    };
+                    const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+                    document.querySelector('#dynamic-manifest').setAttribute('href', URL.createObjectURL(blob));
+                    window.addEventListener('beforeinstallprompt', (e) => {
+                        e.preventDefault();
+                        App.state.deferredPrompt = e;
+                        document.getElementById('pwa-banner').style.display = 'flex';
+                    });
+                }
+            }
+        };
+        // --- INICIALIZAÇÃO ---
+        window.addEventListener('load', App.init);
+    </script>
+</body>
+</html>
