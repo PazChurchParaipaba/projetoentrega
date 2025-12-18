@@ -364,8 +364,8 @@
     <script>
         // --- 1. CONFIGURAÇÃO ---
         const CONFIG = {
-            sbUrl: 'https://groezaseypdbpgymgpvo.supabase.co', // INSIRA AQUI
-            sbKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdyb2V6YXNleXBkYnBneW1ncHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNjkxNjYsImV4cCI6MjA4MTY0NTE2Nn0.5U5QeoGmZn_i9Y8POoUCkatBUAdSW-cjHRyfxpm_pyM'     // INSIRA AQUI
+            sbUrl: 'https://groezaseypdbpgymgpvo.supabase.co',
+            sbKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdyb2V6YXNleXBkYnBneW1ncHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNjkxNjYsImV4cCI6MjA4MTY0NTE2Nn0.5U5QeoGmZn_i9Y8POoUCkatBUAdSW-cjHRyfxpm_pyM'
         };
         const _sb = supabase.createClient(CONFIG.sbUrl, CONFIG.sbKey);
 
@@ -381,13 +381,17 @@
                 activeOrder: null,
                 storeId: null
             },
-            
+           
             init: async () => {
                 App.utils.setupPWA();
-                const { data } = await _sb.auth.getSession();
-                if(data.session) {
-                    App.state.user = data.session.user;
-                    await App.auth.loadProfile();
+                // LOGIN MANUAL: Recupera sessão do LocalStorage
+                const savedUser = localStorage.getItem('logimoveis_session');
+                if(savedUser) {
+                    const profile = JSON.parse(savedUser);
+                    App.state.user = { id: profile.id };
+                    App.state.profile = profile;
+                    App.router.renderNav();
+                    App.router.goDashboard();
                 } else {
                     App.router.renderNav();
                     App.catalog.fetchPublic();
@@ -457,10 +461,10 @@
                     App.state.tempRole = role;
                     document.getElementById('reg-title').innerText = `Cadastro - ${role === 'loja_admin' ? 'Lojista' : role.charAt(0).toUpperCase() + role.slice(1)}`;
                     App.auth.switchView('register');
-                    
+                   
                     const container = document.getElementById('reg-dynamic-fields');
                     let html = '';
-                    
+                   
                     if(role === 'loja_admin') {
                         html = `
                             <div class="input-wrapper"><label>Nome da Loja</label><input id="reg-store-name" class="input-field" placeholder="Ex: Móveis Center"></div>
@@ -482,7 +486,7 @@
                         const video = document.getElementById('cam-video');
                         document.getElementById('cam-box').style.display = 'block';
                         video.srcObject = stream;
-                        
+                       
                         const btn = document.getElementById('btn-cam');
                         btn.innerText = "Analisando rosto...";
                         btn.disabled = true;
@@ -505,52 +509,34 @@
 
                     if(!email || !pass || !name || pass.length < 6) return App.utils.toast('Preencha os campos corretamente', 'error');
 
-                    // Capturar campos extras ANTES de enviar
-                    let storeName = null, cnpj = null, cpf = null, isVerified = false;
-
-                    if(role === 'loja_admin') {
-                        storeName = document.getElementById('reg-store-name')?.value.trim();
-                        cnpj = document.getElementById('reg-cnpj')?.value.trim();
-                        if(!storeName || !cnpj) return App.utils.toast('Preencha os dados da loja', 'error');
-                    }
-                    if(role === 'motorista') {
-                        cpf = document.getElementById('reg-cpf')?.value.trim();
-                        isVerified = document.getElementById('verified-msg').style.display === 'block';
-                    }
-
                     try {
-                        // IMPORTANTE: Enviando TUDO no metadata para o Trigger do SQL capturar
-                        const { data, error } = await _sb.auth.signUp({ 
-                            email, 
+                        // CADASTRO DIRETO NA TABELA PROFILES (Sem Auth Nativo)
+                        const { data: newUser, error } = await _sb.from('profiles').insert({
+                            nome_completo: name,
+                            email: email,
                             password: pass,
-                            options: { 
-                                data: { 
-                                    full_name: name, 
-                                    role: role,
-                                    cpf: cpf,
-                                    cnpj: cnpj,
-                                    is_verified: isVerified
-                                } 
-                            } 
-                        });
-                        
+                            role: role,
+                            cpf: document.getElementById('reg-cpf')?.value || null,
+                            cnpj: document.getElementById('reg-cnpj')?.value || null,
+                            is_verified: document.getElementById('verified-msg')?.style.display === 'block'
+                        }).select().single();
+
                         if(error) throw error;
-                        
-                        // O Trigger já cria o perfil. Só precisamos criar a Loja se for Admin
-                        if(role === 'loja_admin' && data.user) {
-                             const { error: storeErr } = await _sb.from('stores').insert({
-                                admin_id: data.user.id,
+                       
+                        if(role === 'loja_admin') {
+                            const storeName = document.getElementById('reg-store-name').value;
+                            const cnpj = document.getElementById('reg-cnpj').value;
+                            await _sb.from('stores').insert({
+                                admin_id: newUser.id,
                                 nome_loja: storeName,
                                 cnpj: cnpj
                             });
-                            if(storeErr) throw storeErr;
                         }
 
                         App.utils.toast('Cadastro realizado com sucesso!', 'success');
                         App.auth.switchView('login');
                     } catch(e) { 
-                        console.error(e);
-                        App.utils.toast('Erro: ' + (e.message || 'Falha no registro'), 'error'); 
+                        App.utils.toast('Erro: ' + e.message, 'error'); 
                     }
                 },
                 login: async () => {
@@ -558,25 +544,37 @@
                     const pass = document.getElementById('login-pass').value;
                     if(!email || !pass) return App.utils.toast('Preencha email e senha', 'error');
 
-                    const { error } = await _sb.auth.signInWithPassword({email, password: pass});
-                    if(error) App.utils.toast('Erro no login: ' + error.message, 'error');
-                    else window.location.reload();
+                    // LOGIN MANUAL: Busca na tabela de perfis
+                    const { data, error } = await _sb.from('profiles')
+                        .select('*')
+                        .eq('email', email)
+                        .eq('password', pass)
+                        .maybeSingle();
+
+                    if(error || !data) {
+                        App.utils.toast('Dados incorretos ou usuário não encontrado', 'error');
+                    } else {
+                        App.state.user = { id: data.id };
+                        App.state.profile = data;
+                        localStorage.setItem('logimoveis_session', JSON.stringify(data));
+                        App.utils.toast('Bem-vindo!', 'success');
+                        App.router.renderNav();
+                        App.router.goDashboard();
+                    }
                 },
-                logout: async () => {
-                    await _sb.auth.signOut();
+                logout: () => {
+                    localStorage.removeItem('logimoveis_session');
+                    App.state.user = null;
+                    App.state.profile = null;
                     window.location.reload();
                 },
                 loadProfile: async () => {
-                    // Busca direto da tabela profiles
-                    const { data, error } = await _sb.from('profiles').select('*').eq('id', App.state.user.id).single();
-                    if(error || !data) {
-                        App.utils.toast('Erro ao carregar perfil', 'error');
-                        await App.auth.logout();
-                        return;
+                    // Função mantida para compatibilidade, mas dados vêm da sessão manual agora
+                    const savedUser = localStorage.getItem('logimoveis_session');
+                    if(savedUser) {
+                        App.state.profile = JSON.parse(savedUser);
+                        App.router.renderNav();
                     }
-                    App.state.profile = data;
-                    App.router.renderNav();
-                    App.router.goDashboard();
                 }
             },
 
@@ -586,13 +584,13 @@
                     if(!store) return App.utils.toast('Loja não encontrada', 'error');
                     App.state.storeId = store.id;
                    
-                    const { data: orders } = await _sb.from('orders').select('*, products(nome), profiles!cliente_id(nome_completo)').eq('store_id', store.id);
+                    const { data: orders } = await _sb.from('orders').select('*, products(nome), profiles(nome_completo)').eq('store_id', store.id);
                     const pending = orders?.filter(o => o.status === 'pendente') || [];
                    
                     document.getElementById('store-orders-list').innerHTML = pending.length ? pending.map(o => `
                         <div class="card" style="margin-bottom:1rem;">
                             <div class="badge status-pendente">Pendente</div>
-                            <h4>${o.products.nome}</h4>
+                            <h4>${o.products?.nome || 'Produto'}</h4>
                             <p>Cliente: ${o.profiles?.nome_completo || 'Anônimo'}</p>
                             <p class="text-xs text-muted">Destino: ${o.endereco_destino}</p>
                             <div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-top:10px;">
@@ -611,7 +609,10 @@
                 saveProduct: async (nome, preco) => {
                     const { error } = await _sb.from('products').insert({ store_id: App.state.storeId, nome, preco });
                     if(error) App.utils.toast('Erro ao salvar', 'error');
-                    else App.utils.toast('Produto adicionado!', 'success');
+                    else {
+                        App.utils.toast('Produto adicionado!', 'success');
+                        App.catalog.fetchPublic();
+                    }
                 },
                 dispatch: async (id) => {
                     const date = document.getElementById(`date-${id}`).value;
@@ -638,7 +639,7 @@
                     document.getElementById('client-orders-list').innerHTML = orders.map(o => `
                         <div class="card">
                             <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem;">
-                                <strong>${o.products.nome}</strong>
+                                <strong>${o.products?.nome || 'Produto'}</strong>
                                 <span class="badge status-${o.status}">${o.status.replace('_', ' ')}</span>
                             </div>
                             <p class="text-sm">Entrega em: ${o.endereco_destino}</p>
@@ -667,6 +668,7 @@
                     else {
                         App.utils.toast('Pedido realizado!', 'success');
                         App.router.go('cliente');
+                        App.client.init();
                     }
                 }
             },
@@ -694,8 +696,8 @@
                                     <span class="badge ${isMine ? 'status-aceito' : 'status-pendente'}">${isMine ? 'ACEITO POR VOCÊ' : 'DISPONÍVEL'}</span>
                                     <strong style="color:var(--success)">R$ ${j.taxa_servico.toFixed(2)}</strong>
                                 </div>
-                                <h4>${j.products.nome}</h4>
-                                <p class="text-sm">Loja: ${j.stores.nome_loja}</p>
+                                <h4>${j.products?.nome || 'Produto'}</h4>
+                                <p class="text-sm">Loja: ${j.stores?.nome_loja || 'Desconhecida'}</p>
                                 <p class="text-sm">Destino: ${j.endereco_destino}</p>
                                 <hr style="margin:10px 0; border:0; border-top:1px solid #eee;">
                                 ${!isMine ?
@@ -731,7 +733,7 @@
                             <div style="height:140px; background:#f1f5f9; border-radius:8px; display:flex; align-items:center; justify-content:center; margin-bottom:1rem;">
                                 <i class="ri-archive-line" style="font-size:3rem; color:#cbd5e1"></i>
                             </div>
-                            <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores.nome_loja || 'Loja'}</div>
+                            <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja || 'Loja'}</div>
                             <h4>${p.nome}</h4>
                             <h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
                             <button class="btn btn-secondary btn-full" style="margin-top:1rem" onclick="App.client.confirmOrder('${p.id}', '${p.store_id}', ${p.preco})">Solicitar Entrega</button>
@@ -810,7 +812,7 @@
                     const manifest = {
                         "name": "LogiMóveis",
                         "short_name": "LogiMóveis",
-                        "start_url": window.location.href, // Correction for Manifest Error
+                        "start_url": window.location.href,
                         "display": "standalone",
                         "background_color": "#ffffff",
                         "theme_color": "#2563eb",
