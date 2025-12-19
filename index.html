@@ -160,13 +160,21 @@
             background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); color: white; text-align: center;
         }
         
-        .map-modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000;
-            display: none; flex-direction: column;
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000;
+            display: none; align-items: center; justify-content: center;
         }
-        #map { flex: 1; width: 100%; background: #e2e8f0; }
-        .map-header { padding: 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
-        .map-footer { padding: 1rem; border-top: 1px solid var(--border); background: white; }
+        .modal-content {
+            background: white; width: 90%; max-width: 500px; border-radius: var(--radius-md); overflow: hidden;
+            display: flex; flex-direction: column; max-height: 90vh;
+        }
+        .modal-header { padding: 1rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .modal-body { padding: 1rem; overflow-y: auto; }
+        .modal-footer { padding: 1rem; border-top: 1px solid var(--border); background: white; }
+
+        /* Map Specific */
+        #map-modal .modal-content { height: 90%; }
+        #map { flex: 1; width: 100%; background: #e2e8f0; min-height: 300px; }
 
         .toast-container { position: fixed; bottom: 90px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .toast {
@@ -299,7 +307,7 @@
                     <h2>Gestão da Loja</h2>
                     <p>Controle de produtos e despachos</p>
                 </div>
-                <button class="btn btn-primary" onclick="App.store.addProductModal()">
+                <button class="btn btn-primary" onclick="App.store.openAddModal()">
                     <i class="ri-add-line"></i> Novo Produto
                 </button>
             </div>
@@ -307,12 +315,14 @@
                 <div class="card">
                     <h4 style="margin-bottom:1rem; color:var(--primary)">Pedidos Pendentes</h4>
                     <div id="store-orders-list">
-                        <p class="text-sm">Nenhum pedido pendente.</p>
+                        <p class="text-sm">Carregando pedidos...</p>
                     </div>
                 </div>
                 <div class="card">
                     <h4 style="margin-bottom:1rem; color:var(--text-muted)">Histórico de Vendas</h4>
-                    <div id="store-history-list"></div>
+                    <div id="store-history-list">
+                        <p class="text-sm">Carregando histórico...</p>
+                    </div>
                 </div>
             </div>
         </section>
@@ -346,20 +356,49 @@
 
     <nav class="bottom-nav" id="mobile-nav"></nav>
 
-    <div id="map-modal" class="map-modal-overlay">
-        <div class="map-header">
-            <h3>Navegação em Tempo Real</h3>
-            <button class="btn btn-secondary btn-sm" onclick="App.map.close()">Fechar</button>
-        </div>
-        <div id="map"></div>
-        <div class="map-footer" id="map-footer">
-            <div style="display:flex; gap:1rem; align-items:center;">
-                <div class="badge status-aceito" id="map-status-badge">Conectado</div>
-                <p style="margin:0; font-size:0.9rem;" id="map-status-text">Aguardando dados...</p>
+    <div id="map-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Navegação em Tempo Real</h3>
+                <button class="btn btn-secondary btn-sm" onclick="App.map.close()">Fechar</button>
             </div>
-            <button id="btn-start-gps" class="btn btn-success btn-full" style="margin-top:1rem; display:none;" onclick="App.map.startGPS()">
-                <i class="ri-navigation-line"></i> Iniciar Rota (GPS)
-            </button>
+            <div id="map"></div>
+            <div class="modal-footer" id="map-footer">
+                <div style="display:flex; gap:1rem; align-items:center;">
+                    <div class="badge status-aceito" id="map-status-badge">Conectado</div>
+                    <p style="margin:0; font-size:0.9rem;" id="map-status-text">Aguardando dados...</p>
+                </div>
+                <button id="btn-start-gps" class="btn btn-success btn-full" style="margin-top:1rem; display:none;" onclick="App.map.startGPS()">
+                    <i class="ri-navigation-line"></i> Iniciar Rota (GPS)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="product-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Adicionar Produto</h3>
+                <button class="btn btn-secondary btn-sm" onclick="document.getElementById('product-modal').style.display='none'">Fechar</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-wrapper">
+                    <label>Nome do Produto</label>
+                    <input type="text" id="new-prod-name" class="input-field" placeholder="Ex: Sofá 3 Lugares">
+                </div>
+                <div class="input-wrapper">
+                    <label>Preço (R$)</label>
+                    <input type="number" id="new-prod-price" class="input-field" placeholder="0.00">
+                </div>
+                <div class="input-wrapper">
+                    <label>Foto do Produto</label>
+                    <input type="file" id="new-prod-file" class="input-field" accept="image/jpeg, image/png">
+                    <p class="text-xs text-muted" style="margin-top:5px">Formatos: JPG ou PNG</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary btn-full" onclick="App.store.submitProduct()">Salvar Produto</button>
+            </div>
         </div>
     </div>
 
@@ -571,16 +610,22 @@
 
             store: {
                 init: async () => {
-                    // 1. Busca o ID da loja vinculada ao admin logado
+                    // Correção do erro de carregamento: Verifica se user e store existem antes de continuar
+                    if (!App.state.user) return;
+
                     const { data: store, error: sErr } = await _sb.from('stores')
                         .select('id')
                         .eq('admin_id', App.state.user.id)
                         .maybeSingle();
                         
-                    if(!store) return App.utils.toast('Configuração de loja não encontrada', 'error');
+                    if(sErr || !store) {
+                        document.getElementById('store-orders-list').innerHTML = '<p class="text-sm">Erro: Loja não encontrada.</p>';
+                        document.getElementById('store-history-list').innerHTML = '';
+                        return App.utils.toast('Perfil de loja não encontrado.', 'error');
+                    }
+                    
                     App.state.storeId = store.id;
                     
-                    // 2. Busca TODOS os pedidos vinculados a esta loja para gerenciar a lista
                     const { data: orders, error: oErr } = await _sb.from('orders')
                         .select('*, products(nome), profiles(nome_completo)')
                         .eq('store_id', store.id)
@@ -616,66 +661,65 @@
                         </div>
                     `).join('') : '<p class="text-xs">Nenhum registro no histórico.</p>';
                 },
-                addProductModal: async () => {
-                    const nome = prompt("Nome do Produto:");
-                    if(!nome) return;
-                    const preco = prompt("Preço (R$):");
-                    if(!preco || isNaN(preco)) return App.utils.toast('Preço inválido', 'error');
-                    
-                    // Criação do input de arquivo oculto para upload
-                    const fileInput = document.createElement('input');
-                    fileInput.type = 'file';
-                    fileInput.accept = 'image/jpeg, image/png';
-                    
-                    fileInput.onchange = async (e) => {
-                        const file = e.target.files[0];
-                        if(!file) return;
+                
+                openAddModal: () => {
+                    // Limpa os campos
+                    document.getElementById('new-prod-name').value = '';
+                    document.getElementById('new-prod-price').value = '';
+                    document.getElementById('new-prod-file').value = '';
+                    // Abre o modal
+                    document.getElementById('product-modal').style.display = 'flex';
+                },
 
+                submitProduct: async () => {
+                    const nome = document.getElementById('new-prod-name').value;
+                    const preco = document.getElementById('new-prod-price').value;
+                    const fileInput = document.getElementById('new-prod-file');
+                    const file = fileInput.files[0];
+
+                    if (!nome || !preco || isNaN(preco)) {
+                        return App.utils.toast("Preencha nome e preço corretamente", "error");
+                    }
+
+                    let imageUrl = 'https://placehold.co/400x300?text=Sem+Foto';
+
+                    if (file) {
                         App.utils.toast("Enviando imagem...", "info");
-                        
-                        // 1. Gera nome único para o arquivo
-                        // Utiliza timestamp para evitar colisão de nomes
                         const fileName = `${Date.now()}-${file.name.replace(/\s/g, '_')}`;
                         
-                        // 2. Upload para o Bucket 'produtos' usando a biblioteca supabase-js
-                        // Isso conecta automaticamente ao S3 Endpoint configurado no projeto
                         const { data, error: uploadError } = await _sb.storage
                             .from('produtos')
                             .upload(fileName, file);
 
                         if (uploadError) {
                             console.error(uploadError);
-                            return App.utils.toast("Erro no upload da imagem: " + uploadError.message, "error");
+                            return App.utils.toast("Erro no upload: " + uploadError.message, "error");
                         }
 
-                        // 3. Pega a URL pública da imagem recém enviada
                         const { data: publicUrlData } = _sb.storage
                             .from('produtos')
                             .getPublicUrl(fileName);
+                            
+                        imageUrl = publicUrlData.publicUrl;
+                    }
 
-                        // 4. Salva o produto com a URL do bucket
-                        App.store.saveProduct(nome, parseFloat(preco), publicUrlData.publicUrl);
-                    };
-
-                    // Dispara o clique para abrir o seletor de arquivos
-                    fileInput.click();
-                },
-                saveProduct: async (nome, preco, imagem_url) => {
                     const { error } = await _sb.from('products').insert({ 
                         store_id: App.state.storeId, 
                         nome, 
-                        preco,
-                        imagem_url: imagem_url // Link do S3/Bucket
+                        preco: parseFloat(preco),
+                        imagem_url: imageUrl
                     });
                     
-                    if(error) {
+                    if (error) {
                         App.utils.toast('Erro ao salvar produto', 'error');
                     } else {
                         App.utils.toast('Produto cadastrado com sucesso!', 'success');
+                        document.getElementById('product-modal').style.display = 'none';
                         App.catalog.fetchPublic();
                         App.store.init();
                     }
                 },
+
                 dispatch: async (id) => {
                     const date = document.getElementById(`date-${id}`).value;
                     if(!date) return App.utils.toast('Selecione uma data', 'error');
