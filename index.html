@@ -618,7 +618,7 @@
                         .eq('admin_id', App.state.user.id)
                         .maybeSingle();
                     
-                    // 2. CORREÇÃO: Se não existir loja para este usuário, cria uma automaticamente
+                    // 2. Se não existir loja para este usuário, cria uma automaticamente
                     if (!store) {
                         const { data: newStore, error: createErr } = await _sb.from('stores').insert({
                             admin_id: App.state.user.id,
@@ -634,15 +634,15 @@
                     
                     App.state.storeId = store.id;
                     
-                    // 3. Busca pedidos
+                    // 3. Busca pedidos - CORREÇÃO DE AMBIGUIDADE AQUI (profiles!orders_cliente_id_fkey)
                     const { data: orders, error: oErr } = await _sb.from('orders')
-                        .select('*, products(nome), profiles(nome_completo)')
+                        .select('*, products(nome), profiles!orders_cliente_id_fkey(nome_completo)')
                         .eq('store_id', store.id)
                         .order('created_at', { ascending: false });
 
                     if(oErr) {
                         console.error(oErr);
-                        document.getElementById('store-orders-list').innerHTML = '<p class="text-sm">Erro permissão (Verifique RLS).</p>';
+                        document.getElementById('store-orders-list').innerHTML = '<p class="text-sm">Erro ao carregar pedidos.</p>';
                         return;
                     }
                     
@@ -700,7 +700,8 @@
                             .upload(fileName, file);
 
                         if (uploadError) {
-                            return App.utils.toast("Erro no upload (Verifique RLS)", "error");
+                            console.error(uploadError);
+                            return App.utils.toast("Erro no upload: " + uploadError.message, "error");
                         }
 
                         const { data: publicUrlData } = _sb.storage
@@ -713,12 +714,14 @@
                     const { error } = await _sb.from('products').insert({ 
                         store_id: App.state.storeId, 
                         nome, 
-                        preco: parseFloat(preco),
+                        preco: parseFloat(preco), // Garante que seja numérico
                         imagem_url: imageUrl
                     });
                     
-                    if (error) App.utils.toast('Erro ao salvar produto', 'error');
-                    else {
+                    if (error) {
+                        console.error(error);
+                        App.utils.toast('Erro ao salvar produto. Verifique Console.', 'error');
+                    } else {
                         App.utils.toast('Produto cadastrado!', 'success');
                         document.getElementById('product-modal').style.display = 'none';
                         App.catalog.fetchPublic();
@@ -791,6 +794,7 @@
                 init: async () => {
                     const role = App.state.profile.role;
                     document.getElementById('provider-role-label').innerText = role.toUpperCase();
+                    // Pode precisar de correção de ambiguidade aqui também se você precisar do nome do cliente
                     const { data: jobs } = await _sb.from('orders')
                         .select('*, products(nome), stores(nome_loja, cidade)')
                         .or(`status.eq.aguardando_prestador,prestador_id.eq.${App.state.user.id}`);
