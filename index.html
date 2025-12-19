@@ -616,29 +616,62 @@
                         </div>
                     `).join('') : '<p class="text-xs">Nenhum registro no histórico.</p>';
                 },
-                addProductModal: () => {
+                addProductModal: async () => {
                     const nome = prompt("Nome do Produto:");
                     if(!nome) return;
                     const preco = prompt("Preço (R$):");
                     if(!preco || isNaN(preco)) return App.utils.toast('Preço inválido', 'error');
                     
-                    // Solicitação de foto .jpeg ou .png
-                    const fotoUrl = prompt("Insira a URL da foto do produto (.jpeg, .png):", "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400");
+                    // Criação do input de arquivo oculto para upload
+                    const fileInput = document.createElement('input');
+                    fileInput.type = 'file';
+                    fileInput.accept = 'image/jpeg, image/png';
                     
-                    App.store.saveProduct(nome, parseFloat(preco), fotoUrl);
+                    fileInput.onchange = async (e) => {
+                        const file = e.target.files[0];
+                        if(!file) return;
+
+                        App.utils.toast("Enviando imagem...", "info");
+                        
+                        // 1. Gera nome único para o arquivo
+                        // Utiliza timestamp para evitar colisão de nomes
+                        const fileName = `${Date.now()}-${file.name.replace(/\s/g, '_')}`;
+                        
+                        // 2. Upload para o Bucket 'produtos' usando a biblioteca supabase-js
+                        // Isso conecta automaticamente ao S3 Endpoint configurado no projeto
+                        const { data, error: uploadError } = await _sb.storage
+                            .from('produtos')
+                            .upload(fileName, file);
+
+                        if (uploadError) {
+                            console.error(uploadError);
+                            return App.utils.toast("Erro no upload da imagem: " + uploadError.message, "error");
+                        }
+
+                        // 3. Pega a URL pública da imagem recém enviada
+                        const { data: publicUrlData } = _sb.storage
+                            .from('produtos')
+                            .getPublicUrl(fileName);
+
+                        // 4. Salva o produto com a URL do bucket
+                        App.store.saveProduct(nome, parseFloat(preco), publicUrlData.publicUrl);
+                    };
+
+                    // Dispara o clique para abrir o seletor de arquivos
+                    fileInput.click();
                 },
                 saveProduct: async (nome, preco, imagem_url) => {
                     const { error } = await _sb.from('products').insert({ 
                         store_id: App.state.storeId, 
                         nome, 
                         preco,
-                        imagem_url: imagem_url || 'https://placehold.co/400x300?text=Sem+Foto'
+                        imagem_url: imagem_url // Link do S3/Bucket
                     });
                     
                     if(error) {
                         App.utils.toast('Erro ao salvar produto', 'error');
                     } else {
-                        App.utils.toast('Produto adicionado ao catálogo!', 'success');
+                        App.utils.toast('Produto cadastrado com sucesso!', 'success');
                         App.catalog.fetchPublic();
                         App.store.init();
                     }
