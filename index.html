@@ -610,33 +610,46 @@
 
             store: {
                 init: async () => {
-                    // Correção do erro de carregamento: Verifica se user e store existem antes de continuar
                     if (!App.state.user) return;
 
-                    const { data: store, error: sErr } = await _sb.from('stores')
+                    // 1. Tenta buscar a loja existente
+                    let { data: store, error: sErr } = await _sb.from('stores')
                         .select('id')
                         .eq('admin_id', App.state.user.id)
                         .maybeSingle();
+                    
+                    // 2. CORREÇÃO: Se não existir loja para este usuário, cria uma automaticamente
+                    if (!store) {
+                        const { data: newStore, error: createErr } = await _sb.from('stores').insert({
+                            admin_id: App.state.user.id,
+                            nome_loja: 'Minha Loja'
+                        }).select().single();
                         
-                    if(sErr || !store) {
-                        document.getElementById('store-orders-list').innerHTML = '<p class="text-sm">Erro: Loja não encontrada.</p>';
-                        document.getElementById('store-history-list').innerHTML = '';
-                        return App.utils.toast('Perfil de loja não encontrado.', 'error');
+                        if (createErr || !newStore) {
+                            document.getElementById('store-orders-list').innerHTML = '<p class="text-sm">Erro ao inicializar loja.</p>';
+                            return;
+                        }
+                        store = newStore;
                     }
                     
                     App.state.storeId = store.id;
                     
+                    // 3. Busca pedidos
                     const { data: orders, error: oErr } = await _sb.from('orders')
                         .select('*, products(nome), profiles(nome_completo)')
                         .eq('store_id', store.id)
                         .order('created_at', { ascending: false });
 
-                    if(oErr) return App.utils.toast('Erro ao carregar pedidos', 'error');
+                    if(oErr) {
+                        console.error(oErr);
+                        document.getElementById('store-orders-list').innerHTML = '<p class="text-sm">Erro permissão (Verifique RLS).</p>';
+                        return;
+                    }
                     
                     const pending = orders?.filter(o => o.status === 'pendente') || [];
                     const history = orders?.filter(o => o.status !== 'pendente') || [];
                     
-                    // Renderiza Pedidos Pendentes
+                    // Renderiza
                     document.getElementById('store-orders-list').innerHTML = pending.length ? pending.map(o => `
                         <div class="card" style="margin-bottom:1rem; border-left: 4px solid var(--warning);">
                             <div class="badge status-pendente">Aguardando Coleta</div>
@@ -651,7 +664,6 @@
                         </div>
                     `).join('') : '<p class="text-sm">Nenhum pedido pendente.</p>';
 
-                    // Renderiza Histórico
                     document.getElementById('store-history-list').innerHTML = history.length ? history.map(o => `
                         <div class="card" style="margin-bottom:0.5rem; padding:10px; opacity:0.8;">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -663,11 +675,9 @@
                 },
                 
                 openAddModal: () => {
-                    // Limpa os campos
                     document.getElementById('new-prod-name').value = '';
                     document.getElementById('new-prod-price').value = '';
                     document.getElementById('new-prod-file').value = '';
-                    // Abre o modal
                     document.getElementById('product-modal').style.display = 'flex';
                 },
 
@@ -677,9 +687,7 @@
                     const fileInput = document.getElementById('new-prod-file');
                     const file = fileInput.files[0];
 
-                    if (!nome || !preco || isNaN(preco)) {
-                        return App.utils.toast("Preencha nome e preço corretamente", "error");
-                    }
+                    if (!nome || !preco || isNaN(preco)) return App.utils.toast("Preencha nome e preço", "error");
 
                     let imageUrl = 'https://placehold.co/400x300?text=Sem+Foto';
 
@@ -692,8 +700,7 @@
                             .upload(fileName, file);
 
                         if (uploadError) {
-                            console.error(uploadError);
-                            return App.utils.toast("Erro no upload: " + uploadError.message, "error");
+                            return App.utils.toast("Erro no upload (Verifique RLS)", "error");
                         }
 
                         const { data: publicUrlData } = _sb.storage
@@ -710,10 +717,9 @@
                         imagem_url: imageUrl
                     });
                     
-                    if (error) {
-                        App.utils.toast('Erro ao salvar produto', 'error');
-                    } else {
-                        App.utils.toast('Produto cadastrado com sucesso!', 'success');
+                    if (error) App.utils.toast('Erro ao salvar produto', 'error');
+                    else {
+                        App.utils.toast('Produto cadastrado!', 'success');
                         document.getElementById('product-modal').style.display = 'none';
                         App.catalog.fetchPublic();
                         App.store.init();
@@ -730,7 +736,7 @@
                     
                     if(error) App.utils.toast('Erro ao despachar', 'error');
                     else {
-                        App.utils.toast('Pedido despachado! Motoristas notificados.', 'success');
+                        App.utils.toast('Pedido despachado!', 'success');
                         App.store.init();
                     }
                 }
