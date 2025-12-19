@@ -44,7 +44,7 @@
             --nav-height: 70px;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-       
+        
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--background);
@@ -91,11 +91,11 @@
             position: relative; overflow: hidden;
         }
         .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: #cbd5e1; }
-       
+        
         .grid { display: grid; gap: 1.5rem; }
         .grid-2 { grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); }
         .grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-       
+        
         .badge {
             display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 99px;
             font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
@@ -104,7 +104,7 @@
         .status-aceito { background: var(--info-bg); color: #0369a1; }
         .status-em_rota { background: #dbeafe; color: #1e40af; animation: pulse 2s infinite; }
         .status-concluido { background: var(--success-bg); color: #15803d; }
-       
+        
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); } }
 
         /* HEADER */
@@ -159,7 +159,7 @@
             position: absolute; bottom: 0; left: 0; width: 100%; padding: 1rem;
             background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); color: white; text-align: center;
         }
-       
+        
         .map-modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 2000;
             display: none; flex-direction: column;
@@ -171,7 +171,7 @@
         .toast-container { position: fixed; bottom: 90px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .toast {
             background: white; padding: 1rem 1.5rem; border-radius: var(--radius-sm);
-            box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 12px;
+            box-shadow: var(--shadow-md); display: flex; align-items: center; gap: 12px;
             animation: slideInRight 0.3s forwards; pointer-events: auto; min-width: 300px;
             border-left: 4px solid var(--primary);
         }
@@ -182,8 +182,10 @@
         .pwa-banner {
             position: fixed; top: 80px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px;
             background: var(--text-main); color: white; padding: 1rem; border-radius: var(--radius-md);
-            z-index: 999; display: none; align-items: center; justify-content: space-between; box-shadow: var(--shadow-lg);
+            z-index: 999; display: none; align-items: center; justify-content: space-between; box-shadow: var(--shadow-md);
         }
+        
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
@@ -381,10 +383,9 @@
                 activeOrder: null,
                 storeId: null
             },
-           
+            
             init: async () => {
                 App.utils.setupPWA();
-                // LOGIN MANUAL: Recupera sessão do LocalStorage
                 const savedUser = localStorage.getItem('logimoveis_session');
                 if(savedUser) {
                     const profile = JSON.parse(savedUser);
@@ -420,7 +421,7 @@
                 renderNav: () => {
                     const header = document.getElementById('header-actions');
                     const mobile = document.getElementById('mobile-nav');
-                   
+                    
                     if(App.state.user && App.state.profile) {
                         header.innerHTML = `
                             <div style="display:flex; align-items:center; gap:1rem;">
@@ -461,10 +462,10 @@
                     App.state.tempRole = role;
                     document.getElementById('reg-title').innerText = `Cadastro - ${role === 'loja_admin' ? 'Lojista' : role.charAt(0).toUpperCase() + role.slice(1)}`;
                     App.auth.switchView('register');
-                   
+                    
                     const container = document.getElementById('reg-dynamic-fields');
                     let html = '';
-                   
+                    
                     if(role === 'loja_admin') {
                         html = `
                             <div class="input-wrapper"><label>Nome da Loja</label><input id="reg-store-name" class="input-field" placeholder="Ex: Móveis Center"></div>
@@ -486,7 +487,7 @@
                         const video = document.getElementById('cam-video');
                         document.getElementById('cam-box').style.display = 'block';
                         video.srcObject = stream;
-                       
+                        
                         const btn = document.getElementById('btn-cam');
                         btn.innerText = "Analisando rosto...";
                         btn.disabled = true;
@@ -510,7 +511,6 @@
                     if(!email || !pass || !name || pass.length < 6) return App.utils.toast('Preencha os campos corretamente', 'error');
 
                     try {
-                        // CADASTRO DIRETO NA TABELA PROFILES (Sem Auth Nativo)
                         const { data: newUser, error } = await _sb.from('profiles').insert({
                             nome_completo: name,
                             email: email,
@@ -522,7 +522,7 @@
                         }).select().single();
 
                         if(error) throw error;
-                       
+                        
                         if(role === 'loja_admin') {
                             const storeName = document.getElementById('reg-store-name').value;
                             const cnpj = document.getElementById('reg-cnpj').value;
@@ -544,7 +544,6 @@
                     const pass = document.getElementById('login-pass').value;
                     if(!email || !pass) return App.utils.toast('Preencha email e senha', 'error');
 
-                    // LOGIN MANUAL: Busca na tabela de perfis
                     const { data, error } = await _sb.from('profiles')
                         .select('*')
                         .eq('email', email)
@@ -567,51 +566,81 @@
                     App.state.user = null;
                     App.state.profile = null;
                     window.location.reload();
-                },
-                loadProfile: async () => {
-                    // Função mantida para compatibilidade, mas dados vêm da sessão manual agora
-                    const savedUser = localStorage.getItem('logimoveis_session');
-                    if(savedUser) {
-                        App.state.profile = JSON.parse(savedUser);
-                        App.router.renderNav();
-                    }
                 }
             },
 
             store: {
                 init: async () => {
-                    const { data: store } = await _sb.from('stores').select('id').eq('admin_id', App.state.user.id).single();
-                    if(!store) return App.utils.toast('Loja não encontrada', 'error');
+                    // 1. Busca o ID da loja vinculada ao admin logado
+                    const { data: store, error: sErr } = await _sb.from('stores')
+                        .select('id')
+                        .eq('admin_id', App.state.user.id)
+                        .maybeSingle();
+                        
+                    if(!store) return App.utils.toast('Configuração de loja não encontrada', 'error');
                     App.state.storeId = store.id;
-                   
-                    const { data: orders } = await _sb.from('orders').select('*, products(nome), profiles(nome_completo)').eq('store_id', store.id);
+                    
+                    // 2. Busca TODOS os pedidos vinculados a esta loja para gerenciar a lista
+                    const { data: orders, error: oErr } = await _sb.from('orders')
+                        .select('*, products(nome), profiles(nome_completo)')
+                        .eq('store_id', store.id)
+                        .order('created_at', { ascending: false });
+
+                    if(oErr) return App.utils.toast('Erro ao carregar pedidos', 'error');
+                    
                     const pending = orders?.filter(o => o.status === 'pendente') || [];
-                   
+                    const history = orders?.filter(o => o.status !== 'pendente') || [];
+                    
+                    // Renderiza Pedidos Pendentes
                     document.getElementById('store-orders-list').innerHTML = pending.length ? pending.map(o => `
-                        <div class="card" style="margin-bottom:1rem;">
-                            <div class="badge status-pendente">Pendente</div>
-                            <h4>${o.products?.nome || 'Produto'}</h4>
-                            <p>Cliente: ${o.profiles?.nome_completo || 'Anônimo'}</p>
+                        <div class="card" style="margin-bottom:1rem; border-left: 4px solid var(--warning);">
+                            <div class="badge status-pendente">Aguardando Coleta</div>
+                            <h4 style="margin-top:0.5rem">${o.products?.nome || 'Produto'}</h4>
+                            <p class="text-sm">Cliente: ${o.profiles?.nome_completo || 'Anônimo'}</p>
                             <p class="text-xs text-muted">Destino: ${o.endereco_destino}</p>
-                            <div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-top:10px;">
+                            <div style="background:var(--background); padding:10px; border-radius:8px; margin-top:10px;">
                                 <label class="text-xs font-bold">Agendar Despacho:</label>
-                                <input type="datetime-local" id="date-${o.id}" class="input-field" style="padding:5px;">
-                                <button class="btn btn-primary btn-sm btn-full" style="margin-top:5px;" onclick="App.store.dispatch('${o.id}')">Confirmar e Solicitar Motorista</button>
+                                <input type="datetime-local" id="date-${o.id}" class="input-field" style="padding:5px; margin:5px 0;">
+                                <button class="btn btn-primary btn-sm btn-full" onclick="App.store.dispatch('${o.id}')">Confirmar e Notificar Motorista</button>
                             </div>
                         </div>
-                    `).join('') : '<p>Sem novos pedidos.</p>';
+                    `).join('') : '<p class="text-sm">Nenhum pedido pendente.</p>';
+
+                    // Renderiza Histórico
+                    document.getElementById('store-history-list').innerHTML = history.length ? history.map(o => `
+                        <div class="card" style="margin-bottom:0.5rem; padding:10px; opacity:0.8;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <span class="text-sm font-bold">${o.products?.nome}</span>
+                                <span class="badge status-${o.status}">${o.status.replace('_', ' ')}</span>
+                            </div>
+                        </div>
+                    `).join('') : '<p class="text-xs">Nenhum registro no histórico.</p>';
                 },
                 addProductModal: () => {
                     const nome = prompt("Nome do Produto:");
+                    if(!nome) return;
                     const preco = prompt("Preço (R$):");
-                    if(nome && preco && !isNaN(preco)) App.store.saveProduct(nome, parseFloat(preco));
+                    if(!preco || isNaN(preco)) return App.utils.toast('Preço inválido', 'error');
+                    
+                    // Solicitação de foto .jpeg ou .png
+                    const fotoUrl = prompt("Insira a URL da foto do produto (.jpeg, .png):", "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400");
+                    
+                    App.store.saveProduct(nome, parseFloat(preco), fotoUrl);
                 },
-                saveProduct: async (nome, preco) => {
-                    const { error } = await _sb.from('products').insert({ store_id: App.state.storeId, nome, preco });
-                    if(error) App.utils.toast('Erro ao salvar', 'error');
-                    else {
-                        App.utils.toast('Produto adicionado!', 'success');
+                saveProduct: async (nome, preco, imagem_url) => {
+                    const { error } = await _sb.from('products').insert({ 
+                        store_id: App.state.storeId, 
+                        nome, 
+                        preco,
+                        imagem_url: imagem_url || 'https://placehold.co/400x300?text=Sem+Foto'
+                    });
+                    
+                    if(error) {
+                        App.utils.toast('Erro ao salvar produto', 'error');
+                    } else {
+                        App.utils.toast('Produto adicionado ao catálogo!', 'success');
                         App.catalog.fetchPublic();
+                        App.store.init();
                     }
                 },
                 dispatch: async (id) => {
@@ -621,9 +650,10 @@
                         status: 'aguardando_prestador',
                         data_agendada: new Date(date).toISOString()
                     }).eq('id', id);
+                    
                     if(error) App.utils.toast('Erro ao despachar', 'error');
                     else {
-                        App.utils.toast('Pedido despachado!', 'success');
+                        App.utils.toast('Pedido despachado! Motoristas notificados.', 'success');
                         App.store.init();
                     }
                 }
@@ -658,7 +688,8 @@
                     if(wantMontagem) taxa += (price * 0.15);
                     const { error } = await _sb.from('orders').insert({
                         cliente_id: App.state.user.id,
-                        product_id: pid, store_id: sid,
+                        product_id: pid, 
+                        store_id: sid,
                         endereco_destino: address,
                         requer_montagem: wantMontagem,
                         taxa_servico: taxa,
@@ -666,7 +697,7 @@
                     });
                     if(error) App.utils.toast('Erro ao criar pedido', 'error');
                     else {
-                        App.utils.toast('Pedido realizado!', 'success');
+                        App.utils.toast('Pedido realizado com sucesso!', 'success');
                         App.router.go('cliente');
                         App.client.init();
                     }
@@ -680,7 +711,7 @@
                     const { data: jobs } = await _sb.from('orders')
                         .select('*, products(nome), stores(nome_loja, cidade)')
                         .or(`status.eq.aguardando_prestador,prestador_id.eq.${App.state.user.id}`);
-                   
+                    
                     const filtered = (jobs || []).filter(j => {
                         if(j.prestador_id === App.state.user.id) return true;
                         if(j.status !== 'aguardando_prestador') return false;
@@ -709,13 +740,13 @@
                                 }
                             </div>
                         `;
-                    }).join('') || '<p>Nenhuma oportunidade.</p>';
+                    }).join('') || '<p>Nenhuma oportunidade disponível no momento.</p>';
                 },
                 accept: async (id) => {
                     const { error } = await _sb.from('orders').update({ prestador_id: App.state.user.id, status: 'aceito' }).eq('id', id);
                     if(error) App.utils.toast('Erro ao aceitar', 'error');
                     else {
-                        App.utils.toast('Serviço aceito!', 'success');
+                        App.utils.toast('Serviço aceito com sucesso!', 'success');
                         App.provider.init();
                     }
                 }
@@ -724,14 +755,19 @@
             catalog: {
                 fetchPublic: async () => {
                     const { data, error } = await _sb.from('products').select('*, stores(nome_loja)');
+                    const container = document.getElementById('public-catalog');
+                    
                     if(error || !data || data.length === 0) {
-                        document.getElementById('public-catalog').innerHTML = `<p style="text-align:center; padding:2rem;">Nenhum produto disponível.</p>`;
+                        container.innerHTML = `<p style="text-align:center; padding:2rem;">Nenhum produto disponível.</p>`;
                         return;
                     }
-                    document.getElementById('public-catalog').innerHTML = data.map(p => `
+                    
+                    container.innerHTML = data.map(p => `
                         <div class="card">
-                            <div style="height:140px; background:#f1f5f9; border-radius:8px; display:flex; align-items:center; justify-content:center; margin-bottom:1rem;">
-                                <i class="ri-archive-line" style="font-size:3rem; color:#cbd5e1"></i>
+                            <div style="height:180px; margin:-1.5rem -1.5rem 1rem -1.5rem; overflow:hidden; background:#f1f5f9; display:flex; align-items:center; justify-content:center;">
+                                <img src="${p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto'}" 
+                                     style="width:100%; height:100%; object-fit:cover;" 
+                                     onerror="this.src='https://placehold.co/400x300?text=LogiMoveis'">
                             </div>
                             <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja || 'Loja'}</div>
                             <h4>${p.nome}</h4>
