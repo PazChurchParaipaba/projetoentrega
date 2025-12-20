@@ -4,451 +4,656 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#2563eb">
-    <meta name="description" content="NexLog - O maior marketplace de logística de móveis e montagem.">
-    <title>NexLog | Sistema Integrado Profissional</title>
+    <meta name="description" content="NexLog - Soluções logísticas inteligentes para entregas, mudanças e serviços gerais.">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>NexLog | Logística Inteligente</title>
     
     <link rel="manifest" id="dynamic-manifest">
     <link rel="apple-touch-icon" href="https://placehold.co/192x192/2563eb/white?text=NX">
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <script src="https://sdk.mercadopago.com/js/v2"></script>
+    
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        /* --- 1. CORE VARIABLES & RESET --- */
+        /* 1. VARIÁVEIS GLOBAIS E RESET 
+           Definição de cores, espaçamentos e sombras padrão.
+        */
         :root {
+            /* Cores Primárias */
             --primary: #2563eb;
             --primary-dark: #1e40af;
             --primary-light: #eff6ff;
+            --accent: #3b82f6;
+
+            /* Cores de Interface */
             --secondary: #64748b;
             --surface: #ffffff;
             --background: #f8fafc;
             --border: #e2e8f0;
+            
+            /* Tipografia */
             --text-main: #0f172a;
             --text-muted: #64748b;
+            --text-light: #94a3b8;
+
+            /* Cores de Estado */
             --success: #10b981;
             --success-bg: #dcfce7;
+            --success-dark: #047857;
+            
             --warning: #f59e0b;
             --warning-bg: #fef3c7;
+            --warning-dark: #b45309;
+            
             --danger: #ef4444;
             --danger-bg: #fee2e2;
+            --danger-dark: #b91c1c;
+            
             --info: #0ea5e9;
             --info-bg: #e0f2fe;
+            --info-dark: #0369a1;
+
+            /* Layout e Formas */
             --radius-sm: 8px;
             --radius-md: 12px;
             --radius-lg: 16px;
+            --radius-full: 9999px;
+            
+            /* Sombras */
             --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
             --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
             --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            
+            /* Animações */
             --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            
+            /* Tamanhos Fixos */
             --nav-height: 70px;
+            --mobile-nav-height: 60px;
         }
 
-        * { 
-            margin: 0; 
-            padding: 0; 
-            box-sizing: border-box; 
-            -webkit-tap-highlight-color: transparent; 
+        /* Reset Básico */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
         
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--background);
             color: var(--text-main);
             min-height: 100vh;
-            padding-bottom: 90px; /* Espaço extra para mobile nav */
+            padding-bottom: 90px; /* Espaço para a barra de navegação móvel */
             overflow-x: hidden;
+            line-height: 1.5;
         }
 
-        /* --- UI COMPONENTS --- */
-        h1, h2, h3, h4 { 
-            font-weight: 700; 
-            letter-spacing: -0.025em; 
-            line-height: 1.2; 
-            margin-bottom: 0.5rem; 
+        /* 2. TIPOGRAFIA 
+        */
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            line-height: 1.2;
+            margin-bottom: 0.5rem;
+            color: var(--text-main);
         }
 
-        p { 
-            color: var(--text-muted); 
-            line-height: 1.6; 
-            margin-bottom: 1rem; 
+        h1 { font-size: 2.25rem; }
+        h2 { font-size: 1.875rem; }
+        h3 { font-size: 1.5rem; }
+        h4 { font-size: 1.25rem; }
+
+        p {
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            font-size: 1rem;
         }
 
         .text-sm { font-size: 0.875rem; }
         .text-xs { font-size: 0.75rem; }
+        .text-center { text-align: center; }
         .font-bold { font-weight: 700; }
+        .text-primary { color: var(--primary); }
 
+        /* 3. COMPONENTES: BOTÕES 
+        */
         .btn {
-            display: inline-flex; 
-            align-items: center; 
-            justify-content: center; 
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             gap: 0.5rem;
-            padding: 0.75rem 1.5rem; 
-            border-radius: var(--radius-sm); 
-            font-weight: 600; 
-            font-size: 0.95rem;
-            cursor: pointer; 
-            transition: var(--transition); 
-            border: none; 
-            outline: none; 
-            position: relative; 
-            overflow: hidden;
-        }
-        
-        .btn:active { transform: scale(0.98); }
-        
-        .btn-primary { 
-            background: var(--primary); 
-            color: white; 
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); 
-        }
-        
-        .btn-primary:hover { 
-            background: var(--primary-dark); 
-        }
-        
-        .btn-secondary { 
-            background: white; 
-            border: 1px solid var(--border); 
-            color: var(--text-main); 
-        }
-        
-        .btn-secondary:hover { 
-            border-color: var(--primary); 
-            color: var(--primary); 
-            background: var(--primary-light); 
-        }
-        
-        .btn-danger { 
-            background: var(--danger); 
-            color: white; 
-        }
-        
-        .btn-success { 
-            background: var(--success); 
-            color: white; 
-        }
-        
-        .btn-full { width: 100%; }
-        .btn-sm { padding: 0.5rem 1rem; font-size: 0.85rem; }
-
-        .input-wrapper { 
-            margin-bottom: 1.25rem; 
-            text-align: left; 
-        }
-        
-        .input-wrapper label { 
-            display: block; 
-            margin-bottom: 0.5rem; 
-            font-size: 0.9rem; 
-            font-weight: 600; 
-            color: var(--text-main); 
-        }
-        
-        .input-field {
-            width: 100%; 
-            padding: 0.875rem 1rem; 
-            border: 1px solid var(--border); 
+            padding: 0.875rem 1.5rem;
             border-radius: var(--radius-sm);
-            background: white; 
-            font-size: 1rem; 
-            transition: var(--transition); 
-            font-family: inherit;
-        }
-        
-        .input-field:focus { 
-            border-color: var(--primary); 
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); 
-            outline: none; 
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: var(--transition);
+            border: none;
+            outline: none;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            user-select: none;
         }
 
-        .container { 
-            max-width: 1200px; 
-            margin: 0 auto; 
-            padding: 2rem 1.5rem; 
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: white;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
         }
         
-        .card {
-            background: var(--surface); 
-            border-radius: var(--radius-md); 
-            padding: 1.5rem;
-            border: 1px solid var(--border); 
-            box-shadow: var(--shadow-sm); 
+        .btn-danger:hover {
+            background: var(--danger-dark);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: var(--success-dark);
+        }
+
+        .btn-full {
+            width: 100%;
+            display: flex;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        /* 4. COMPONENTES: FORMULÁRIOS 
+        */
+        .input-wrapper {
+            margin-bottom: 1.25rem;
+            text-align: left;
+            position: relative;
+        }
+
+        .input-wrapper label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: white;
+            font-size: 1rem;
             transition: var(--transition);
-            position: relative; 
+            font-family: inherit;
+            color: var(--text-main);
+        }
+
+        .input-field::placeholder {
+            color: #cbd5e1;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+            outline: none;
+        }
+
+        /* 5. COMPONENTES: CARDS E CONTAINERS 
+        */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .card {
+            background: var(--surface);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+            position: relative;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
-        
-        .card:hover { 
-            transform: translateY(-2px); 
-            box-shadow: var(--shadow-md); 
-            border-color: #cbd5e1; 
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: #cbd5e1;
         }
-        
-        .grid { display: grid; gap: 1.5rem; }
-        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); }
-        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
-        
+
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        /* 6. COMPONENTES: BADGES (STATUS) 
+        */
         .badge {
-            display: inline-flex; 
-            align-items: center; 
-            padding: 0.25rem 0.75rem; 
+            display: inline-flex;
+            align-items: center;
+            padding: 0.35rem 0.85rem;
             border-radius: 99px;
-            font-size: 0.75rem; 
-            font-weight: 700; 
-            text-transform: uppercase; 
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
             letter-spacing: 0.05em;
         }
-        
-        .status-pendente { background: var(--warning-bg); color: #b45309; }
-        .status-aceito { background: var(--info-bg); color: #0369a1; }
-        .status-em_rota { background: #dbeafe; color: #1e40af; animation: pulse 2s infinite; }
-        .status-concluido { background: var(--success-bg); color: #15803d; }
-        
-        @keyframes pulse { 
-            0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); } 
-            70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); } 
-            100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); } 
+
+        .status-pendente {
+            background: var(--warning-bg);
+            color: var(--warning-dark);
         }
 
-        /* HEADER */
+        .status-aceito {
+            background: var(--info-bg);
+            color: var(--info-dark);
+        }
+
+        .status-em_rota {
+            background: #dbeafe;
+            color: #1e40af;
+            animation: pulse 2s infinite;
+        }
+
+        .status-concluido {
+            background: var(--success-bg);
+            color: var(--success-dark);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+        }
+
+        /* 7. ESTRUTURA: HEADER E NAVEGAÇÃO 
+        */
         header {
-            background: rgba(255, 255, 255, 0.95); 
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--border); 
-            padding: 0 5%; 
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 5%;
             height: var(--nav-height);
-            display: flex; 
-            justify-content: space-between; 
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            position: sticky; 
-            top: 0; 
+            position: sticky;
+            top: 0;
             z-index: 100;
+            box-shadow: var(--shadow-sm);
         }
-        
-        .brand { 
-            font-size: 1.5rem; 
-            font-weight: 800; 
-            color: var(--primary); 
-            display: flex; 
-            align-items: center; 
-            gap: 0.5rem; 
-        }
-        
-        .brand i { font-size: 1.75rem; }
 
-        /* MOBILE NAV */
-        .bottom-nav {
-            display: none; 
-            position: fixed; 
-            bottom: 0; 
-            left: 0; 
-            width: 100%; 
-            background: white;
-            border-top: 1px solid var(--border); 
-            padding: 0.5rem 0; 
-            z-index: 90;
-            justify-content: space-around; 
+        .brand {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            display: flex;
             align-items: center;
+            gap: 0.5rem;
+            letter-spacing: -0.05em;
         }
-        
+
+        .brand i {
+            font-size: 1.75rem;
+        }
+
+        /* Navegação Inferior (Mobile) */
+        .bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: white;
+            border-top: 1px solid var(--border);
+            padding: 0.5rem 0;
+            z-index: 90;
+            justify-content: space-around;
+            align-items: center;
+            height: var(--mobile-nav-height);
+            box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+        }
+
         .nav-item {
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             gap: 2px;
-            font-size: 0.7rem; 
-            color: var(--text-muted); 
-            padding: 0.5rem; 
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            padding: 0.5rem;
             cursor: pointer;
+            transition: var(--transition);
         }
-        
-        .nav-item i { font-size: 1.25rem; margin-bottom: 2px; }
-        .nav-item.active { color: var(--primary); font-weight: 600; }
-        
+
+        .nav-item i {
+            font-size: 1.35rem;
+            margin-bottom: 2px;
+        }
+
+        .nav-item.active {
+            color: var(--primary);
+            font-weight: 700;
+            transform: translateY(-2px);
+        }
+
+        /* Responsividade da Navegação */
         @media (max-width: 768px) {
             .bottom-nav { display: flex; }
             .desktop-only { display: none !important; }
         }
 
-        /* SPA VIEWS */
-        .view-section { 
-            display: none; 
-            animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
-        }
-        
-        .view-section.active { display: block; }
-        
-        @keyframes fadeUp { 
-            from { opacity: 0; transform: translateY(20px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
-
-        /* AUTH & SPECIALS */
-        .auth-card { 
-            max-width: 420px; 
-            margin: 3rem auto; 
-            text-align: center; 
-            padding: 2.5rem; 
-        }
-        
-        .role-grid { 
-            display: grid; 
-            grid-template-columns: 1fr 1fr; 
-            gap: 1rem; 
-            margin-top: 2rem; 
-        }
-        
-        .role-card {
-            border: 2px solid var(--border); 
-            border-radius: var(--radius-md); 
-            padding: 1.5rem;
-            cursor: pointer; 
-            transition: var(--transition); 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            gap: 0.5rem;
-        }
-        
-        .role-card:hover { 
-            border-color: var(--primary); 
-            background: var(--primary-light); 
-        }
-        
-        .role-card.selected { 
-            border-color: var(--primary); 
-            background: #dbeafe; 
-            ring: 2px solid var(--primary); 
-        }
-        
-        .role-card i { font-size: 2rem; color: var(--primary); }
-
-        .camera-container {
-            background: #000; 
-            border-radius: var(--radius-md); 
-            overflow: hidden; 
-            position: relative;
-            aspect-ratio: 4/3; 
-            margin-bottom: 1rem; 
+        /* 8. SISTEMA DE VIEWS (SPA) 
+        */
+        .view-section {
             display: none;
+            animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        
-        .camera-container video { width: 100%; height: 100%; object-fit: cover; }
-        
-        .camera-overlay {
-            position: absolute; 
-            bottom: 0; 
-            left: 0; 
-            width: 100%; 
-            padding: 1rem;
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); 
-            color: white; 
+
+        .view-section.active {
+            display: block;
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 9. TELAS ESPECÍFICAS: AUTH & ROLES 
+        */
+        .auth-card {
+            max-width: 420px;
+            margin: 3rem auto;
             text-align: center;
-        }
-        
-        .modal-overlay {
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(0,0,0,0.5); 
-            z-index: 2000;
-            display: none; 
-            align-items: center; 
-            justify-content: center;
-        }
-        
-        .modal-content {
-            background: white; 
-            width: 90%; 
-            max-width: 500px; 
-            border-radius: var(--radius-md); 
-            overflow: hidden;
-            display: flex; 
-            flex-direction: column; 
-            max-height: 90vh;
-        }
-        
-        .modal-header { 
-            padding: 1rem; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            border-bottom: 1px solid var(--border); 
-        }
-        
-        .modal-body { padding: 1rem; overflow-y: auto; }
-        
-        .modal-footer { 
-            padding: 1rem; 
-            border-top: 1px solid var(--border); 
-            background: white; 
+            padding: 2.5rem;
         }
 
-        /* Map Specific */
-        #map-modal .modal-content { height: 90%; }
-        #map { flex: 1; width: 100%; background: #e2e8f0; min-height: 300px; }
-
-        .toast-container { 
-            position: fixed; 
-            bottom: 90px; 
-            right: 20px; 
-            z-index: 9999; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 10px; 
-            pointer-events: none; 
-        }
-        
-        .toast {
-            background: white; 
-            padding: 1rem 1.5rem; 
-            border-radius: var(--radius-sm);
-            box-shadow: var(--shadow-md); 
-            display: flex; 
-            align-items: center; 
-            gap: 12px;
-            animation: slideInRight 0.3s forwards; 
-            pointer-events: auto; 
-            min-width: 300px;
-            border-left: 4px solid var(--primary);
-        }
-        
-        .toast.error { border-left-color: var(--danger); }
-        .toast.success { border-left-color: var(--success); }
-        .toast.info { border-left-color: var(--info); }
-        
-        @keyframes slideInRight { 
-            from { transform: translateX(100%); opacity: 0; } 
-            to { transform: translateX(0); opacity: 1; } 
+        .role-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 2rem;
         }
 
-        .pwa-banner {
-            position: fixed; 
-            top: 80px; 
-            left: 50%; 
-            transform: translateX(-50%); 
-            width: 90%; 
-            max-width: 400px;
-            background: var(--text-main); 
-            color: white; 
-            padding: 1rem; 
+        .role-card {
+            border: 2px solid var(--border);
             border-radius: var(--radius-md);
-            z-index: 999; 
-            display: none; 
-            align-items: center; 
-            justify-content: space-between; 
-            box-shadow: var(--shadow-md);
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            background-color: white;
+        }
+
+        .role-card:hover {
+            border-color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .role-card.selected {
+            border-color: var(--primary);
+            background: #dbeafe;
+            box-shadow: 0 0 0 2px var(--primary);
+        }
+
+        .role-card i {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Container da Câmera (Validação) */
+        .camera-container {
+            background: #000;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            position: relative;
+            aspect-ratio: 4/3;
+            margin-bottom: 1rem;
+            display: none;
+            border: 2px solid var(--border);
+        }
+
+        .camera-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .camera-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            color: white;
+            text-align: center;
+            font-weight: 600;
         }
         
-        @keyframes spin { 
-            from { transform: rotate(0deg); } 
-            to { transform: rotate(360deg); } 
+        /* 10. SISTEMA DE MODAIS 
+        */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            max-height: 90vh;
+            box-shadow: var(--shadow-lg);
+            animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .modal-header {
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            background-color: #fcfcfc;
+        }
+
+        .modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 1.5rem;
+            border-top: 1px solid var(--border);
+            background: white;
+        }
+
+        /* Estilização Específica do Mapa */
+        #map-modal .modal-content {
+            height: 90%;
+        }
+
+        #map {
+            flex: 1;
+            width: 100%;
+            background: #e2e8f0;
+            min-height: 300px;
+            z-index: 1;
+        }
+
+        /* 11. NOTIFICAÇÕES (TOASTS) 
+        */
+        .toast-container {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: white;
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideInRight 0.3s forwards;
+            pointer-events: auto;
+            min-width: 300px;
+            border-left: 5px solid var(--primary);
+            font-weight: 500;
+        }
+
+        .toast i {
+            font-size: 1.25rem;
+        }
+
+        .toast.error {
+            border-left-color: var(--danger);
+            color: var(--danger-dark);
+        }
+
+        .toast.success {
+            border-left-color: var(--success);
+            color: var(--success-dark);
+        }
+
+        .toast.info {
+            border-left-color: var(--info);
+            color: var(--info-dark);
+        }
+
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* 12. PWA BANNER 
+        */
+        .pwa-banner {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 400px;
+            background: var(--text-main);
+            color: white;
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            z-index: 999;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        /* 13. UTILITÁRIOS 
+        */
+        .spin {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Ajuste para inputs do Brick Mercado Pago */
+        #payment-brick_container {
+            min-height: 300px;
         }
     </style>
 </head>
@@ -456,10 +661,10 @@
     <div class="toast-container" id="toast-container"></div>
     
     <div id="pwa-banner" class="pwa-banner">
-        <div style="display:flex; align-items:center; gap:10px;">
+        <div style="display:flex; align-items:center; gap:12px;">
             <i class="ri-download-cloud-2-line" style="font-size:1.5rem"></i>
             <div>
-                <div style="font-weight:bold">Instalar App</div>
+                <div style="font-weight:bold">Instalar NexLog</div>
                 <div style="font-size:0.8rem; opacity:0.8">Acesso rápido na tela inicial</div>
             </div>
         </div>
@@ -474,29 +679,34 @@
     </header>
 
     <main>
+        
         <section id="view-home" class="view-section active">
-            <div style="background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); padding: 4rem 1.5rem; text-align: center; margin-bottom: 2rem;">
+            <div style="background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); padding: 5rem 1.5rem; text-align: center; margin-bottom: 2rem;">
                 <div class="container">
-                    <h1 style="font-size: 2.5rem; margin-bottom: 1rem; color: var(--text-main);">Logística Inteligente <br><span style="color:var(--primary)">Para Todos os Serviços</span></h1>
-                    <p style="max-width: 600px; margin: 0 auto 2rem auto; font-size: 1.1rem;">
-                        Conectando grandes lojas a motoristas parceiros e montadores especializados.
-                        A solução completa para entregar e montar sonhos.
+                    <h1 style="font-size: 2.75rem; margin-bottom: 1.25rem; color: var(--text-main);">
+                        Logística Inteligente <br><span style="color:var(--primary)">Para Todos os Serviços</span>
+                    </h1>
+                    <p style="max-width: 650px; margin: 0 auto 2.5rem auto; font-size: 1.15rem;">
+                        Conectando grandes lojas, motoristas parceiros e prestadores de serviço em todo o Brasil.
+                        A solução completa para qualquer tipo de entrega, montagem ou serviço.
                     </p>
-                    <div style="display: flex; gap: 1rem; justify-content: center;">
+                    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
                         <button class="btn btn-primary" onclick="App.router.go('auth')">Acessar Plataforma</button>
-                        <button class="btn btn-secondary" onclick="document.getElementById('catalog-anchor').scrollIntoView({behavior:'smooth'})">Ver Ofertas</button>
+                        <button class="btn btn-secondary" onclick="document.getElementById('catalog-anchor').scrollIntoView({behavior:'smooth'})">Ver Serviços Disponíveis</button>
                     </div>
                 </div>
             </div>
+            
             <div class="container" id="catalog-anchor">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-                    <h3>Destaques das Lojas</h3>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+                    <h3>Destaques das Lojas Parceiras</h3>
                     <span class="badge status-aceito">Ofertas Atualizadas</span>
                 </div>
+                
                 <div id="public-catalog" class="grid grid-3">
-                    <div class="card" style="text-align:center; padding:3rem;">
-                        <i class="ri-loader-4-line" style="font-size:2rem; animation:spin 1s linear infinite"></i>
-                        <p>Carregando catálogo...</p>
+                    <div class="card" style="text-align:center; padding:4rem;">
+                        <i class="ri-loader-4-line spin" style="font-size:2.5rem; color:var(--primary)"></i>
+                        <p style="margin-top:1rem;">Carregando catálogo...</p>
                     </div>
                 </div>
             </div>
@@ -504,54 +714,74 @@
 
         <section id="view-auth" class="view-section container">
             <div class="card auth-card">
+                
                 <div id="auth-state-login">
-                    <h2 style="color:var(--primary); margin-bottom:0.5rem;">Bem-vindo</h2>
-                    <p>Entre para gerenciar seus pedidos</p>
+                    <div style="margin-bottom: 2rem;">
+                        <h2 style="color:var(--primary); margin-bottom:0.5rem;">Bem-vindo</h2>
+                        <p>Entre para gerenciar seus pedidos e serviços</p>
+                    </div>
+                    
                     <div class="input-wrapper">
-                        <label>Email</label>
+                        <label>Endereço de Email</label>
                         <input type="email" id="login-email" class="input-field" placeholder="seu@email.com">
                     </div>
                     <div class="input-wrapper">
-                        <label>Senha</label>
+                        <label>Sua Senha</label>
                         <input type="password" id="login-pass" class="input-field" placeholder="••••••">
                     </div>
+                    
                     <button class="btn btn-primary btn-full" onclick="App.auth.login()">Entrar no Sistema</button>
-                    <div style="margin-top:1.5rem; padding-top:1.5rem; border-top:1px solid var(--border);">
+                    
+                    <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--border);">
                         <p class="text-xs">Não possui conta?</p>
                         <button class="btn btn-secondary btn-full" onclick="App.auth.switchView('roles')">Criar Nova Conta</button>
                     </div>
                 </div>
+                
                 <div id="auth-state-roles" style="display:none;">
                     <h3>Qual o seu perfil?</h3>
-                    <p>Selecione como deseja usar a plataforma</p>
+                    <p>Selecione como deseja usar a plataforma NexLog</p>
                     <div class="role-grid">
                         <div class="role-card" onclick="App.auth.startReg('cliente')">
                             <i class="ri-user-smile-line"></i>
-                            <span class="font-bold">Cliente</span>
+                            <span class="font-bold">Sou Cliente</span>
                         </div>
                         <div class="role-card" onclick="App.auth.startReg('loja_admin')">
                             <i class="ri-store-2-line"></i>
-                            <span class="font-bold">Lojista</span>
+                            <span class="font-bold">Sou Lojista</span>
                         </div>
                         <div class="role-card" onclick="App.auth.startReg('motorista')">
                             <i class="ri-truck-line"></i>
-                            <span class="font-bold">Motorista</span>
+                            <span class="font-bold">Sou Motorista</span>
                         </div>
                         <div class="role-card" onclick="App.auth.startReg('montador')">
                             <i class="ri-tools-line"></i>
-                            <span class="font-bold">Prestador</span>
+                            <span class="font-bold">Sou Prestador</span>
                         </div>
                     </div>
-                    <button class="btn btn-secondary btn-full" style="margin-top:1.5rem" onclick="App.auth.switchView('login')">Voltar</button>
+                    <button class="btn btn-secondary btn-full" style="margin-top:2rem" onclick="App.auth.switchView('login')">Voltar ao Login</button>
                 </div>
+
                 <div id="auth-state-register" style="display:none;">
                     <h3 id="reg-title">Cadastro</h3>
                     <p>Preencha seus dados para continuar</p>
-                    <div class="input-wrapper"><label>Nome Completo</label><input type="text" id="reg-name" class="input-field"></div>
-                    <div class="input-wrapper"><label>Email</label><input type="email" id="reg-email" class="input-field"></div>
-                    <div class="input-wrapper"><label>Senha</label><input type="password" id="reg-pass" class="input-field"></div>
+                    
+                    <div class="input-wrapper">
+                        <label>Nome Completo</label>
+                        <input type="text" id="reg-name" class="input-field" placeholder="Seu nome">
+                    </div>
+                    <div class="input-wrapper">
+                        <label>Email</label>
+                        <input type="email" id="reg-email" class="input-field" placeholder="seu@email.com">
+                    </div>
+                    <div class="input-wrapper">
+                        <label>Senha</label>
+                        <input type="password" id="reg-pass" class="input-field" placeholder="••••••">
+                    </div>
+                    
                     <div id="reg-dynamic-fields"></div>
-                    <button class="btn btn-primary btn-full" onclick="App.auth.register()" id="btn-final-reg">Finalizar Cadastro</button>
+                    
+                    <button class="btn btn-primary btn-full" onclick="App.auth.register()" id="btn-final-reg" style="margin-top:1rem;">Finalizar Cadastro</button>
                     <button class="btn btn-secondary btn-full" style="margin-top:0.5rem" onclick="App.auth.switchView('roles')">Voltar</button>
                 </div>
             </div>
@@ -561,10 +791,10 @@
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
                 <div>
                     <h2>Gestão da Loja</h2>
-                    <p>Controle de produtos e despachos</p>
+                    <p>Controle de produtos, serviços e despachos</p>
                 </div>
                 <button class="btn btn-primary" onclick="App.store.openAddModal()">
-                    <i class="ri-add-line"></i> Novo Serviço
+                    <i class="ri-add-line"></i> Novo Serviço/Produto
                 </button>
             </div>
             <div class="grid grid-2">
@@ -589,19 +819,21 @@
                 <p>Acompanhe suas compras e serviços contratados</p>
             </div>
             <div id="client-orders-list" class="grid grid-2"></div>
-            <div style="margin-top:2rem; text-align:center;">
-                <button class="btn btn-secondary" onclick="App.router.go('home')">Ir para o Catálogo de Serviços</button>
+            <div style="margin-top:3rem; text-align:center;">
+                <button class="btn btn-secondary" onclick="App.router.go('home')">
+                    <i class="ri-search-line"></i> Ir para o Catálogo de Serviços
+                </button>
             </div>
         </section>
 
         <section id="view-provider" class="view-section container">
-            <div class="card" style="background:var(--text-main); color:white; margin-bottom:2rem;">
+            <div class="card" style="background:var(--text-main); color:white; margin-bottom:2rem; border:none;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                     <div>
                         <h3 style="color:white; margin-bottom:0.2rem;">Painel de Serviços</h3>
                         <p style="color:rgba(255,255,255,0.7); margin:0;" id="provider-role-label">Parceiro</p>
                     </div>
-                    <div class="badge status-aceito">Online</div>
+                    <div class="badge status-aceito"><i class="ri-wifi-line"></i> Online</div>
                 </div>
             </div>
             <h3>Oportunidades Disponíveis</h3>
@@ -617,13 +849,13 @@
             <div class="modal-header">
                 <div>
                     <h3>Navegação GPS</h3>
-                    <p id="map-dest-address" class="text-xs text-muted" style="margin:0;"></p>
+                    <p id="map-dest-address" class="text-xs text-muted" style="margin:0; font-family: monospace;"></p>
                 </div>
                 <button class="btn btn-secondary btn-sm" onclick="App.map.close()">Fechar</button>
             </div>
             <div id="map"></div>
             <div class="modal-footer" id="map-footer">
-                <div style="display:flex; gap:1rem; align-items:center;">
+                <div style="display:flex; gap:1rem; align-items:center; margin-bottom:1rem;">
                     <div class="badge status-aceito" id="map-status-badge">Conectado</div>
                     <p style="margin:0; font-size:0.9rem;" id="map-status-text">Aguardando dados...</p>
                 </div>
@@ -671,32 +903,36 @@
                 <button class="btn btn-secondary btn-sm" onclick="App.payment.close()">Cancelar</button>
             </div>
             <div class="modal-body">
-                <div style="text-align:center; margin-bottom:1rem;">
-                    <p>Total a pagar:</p>
-                    <h2 id="pay-total-display" style="color:var(--primary); font-size:2rem;">R$ 0,00</h2>
-                    <p class="text-xs text-muted" id="pay-detail-display"></p>
+                <div style="text-align:center; margin-bottom:1.5rem; background: var(--info-bg); padding: 1rem; border-radius: var(--radius-sm);">
+                    <p style="color:var(--info-dark); margin-bottom:0.5rem;">Total a pagar:</p>
+                    <h2 id="pay-total-display" style="color:var(--primary); font-size:2.5rem; margin-bottom:0;">R$ 0,00</h2>
+                    <p class="text-xs text-muted" id="pay-detail-display" style="margin-top:0.5rem;">Segurança Mercado Pago</p>
                 </div>
+                
                 <div id="payment-brick_container"></div>
             </div>
         </div>
     </div>
 
     <script>
-        // CONFIGURAÇÃO
+        // --- 1. CONFIGURAÇÃO ---
         const CONFIG = {
+            // URL e Chave do Supabase (Banco de Dados)
             sbUrl: 'https://groezaseypdbpgymgpvo.supabase.co',
             sbKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdyb2V6YXNleXBkYnBneW1ncHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNjkxNjYsImV4cCI6MjA4MTY0NTE2Nn0.5U5QeoGmZn_i9Y8POoUCkatBUAdSW-cjHRyfxpm_pyM',
             
-            // Credenciais de PRODUÇÃO
+            // Chave Pública de PRODUÇÃO do Mercado Pago
             mpPublicKey: 'APP_USR-834374cc-7e6d-494f-9842-49a7e3e57357',
             
-            // Mapbox Token
+            // Token Mapbox (Substitua pelo seu se tiver, senão usa OpenStreetMap)
             mapboxToken: 'pk.eyJ1IjoiZXhhbXBsZXVzZXIiLCJhIjoiY2p5Y3Z6eG9jMDFlazNnbzQ4a3R4bWk4ZyJ9.ExampleTokenPlaceholder' 
         };
         
+        // Inicializa Clientes
         const _sb = supabase.createClient(CONFIG.sbUrl, CONFIG.sbKey);
         const mp = new MercadoPago(CONFIG.mpPublicKey);
 
+        // --- APP CONTROLLER ---
         const App = {
             state: {
                 user: null,
@@ -710,9 +946,10 @@
                 storeId: null,
                 pendingPayment: null,
                 brickController: null,
-                pixInterval: null // Controle do Polling
+                pixInterval: null // Controle do Intervalo de Verificação (Polling)
             },
             
+            // Inicialização
             init: async () => {
                 App.utils.setupPWA();
                 const savedUser = localStorage.getItem('logimoveis_session');
@@ -728,6 +965,7 @@
                 }
             },
 
+            // Lógica PWA
             pwa: {
                 install: () => {
                     if (App.state.deferredPrompt) {
@@ -740,23 +978,41 @@
                 }
             },
 
+            // Roteamento SPA
             router: {
                 go: (viewId) => {
                     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
                     document.getElementById(`view-${viewId}`).classList.add('active');
                     window.scrollTo(0,0);
                     App.router.renderNav();
+                    
                     if(viewId === 'home') App.catalog.fetchPublic();
                 },
                 renderNav: () => {
                     const header = document.getElementById('header-actions');
                     const mobile = document.getElementById('mobile-nav');
+                    
                     if(App.state.user && App.state.profile) {
-                        header.innerHTML = `<div style="display:flex; align-items:center; gap:1rem;"><div class="text-xs text-muted desktop-only">${App.state.profile.nome_completo}</div><button class="btn btn-secondary btn-sm" onclick="App.router.goDashboard()">Painel</button><button class="btn btn-danger btn-sm" onclick="App.auth.logout()">Sair</button></div>`;
-                        mobile.innerHTML = `<div class="nav-item" onclick="App.router.go('home')"><i class="ri-store-line"></i><span>Loja</span></div><div class="nav-item active" onclick="App.router.goDashboard()"><i class="ri-dashboard-line"></i><span>Painel</span></div><div class="nav-item" onclick="App.auth.logout()"><i class="ri-logout-box-line"></i><span>Sair</span></div>`;
+                        // Logado
+                        header.innerHTML = `
+                            <div style="display:flex; align-items:center; gap:1rem;">
+                                <div class="text-xs text-muted desktop-only">${App.state.profile.nome_completo || 'Usuário'}</div>
+                                <button class="btn btn-secondary btn-sm" onclick="App.router.goDashboard()">Painel</button>
+                                <button class="btn btn-danger btn-sm" onclick="App.auth.logout()">Sair</button>
+                            </div>
+                        `;
+                        mobile.innerHTML = `
+                            <div class="nav-item" onclick="App.router.go('home')"><i class="ri-store-line"></i><span>Loja</span></div>
+                            <div class="nav-item active" onclick="App.router.goDashboard()"><i class="ri-dashboard-line"></i><span>Painel</span></div>
+                            <div class="nav-item" onclick="App.auth.logout()"><i class="ri-logout-box-line"></i><span>Sair</span></div>
+                        `;
                     } else {
+                        // Não Logado
                         header.innerHTML = `<button class="btn btn-primary btn-sm" onclick="App.router.go('auth')">Entrar / Cadastrar</button>`;
-                        mobile.innerHTML = `<div class="nav-item active" onclick="App.router.go('home')"><i class="ri-store-line"></i><span>Início</span></div><div class="nav-item" onclick="App.router.go('auth')"><i class="ri-user-line"></i><span>Conta</span></div>`;
+                        mobile.innerHTML = `
+                            <div class="nav-item active" onclick="App.router.go('home')"><i class="ri-store-line"></i><span>Início</span></div>
+                            <div class="nav-item" onclick="App.router.go('auth')"><i class="ri-user-line"></i><span>Conta</span></div>
+                        `;
                     }
                 },
                 goDashboard: () => {
@@ -768,6 +1024,7 @@
                 }
             },
 
+            // Autenticação
             auth: {
                 switchView: (view) => {
                     ['login', 'roles', 'register'].forEach(v => document.getElementById(`auth-state-${v}`).style.display = 'none');
@@ -832,6 +1089,7 @@
                     if(!email || !pass || !name) return App.utils.toast('Preencha os campos corretamente', 'error');
                     
                     try {
+                        // Validação de Token (Loja)
                         if (role === 'loja_admin') {
                             const token = document.getElementById('reg-token').value.trim();
                             if (!token) throw new Error("Token de autorização é obrigatório");
@@ -922,8 +1180,8 @@
                     document.getElementById('pay-total-display').innerText = `R$ ${total.toFixed(2)}`;
                     document.getElementById('payment-modal').style.display = 'flex';
                     document.getElementById('payment-brick_container').innerHTML = '';
-                    document.getElementById('payment-brick_container').style.display = 'block';
                     const oldPix = document.getElementById('pix-display-area'); if(oldPix) oldPix.remove();
+                    document.getElementById('payment-brick_container').style.display = 'block';
                     App.payment.renderBrick(total);
                 },
                 close: () => {
@@ -932,71 +1190,138 @@
                     if (App.state.pixInterval) clearInterval(App.state.pixInterval); 
                 },
                 renderBrick: async (amount) => {
-                    if (amount < 1) amount = 1; 
+                    // Prevenção de erro: Força valor mínimo visual para o boleto aparecer, se necessário.
+                    if (amount < 1) amount = 1;
+
                     const builder = mp.bricks();
                     App.state.brickController = await builder.create("payment", "payment-brick_container", {
                         initialization: { 
                             amount: amount, 
-                            payer: { email: App.state.profile.email || 'guest@nexlog.com' } 
+                            payer: { 
+                                email: App.state.profile.email || 'guest@nexlog.com'
+                                // entityType removido para aceitar CPF e CNPJ dinamicamente
+                            } 
                         },
-                        customization: { paymentMethods: { ticket: "all", bankTransfer: "all", creditCard: "all", debitCard: "all", maxInstallments: 3 }, visual: { style: { theme: 'default' } } },
+                        customization: { 
+                            paymentMethods: { 
+                                ticket: "all", 
+                                bankTransfer: "all", 
+                                creditCard: "all", 
+                                debitCard: "all", 
+                                maxInstallments: 3 
+                            }, 
+                            visual: { 
+                                style: { theme: 'default' } 
+                            } 
+                        },
                         callbacks: {
                             onReady: () => console.log("Brick Ready"),
-                            onError: (e) => console.error(e),
+                            onError: (e) => console.error(e), // Log de erros do SDK (SVG)
                             onSubmit: async ({ formData }) => {
                                 return new Promise((resolve, reject) => {
-                                    fetch("/api/pix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData) })
+                                    fetch("/api/pix", { 
+                                        method: "POST", 
+                                        headers: { "Content-Type": "application/json" }, 
+                                        body: JSON.stringify(formData) 
+                                    })
                                     .then(async r => {
                                         const data = await r.json();
-                                        if(!r.ok) { App.utils.toast(data.message || "Erro MP", "error"); reject(); return; }
-                                        if(data.status === 'approved') { App.utils.toast("Aprovado!", "success"); App.payment.finalizeSuccess(); resolve(); }
-                                        else if(data.status === 'pending' && data.payment_method_id === 'pix') { App.payment.showPixScreen(data); resolve(); }
-                                        else { App.utils.toast("Recusado", "error"); reject(); }
-                                    }).catch(() => { App.utils.toast("Erro Conexão", "error"); reject(); });
+                                        if(!r.ok) { 
+                                            // Exibe erro vindo do backend
+                                            App.utils.toast(data.message || "Erro ao processar", "error"); 
+                                            console.error("Backend Error:", data);
+                                            reject(); 
+                                            return; 
+                                        }
+                                        
+                                        if(data.status === 'approved') { 
+                                            App.utils.toast("Aprovado!", "success"); 
+                                            App.payment.finalizeSuccess(); 
+                                            resolve(); 
+                                        }
+                                        else if(data.status === 'pending' && data.payment_method_id === 'pix') { 
+                                            // SUCESSO DO PIX: MOSTRA TELA E INICIA POLLING
+                                            App.payment.showPixScreen(data); 
+                                            resolve(); 
+                                        }
+                                        else { 
+                                            App.utils.toast("Pagamento recusado.", "error"); 
+                                            reject(); 
+                                        }
+                                    })
+                                    .catch((err) => { 
+                                        console.error(err);
+                                        App.utils.toast("Erro de Conexão", "error"); 
+                                        reject(); 
+                                    });
                                 });
                             }
                         }
                     });
                 },
+                
+                // TELA DE PIX COM POLLING
                 showPixScreen: (data) => {
                     document.getElementById('payment-brick_container').style.display = 'none';
                     const qr = data.point_of_interaction.transaction_data;
-                    const div = document.createElement('div'); div.id='pix-display-area'; div.style.textAlign='center';
+                    const div = document.createElement('div'); 
+                    div.id = 'pix-display-area'; 
+                    div.style.textAlign='center';
+                    
                     div.innerHTML = `
-                        <div style="background:#f1f5f9; padding:20px; border-radius:12px; margin-bottom:15px;">
-                            <img src="data:image/png;base64,${qr.qr_code_base64}" style="width:200px">
+                        <div style="background:#f8fafc; padding:20px; border-radius:12px; margin-bottom:15px; border:2px dashed #cbd5e1;">
+                            <img src="data:image/png;base64,${qr.qr_code_base64}" style="width:220px; height:220px; border-radius:8px;">
                         </div>
-                        <p class="text-xs">Copie e Cole: <input value="${qr.qr_code}" readonly style="width:100%"></p>
-                        <div style="margin-top:20px; color:var(--primary)">
+                        <p class="text-xs" style="margin-bottom:5px">Código Copia e Cola:</p>
+                        <input value="${qr.qr_code}" readonly style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:0.8rem; margin-bottom:15px; background:#f1f5f9;">
+                        
+                        <div style="margin-top:20px; color:var(--primary); background:var(--info-bg); padding:15px; border-radius:8px;">
                             <i class="ri-loader-4-line spin" style="font-size:2rem"></i>
-                            <p>Aguardando pagamento...</p>
+                            <p style="margin:5px 0 0 0; font-weight:600; color:var(--info-dark)">Aguardando confirmação do banco...</p>
+                            <p class="text-xs" style="margin:0">Assim que pagar, esta tela fechará sozinha.</p>
                         </div>
-                        <button class="btn btn-success btn-full" onclick="App.payment.finalizeSuccess()">Já Paguei (Manual)</button>
                     `;
                     document.querySelector('#payment-modal .modal-body').appendChild(div);
                     
-                    // START POLLING (AUTOMATIC CHECK)
+                    // INICIA VERIFICAÇÃO AUTOMÁTICA (POLLING)
                     App.payment.startPolling(data.id);
                 },
+                
+                // FUNÇÃO DE POLLING
                 startPolling: (paymentId) => {
-                    if(App.state.pixInterval) clearInterval(App.state.pixInterval);
+                    if (App.state.pixInterval) clearInterval(App.state.pixInterval);
+                    
                     App.state.pixInterval = setInterval(async () => {
                         try {
                             const res = await fetch(`/api/pix?id=${paymentId}`);
                             const data = await res.json();
-                            if(data.status === 'approved') {
-                                clearInterval(App.state.pixInterval);
-                                App.utils.toast("Pagamento confirmado!", "success");
-                                App.payment.finalizeSuccess();
+                            
+                            if (data.status === 'approved') {
+                                clearInterval(App.state.pixInterval); // Para o loop
+                                App.utils.toast("Pagamento confirmado com sucesso!", "success");
+                                App.payment.finalizeSuccess(); // Finaliza
                             }
-                        } catch(e) { console.error("Polling error", e); }
-                    }, 3000); // Check every 3 seconds
+                        } catch (e) {
+                            console.error("Polling error", e);
+                        }
+                    }, 3000); // Verifica a cada 3 segundos
                 },
+                
                 finalizeSuccess: async () => {
                     App.payment.close();
                     const { orderPayload } = App.state.pendingPayment;
-                    await _sb.from('orders').insert({ cliente_id: App.state.user.id, product_id: orderPayload.product_id, store_id: orderPayload.store_id, endereco_destino: orderPayload.address, requer_montagem: orderPayload.requer_montagem, taxa_servico: orderPayload.taxa, status: 'pendente' });
-                    App.utils.toast('Pedido Feito!', 'success'); App.router.go('cliente'); App.client.init();
+                    await _sb.from('orders').insert({ 
+                        cliente_id: App.state.user.id, 
+                        product_id: orderPayload.product_id, 
+                        store_id: orderPayload.store_id, 
+                        endereco_destino: orderPayload.address, 
+                        requer_montagem: orderPayload.requer_montagem, 
+                        taxa_servico: orderPayload.taxa, 
+                        status: 'pendente' 
+                    });
+                    App.utils.toast('Pedido realizado!', 'success'); 
+                    App.router.go('cliente'); 
+                    App.client.init();
                 }
             },
 
@@ -1004,59 +1329,152 @@
                 init: async () => {
                     const { data: orders } = await _sb.from('orders').select('*, products(nome)').eq('cliente_id', App.state.user.id).order('created_at', {ascending:false});
                     document.getElementById('client-orders-list').innerHTML = orders?.map(o => `
-                        <div class="card" style="margin-bottom:1rem"><strong>${o.products?.nome}</strong><p>${o.endereco_destino}</p><span class="badge status-${o.status}">${o.status}</span>${['em_rota','aceito'].includes(o.status)?`<button class="btn btn-success btn-sm btn-full" onclick="App.map.open('${o.id}', false)">Rastrear</button>`:''}</div>`).join('') || '<p>Sem pedidos</p>';
+                        <div class="card" style="margin-bottom:1rem">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem">
+                                <strong>${o.products?.nome}</strong>
+                                <span class="badge status-${o.status}">${o.status}</span>
+                            </div>
+                            <p class="text-sm">${o.endereco_destino}</p>
+                            ${['em_rota', 'aceito', 'concluido'].includes(o.status) ? 
+                                `<button class="btn btn-success btn-sm btn-full" onclick="App.map.open('${o.id}', false)">Rastrear Entrega</button>` : ''}
+                        </div>
+                    `).join('') || '<p>Nenhum pedido encontrado.</p>';
                 },
                 confirmOrder: async (pid, sid, price) => {
                     if(!App.state.user) { App.router.go('auth'); return; }
-                    const address = prompt("Endereço:"); if(!address) return;
-                    const total = price * 1.15; App.payment.open(total, { product_id: pid, store_id: sid, basePrice: price, address, requer_montagem: false, taxa: price*0.15 });
+                    const address = prompt("Endereço de Entrega Completo:"); 
+                    if(!address) return;
+                    const total = price * 1.15; // 15% taxa
+                    App.payment.open(total, { product_id: pid, store_id: sid, basePrice: price, address, requer_montagem: false, taxa: price*0.15 });
                 }
             },
 
             provider: {
                 init: async () => {
-                    const role = App.state.profile.role; document.getElementById('provider-role-label').innerText = role.toUpperCase();
+                    const role = App.state.profile.role; 
+                    document.getElementById('provider-role-label').innerText = role.toUpperCase();
                     const { data: jobs } = await _sb.from('orders').select('*, products(nome), stores(nome_loja)').or(`status.eq.aguardando_prestador,prestador_id.eq.${App.state.user.id}`);
                     const filtered = (jobs||[]).filter(j => j.prestador_id === App.state.user.id || (j.status === 'aguardando_prestador' && (role!=='montador' || j.requer_montagem)));
                     document.getElementById('provider-jobs-list').innerHTML = filtered.map(j => {
                         const isMine = j.prestador_id === App.state.user.id;
-                        return `<div class="card" style="${isMine?'border-color:var(--success)':''}"><h4>${j.products?.nome}</h4><p>${j.stores?.nome_loja} -> ${j.endereco_destino}</p><span class="badge ${isMine?'status-aceito':'status-pendente'}">${isMine?'ACEITO':'NOVO'}</span>${!isMine?`<button class="btn btn-primary btn-full" onclick="App.provider.accept('${j.id}')">Aceitar</button>`:`<button class="btn btn-success btn-full" onclick="App.map.open('${j.id}', true, '${j.endereco_destino}')">Navegar</button>`}</div>`;
-                    }).join('') || '<p>Sem ofertas</p>';
+                        return `
+                            <div class="card" style="${isMine?'border-color:var(--success); border-left:5px solid var(--success)':''}">
+                                <h4>${j.products?.nome}</h4>
+                                <p>${j.stores?.nome_loja} -> ${j.endereco_destino}</p>
+                                <span class="badge ${isMine?'status-aceito':'status-pendente'}">${isMine?'ACEITO POR VOCÊ':'NOVA OFERTA'}</span>
+                                <hr style="margin:10px 0; border:0; border-top:1px solid #eee;">
+                                ${!isMine ? 
+                                    `<button class="btn btn-primary btn-full" onclick="App.provider.accept('${j.id}')">Aceitar Corrida</button>` 
+                                    : 
+                                    `<button class="btn btn-success btn-full" onclick="App.map.open('${j.id}', true, '${j.endereco_destino}')">
+                                        <i class="ri-navigation-line"></i> Iniciar Navegação
+                                     </button>`}
+                            </div>`;
+                    }).join('') || '<p>Nenhuma oportunidade no momento.</p>';
                 },
-                accept: async (id) => { await _sb.from('orders').update({ prestador_id: App.state.user.id, status: 'aceito' }).eq('id', id); App.utils.toast('Aceito!', 'success'); App.provider.init(); }
+                accept: async (id) => { await _sb.from('orders').update({ prestador_id: App.state.user.id, status: 'aceito' }).eq('id', id); App.utils.toast('Serviço aceito com sucesso!', 'success'); App.provider.init(); }
             },
 
             map: {
                 open: (id, isDriver, addr='') => {
-                    App.state.activeOrder = id; document.getElementById('map-modal').style.display='flex';
-                    const dest = document.getElementById('map-dest-address'); if(isDriver) { dest.innerHTML=`Destino: ${addr}`; dest.style.display='block'; } else dest.style.display='none';
+                    App.state.activeOrder = id; 
+                    document.getElementById('map-modal').style.display='flex';
+                    const dest = document.getElementById('map-dest-address'); 
+                    if(isDriver) { dest.innerHTML=`<strong>Destino:</strong> ${addr}`; dest.style.display='block'; } else dest.style.display='none';
+                    
                     document.getElementById('btn-start-gps').style.display = isDriver ? 'block' : 'none';
                     document.getElementById('btn-end-gps').style.display = 'none';
+                    
                     setTimeout(() => {
-                        if(!App.state.mapInstance) { App.state.mapInstance = L.map('map').setView([-23.55, -46.63], 13); 
-                        
-                        // MAPBOX INTEGRATION
-                        let tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-                        if (CONFIG.mapboxToken.includes('pk.')) {
-                            tileUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${CONFIG.mapboxToken}`;
+                        if(!App.state.mapInstance) { 
+                            App.state.mapInstance = L.map('map').setView([-23.5505, -46.6333], 13); 
+                            
+                            // Mapbox Integration
+                            let tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+                            if (CONFIG.mapboxToken.includes('pk.')) {
+                                tileUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${CONFIG.mapboxToken}`;
+                            }
+                            L.tileLayer(tileUrl, { attribution: 'Mapbox / OpenStreetMap' }).addTo(App.state.mapInstance); 
                         }
-                        L.tileLayer(tileUrl, { attribution: 'Map' }).addTo(App.state.mapInstance); }
-                        
-                        App.state.mapInstance.invalidateSize(); if(!isDriver) App.map.watchOrder(id);
+                        App.state.mapInstance.invalidateSize(); 
+                        if(!isDriver) App.map.watchOrder(id);
                     }, 500);
                 },
-                watchOrder: (id) => { _sb.channel(`track-${id}`).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, (payload) => { const { lat_atual, lng_atual, status } = payload.new; if(status==='em_rota') App.utils.toast('Em rota!', 'info'); if(status==='concluido') { App.utils.toast('Entregue!', 'success'); document.getElementById('map-status-badge').innerText="Concluído"; } if(lat_atual) App.map.updatePin(lat_atual, lng_atual); }).subscribe(); },
-                startGPS: () => { document.getElementById('btn-start-gps').style.display='none'; document.getElementById('btn-end-gps').style.display='block'; _sb.from('orders').update({ status: 'em_rota' }).eq('id', App.state.activeOrder); App.state.watchId = navigator.geolocation.watchPosition(async (pos) => { const { latitude, longitude } = pos.coords; App.map.updatePin(latitude, longitude); await _sb.from('orders').update({ lat_atual: latitude, lng_atual: longitude }).eq('id', App.state.activeOrder); }, e=>console.log(e), {enableHighAccuracy:true}); },
-                finishDelivery: async () => { if(confirm("Finalizar?")) { navigator.geolocation.clearWatch(App.state.watchId); await _sb.from('orders').update({ status: 'concluido' }).eq('id', App.state.activeOrder); App.utils.toast("Finalizado!", "success"); App.map.close(); App.provider.init(); } },
-                updatePin: (lat, lng) => { if(App.state.marker) App.state.marker.setLatLng([lat,lng]); else App.state.marker=L.marker([lat,lng]).addTo(App.state.mapInstance); App.state.mapInstance.setView([lat,lng], 16); },
-                close: () => { document.getElementById('map-modal').style.display='none'; if(App.state.watchId) navigator.geolocation.clearWatch(App.state.watchId); _sb.removeAllChannels(); }
+                watchOrder: (id) => { 
+                    _sb.channel(`track-${id}`).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, (payload) => { 
+                        const { lat_atual, lng_atual, status } = payload.new; 
+                        if(status==='em_rota') App.utils.toast('Motorista saiu para entrega!', 'info'); 
+                        if(status==='concluido') { App.utils.toast('Entrega Finalizada!', 'success'); document.getElementById('map-status-badge').innerText="Concluído"; } 
+                        if(lat_atual) App.map.updatePin(lat_atual, lng_atual); 
+                    }).subscribe(); 
+                },
+                startGPS: () => { 
+                    document.getElementById('btn-start-gps').style.display='none'; 
+                    document.getElementById('btn-end-gps').style.display='block'; 
+                    _sb.from('orders').update({ status: 'em_rota' }).eq('id', App.state.activeOrder); 
+                    
+                    App.state.watchId = navigator.geolocation.watchPosition(async (pos) => { 
+                        const { latitude, longitude } = pos.coords; 
+                        App.map.updatePin(latitude, longitude); 
+                        await _sb.from('orders').update({ lat_atual: latitude, lng_atual: longitude }).eq('id', App.state.activeOrder); 
+                    }, e=>console.log(e), {enableHighAccuracy:true}); 
+                },
+                finishDelivery: async () => { 
+                    if(confirm("Confirmar entrega no destino?")) { 
+                        navigator.geolocation.clearWatch(App.state.watchId); 
+                        await _sb.from('orders').update({ status: 'concluido' }).eq('id', App.state.activeOrder); 
+                        App.utils.toast("Serviço Finalizado!", "success"); 
+                        App.map.close(); 
+                        App.provider.init(); 
+                    } 
+                },
+                updatePin: (lat, lng) => { 
+                    if(App.state.marker) App.state.marker.setLatLng([lat,lng]); 
+                    else App.state.marker=L.marker([lat,lng]).addTo(App.state.mapInstance); 
+                    App.state.mapInstance.setView([lat,lng], 16); 
+                },
+                close: () => { 
+                    document.getElementById('map-modal').style.display='none'; 
+                    if(App.state.watchId) navigator.geolocation.clearWatch(App.state.watchId); 
+                    _sb.removeAllChannels(); 
+                }
+            },
+
+            catalog: { 
+                fetchPublic: async () => {
+                    const { data } = await _sb.from('products').select('*, stores(nome_loja)');
+                    document.getElementById('public-catalog').innerHTML = data?.map(p => `
+                        <div class="card">
+                            <div style="height:180px; background:#f1f5f9; margin:-1.5rem -1.5rem 1rem -1.5rem; display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                                <img src="${p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto'}" style="width:100%; height:100%; object-fit:cover;">
+                            </div>
+                            <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div>
+                            <h4>${p.nome}</h4>
+                            <h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
+                            <button class="btn btn-secondary btn-full" style="margin-top:10px" onclick="App.client.confirmOrder('${p.id}', '${p.store_id}', ${p.preco})">Contratar Serviço</button>
+                        </div>`).join('') || '<p>Sem ofertas disponíveis no momento.</p>';
+                }
             },
 
             utils: {
-                toast: (msg, type='success') => { const c = document.getElementById('toast-container'); const e = document.createElement('div'); e.className=`toast ${type}`; e.innerHTML=`<span>${msg}</span>`; c.appendChild(e); setTimeout(()=>e.remove(), 4000); },
-                setupPWA: () => { /* ... */ }
+                toast: (msg, type='success') => { 
+                    const c = document.getElementById('toast-container'); 
+                    const e = document.createElement('div'); 
+                    e.className=`toast ${type}`; 
+                    e.innerHTML=`<span>${msg}</span>`; 
+                    c.appendChild(e); 
+                    setTimeout(()=>e.remove(), 4000); 
+                },
+                setupPWA: () => { 
+                    const manifest = { "name": "NexLog", "short_name": "NexLog", "start_url": window.location.href, "display": "standalone", "background_color": "#ffffff", "theme_color": "#2563eb", "icons": [{ "src": "https://placehold.co/192x192/2563eb/white?text=NX", "sizes": "192x192", "type": "image/png" }] };
+                    const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
+                    document.querySelector('#dynamic-manifest').setAttribute('href', URL.createObjectURL(blob));
+                    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); App.state.deferredPrompt = e; document.getElementById('pwa-banner').style.display = 'flex'; });
+                }
             }
         };
+        
+        // Inicialização do Sistema
         window.addEventListener('load', App.init);
     </script>
 </body>
