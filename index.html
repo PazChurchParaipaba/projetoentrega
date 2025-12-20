@@ -193,19 +193,6 @@
             background: var(--text-main); color: white; padding: 1rem; border-radius: var(--radius-md);
             z-index: 999; display: none; align-items: center; justify-content: space-between; box-shadow: var(--shadow-md);
         }
-
-        /* Pagamento Specifics */
-        .qr-container {
-            text-align: center; padding: 1rem; background: #f8fafc; border-radius: 8px; margin-top: 1rem;
-        }
-        .qr-code-img {
-            max-width: 200px; height: auto; margin: 0 auto; display: block; mix-blend-mode: multiply;
-        }
-        .copy-paste-box {
-            word-break: break-all; font-family: monospace; font-size: 0.8rem; 
-            background: #e2e8f0; padding: 10px; margin-top: 10px; border-radius: 4px;
-            max-height: 60px; overflow-y: auto;
-        }
         
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     </style>
@@ -420,44 +407,15 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Finalizar Compra</h3>
-                <button class="btn btn-secondary btn-sm" onclick="document.getElementById('payment-modal').style.display='none'">Cancelar</button>
+                <button class="btn btn-secondary btn-sm" onclick="App.payment.close()">Cancelar</button>
             </div>
             <div class="modal-body">
-                <div style="text-align:center; margin-bottom:1.5rem;">
+                <div style="text-align:center; margin-bottom:1rem;">
                     <p>Total a pagar:</p>
                     <h2 id="pay-total-display" style="color:var(--primary); font-size:2rem;">R$ 0,00</h2>
                     <p class="text-xs text-muted" id="pay-detail-display"></p>
                 </div>
-
-                <div id="pay-step-init">
-                    <p class="text-sm">Pagamento instantâneo via Pix para liberar seu pedido na hora.</p>
-                    <button class="btn btn-success btn-full" onclick="App.payment.generatePix()">
-                        <i class="ri-qr-code-line"></i> Gerar Pix
-                    </button>
-                </div>
-
-                <div id="pay-step-qr" style="display:none;">
-                    <div class="qr-container">
-                        <img id="pay-qr-img" class="qr-code-img" src="" alt="QR Code Pix">
-                        <p class="text-xs" style="margin-top:10px">Aponte a câmera do seu app de banco</p>
-                    </div>
-                    <div class="input-wrapper" style="margin-top:1rem;">
-                        <label class="text-xs">Ou use o Copia e Cola:</label>
-                        <div class="copy-paste-box" id="pay-copy-code" onclick="App.payment.copyCode()"></div>
-                        <button class="btn btn-secondary btn-sm btn-full" style="margin-top:5px" onclick="App.payment.copyCode()">Copiar Código</button>
-                    </div>
-                    <div style="text-align:center; margin-top:1.5rem;">
-                        <div style="display:flex; align-items:center; justify-content:center; gap:5px; color:var(--primary)">
-                            <i class="ri-loader-4-line" style="animation:spin 1s linear infinite"></i>
-                            <span class="font-bold text-sm">Aguardando pagamento...</span>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top:20px; padding-top:10px; border-top:1px dashed #ccc;">
-                        <p class="text-xs text-muted">Problemas com o Pix automático?</p>
-                        <button class="btn btn-secondary btn-sm btn-full" onclick="App.payment.simulateSuccess()">Simular Pagamento (Teste)</button>
-                    </div>
-                </div>
+                <div id="payment-brick_container"></div>
             </div>
         </div>
     </div>
@@ -488,7 +446,7 @@
                 storeId: null,
                 // Estado do Pagamento
                 pendingPayment: null,
-                paymentPollInterval: null
+                brickController: null
             },
             
             init: async () => {
@@ -809,116 +767,97 @@
                 }
             },
 
-            // --- MÓDULO DE PAGAMENTO MERCADO PAGO ---
+            // --- MÓDULO DE PAGAMENTO MERCADO PAGO (BRICK) ---
             payment: {
-                open: (total, orderPayload) => {
+                open: async (total, orderPayload) => {
                     App.state.pendingPayment = { total, orderPayload };
                     document.getElementById('pay-total-display').innerText = `R$ ${total.toFixed(2)}`;
                     
-                    // Detalhe
                     let detail = `Produto: R$ ${orderPayload.basePrice.toFixed(2)}`;
                     if (orderPayload.requer_montagem) detail += ` + Montagem`;
                     detail += ` + Taxa`;
                     document.getElementById('pay-detail-display').innerText = detail;
 
-                    // Reset visual
-                    document.getElementById('pay-step-init').style.display = 'block';
-                    document.getElementById('pay-step-qr').style.display = 'none';
-                    document.getElementById('pay-qr-img').src = '';
                     document.getElementById('payment-modal').style.display = 'flex';
+                    
+                    // Renderiza o Brick
+                    App.payment.renderBrick(total);
                 },
 
-                generatePix: async () => {
-                    const { total, orderPayload } = App.state.pendingPayment;
-                    const email = App.state.profile.email; // Pega email do usuário logado
-
-                    App.utils.toast('Gerando Pix...', 'info');
-
-                    try {
-                        // --- SOLUÇÃO CORS: Chamada para a API interna (Serverless Function) ---
-                        // O arquivo pix.js DEVE estar na pasta /api/pix.js no GitHub
-                        const response = await fetch('/api/pix', { 
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                                // Não precisa de Authorization aqui, pois o token está no backend
-                            },
-                            body: JSON.stringify({
-                                transaction_amount: parseFloat(total.toFixed(2)),
-                                description: `Pedido LogiMoveis - ${email}`,
-                                email: email
-                            })
-                        });
-
-                        const data = await response.json();
-
-                        if (data.status === 401 || data.status === 403) {
-                            throw new Error('Erro de autenticação MP.');
-                        }
-                        
-                        if (data.point_of_interaction) {
-                            const qrBase64 = data.point_of_interaction.transaction_data.qr_code_base64;
-                            const qrCode = data.point_of_interaction.transaction_data.qr_code;
-                            const paymentId = data.id;
-
-                            // Renderiza
-                            document.getElementById('pay-step-init').style.display = 'none';
-                            document.getElementById('pay-step-qr').style.display = 'block';
-                            document.getElementById('pay-qr-img').src = `data:image/jpeg;base64,${qrBase64}`;
-                            document.getElementById('pay-copy-code').innerText = qrCode;
-
-                            // Inicia Polling para checar status
-                            App.payment.startPolling(paymentId);
-                        } else {
-                            throw new Error('Resposta inválida do MP.');
-                        }
-
-                    } catch (err) {
-                        console.error(err);
-                        // Fallback para teste manual se der erro
-                        App.utils.toast('Erro ao gerar Pix. Use a simulação.', 'warning');
-                        document.getElementById('pay-step-init').style.display = 'none';
-                        document.getElementById('pay-step-qr').style.display = 'block';
-                        document.getElementById('pay-qr-img').src = 'https://placehold.co/200x200?text=Erro+Conexao';
-                        document.getElementById('pay-copy-code').innerText = "Erro de conexão com o servidor /api/pix.";
+                close: () => {
+                    document.getElementById('payment-modal').style.display = 'none';
+                    const container = document.getElementById('payment-brick_container');
+                    container.innerHTML = ''; // Limpa para não duplicar
+                    if (App.state.brickController) {
+                        App.state.brickController.unmount();
                     }
                 },
 
-                copyCode: () => {
-                    const code = document.getElementById('pay-copy-code').innerText;
-                    navigator.clipboard.writeText(code).then(() => App.utils.toast('Código copiado!', 'success'));
-                },
-
-                startPolling: (paymentId) => {
-                    if (App.state.paymentPollInterval) clearInterval(App.state.paymentPollInterval);
+                renderBrick: async (amount) => {
+                    const builder = mp.bricks();
+                    const settings = {
+                        initialization: {
+                            amount: amount,
+                            preferenceId: null, // Não usamos preferenceId, usamos dados diretos
+                            payer: {
+                                email: App.state.profile.email,
+                            },
+                        },
+                        customization: {
+                            paymentMethods: {
+                                ticket: "all",
+                                bankTransfer: "all",
+                                creditCard: "all",
+                                debitCard: "all",
+                            },
+                        },
+                        callbacks: {
+                            onReady: () => {
+                                // Brick carregado
+                            },
+                            onSubmit: async ({ selectedPaymentMethod, formData }) => {
+                                // Recebe os dados do formulário do Brick
+                                return new Promise((resolve, reject) => {
+                                    fetch("/api/pix", { // Usa o mesmo arquivo api/pix.js (que agora é universal)
+                                        method: "POST",
+                                        headers: {
+                                            "Content-Type": "application/json",
+                                        },
+                                        body: JSON.stringify(formData)
+                                    })
+                                    .then((response) => response.json())
+                                    .then((data) => {
+                                        if (data.status === 'approved' || data.status === 'pending' || data.status === 'in_process') {
+                                            // Sucesso (Cartão aprovado ou Pix/Boleto gerado)
+                                            App.payment.finalizeSuccess();
+                                            resolve();
+                                        } else {
+                                            // Recusado
+                                            App.utils.toast("Pagamento recusado ou erro.", "error");
+                                            reject();
+                                        }
+                                    })
+                                    .catch((error) => {
+                                        console.error(error);
+                                        App.utils.toast("Erro de conexão.", "error");
+                                        reject();
+                                    });
+                                });
+                            },
+                            onError: (error) => {
+                                console.error(error);
+                                App.utils.toast("Erro no formulário de pagamento.", "error");
+                            },
+                        },
+                    };
                     
-                    App.state.paymentPollInterval = setInterval(async () => {
-                        try {
-                            const res = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-                                headers: { 'Authorization': `Bearer ${CONFIG.mpAccessToken}` } // Para leitura pública de status, ok usar token público ou backend
-                            });
-                            const data = await res.json();
-                            
-                            if (data.status === 'approved') {
-                                clearInterval(App.state.paymentPollInterval);
-                                App.payment.finalizeSuccess();
-                            }
-                        } catch (e) { console.log("Polling error", e); }
-                    }, 5000); // Checa a cada 5s
-                },
-
-                simulateSuccess: () => {
-                    App.utils.toast('Pagamento simulado (Ambiente Teste)', 'success');
-                    App.payment.finalizeSuccess();
+                    App.state.brickController = await builder.create("payment", "payment-brick_container", settings);
                 },
 
                 finalizeSuccess: async () => {
-                    document.getElementById('payment-modal').style.display = 'none';
-                    if (App.state.paymentPollInterval) clearInterval(App.state.paymentPollInterval);
-                    
+                    App.payment.close();
                     const { orderPayload } = App.state.pendingPayment;
                     
-                    // Salva no Supabase
                     const { error } = await _sb.from('orders').insert({
                         cliente_id: App.state.user.id,
                         product_id: orderPayload.product_id, 
@@ -926,12 +865,12 @@
                         endereco_destino: orderPayload.address,
                         requer_montagem: orderPayload.requer_montagem,
                         taxa_servico: orderPayload.taxa,
-                        status: 'pendente' // Pago e pronto pra loja
+                        status: 'pendente'
                     });
 
                     if(error) App.utils.toast('Erro ao salvar pedido', 'error');
                     else {
-                        App.utils.toast('Pagamento Aprovado! Pedido realizado.', 'success');
+                        App.utils.toast('Pedido realizado com sucesso!', 'success');
                         App.router.go('cliente');
                         App.client.init();
                     }
