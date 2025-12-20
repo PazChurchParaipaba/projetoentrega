@@ -467,9 +467,8 @@
         const CONFIG = {
             sbUrl: 'https://groezaseypdbpgymgpvo.supabase.co',
             sbKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdyb2V6YXNleXBkYnBneW1ncHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNjkxNjYsImV4cCI6MjA4MTY0NTE2Nn0.5U5QeoGmZn_i9Y8POoUCkatBUAdSW-cjHRyfxpm_pyM',
-            // Credenciais Mercado Pago do Usuário
-            mpPublicKey: 'APP_USR-c0850387-263d-40d4-9780-464f471fc612',
-            mpAccessToken: 'APP_USR-5291120312583168-122012-3c60a971b1784e8f822b55e09634c8b3-3081057062'
+            // Credenciais MP (Token removido por segurança, agora está no backend /api/pix.js)
+            mpPublicKey: 'APP_USR-c0850387-263d-40d4-9780-464f471fc612'
         };
         
         const _sb = supabase.createClient(CONFIG.sbUrl, CONFIG.sbKey);
@@ -836,25 +835,18 @@
                     App.utils.toast('Gerando Pix...', 'info');
 
                     try {
-                        const idempotencyKey = Date.now().toString();
-                        
-                        // Chamada à API Mercado Pago (Pix)
-                        // NOTA: Em produção, isso deve ser feito via Backend para não expor o Access Token
-                        // Como solicitado "sem backend", usaremos fetch direto, mas pode haver bloqueio de CORS.
-                        const response = await fetch('https://api.mercadopago.com/v1/payments', {
+                        // --- SOLUÇÃO CORS: Chamada para a API interna (Serverless Function) ---
+                        // O arquivo pix.js DEVE estar na pasta /api/pix.js no GitHub
+                        const response = await fetch('/api/pix', { 
                             method: 'POST',
                             headers: {
-                                'Authorization': `Bearer ${CONFIG.mpAccessToken}`,
-                                'Content-Type': 'application/json',
-                                'X-Idempotency-Key': idempotencyKey
+                                'Content-Type': 'application/json'
+                                // Não precisa de Authorization aqui, pois o token está no backend
                             },
                             body: JSON.stringify({
                                 transaction_amount: parseFloat(total.toFixed(2)),
                                 description: `Pedido LogiMoveis - ${email}`,
-                                payment_method_id: 'pix',
-                                payer: {
-                                    email: email
-                                }
+                                email: email
                             })
                         });
 
@@ -878,17 +870,17 @@
                             // Inicia Polling para checar status
                             App.payment.startPolling(paymentId);
                         } else {
-                            throw new Error('Resposta inválida do MP (possível bloqueio CORS).');
+                            throw new Error('Resposta inválida do MP.');
                         }
 
                     } catch (err) {
                         console.error(err);
-                        // Fallback para teste manual se CORS bloquear
-                        App.utils.toast('Atenção: Bloqueio de CORS detectado ou erro na API.', 'warning');
+                        // Fallback para teste manual se der erro
+                        App.utils.toast('Erro ao gerar Pix. Use a simulação.', 'warning');
                         document.getElementById('pay-step-init').style.display = 'none';
                         document.getElementById('pay-step-qr').style.display = 'block';
-                        document.getElementById('pay-qr-img').src = 'https://placehold.co/200x200?text=Erro+API+MP';
-                        document.getElementById('pay-copy-code').innerText = "Erro ao conectar API direto do browser. Use o botão de Simulação abaixo.";
+                        document.getElementById('pay-qr-img').src = 'https://placehold.co/200x200?text=Erro+Conexao';
+                        document.getElementById('pay-copy-code').innerText = "Erro de conexão com o servidor /api/pix.";
                     }
                 },
 
@@ -903,7 +895,7 @@
                     App.state.paymentPollInterval = setInterval(async () => {
                         try {
                             const res = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-                                headers: { 'Authorization': `Bearer ${CONFIG.mpAccessToken}` }
+                                headers: { 'Authorization': `Bearer ${CONFIG.mpAccessToken}` } // Para leitura pública de status, ok usar token público ou backend
                             });
                             const data = await res.json();
                             
