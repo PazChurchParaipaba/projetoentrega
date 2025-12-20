@@ -1,8 +1,9 @@
 const https = require('https');
 
 export default async function handler(req, res) {
+  // Configuração CORS para aceitar requisições do seu Front
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Origin', '*'); // Em produção, troque '*' pelo seu domínio Vercel
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
     'Access-Control-Allow-Headers',
@@ -10,10 +11,15 @@ export default async function handler(req, res) {
   );
 
   if (req.method === 'OPTIONS') return res.status(200).end();
-  
+
   const body = req.body;
-  // SEU TOKEN (Garanta que é o de TESTE - "TEST-...")
+  if (!body) return res.status(400).json({ error: 'Nenhum dado recebido.' });
+
+  // SEU ACCESS TOKEN (Use o de Produção ou Teste conforme o ambiente)
   const ACCESS_TOKEN = 'TEST-1174857331903554-122013-f01b6851dd5d57f3b197bf4f7a5384e3-3082316443';
+
+  // Tratamento básico de CPF para enviar limpo ao MP
+  const cleanCPF = body.payer.identification.number ? body.payer.identification.number.replace(/\D/g, '') : '';
 
   const paymentData = {
     transaction_amount: Number(body.transaction_amount),
@@ -26,7 +32,10 @@ export default async function handler(req, res) {
       email: body.payer.email,
       entity_type: 'individual',
       type: 'customer',
-      identification: body.payer.identification // CPF é crucial
+      identification: {
+        type: body.payer.identification.type,
+        number: cleanCPF
+      }
     }
   };
 
@@ -39,7 +48,7 @@ export default async function handler(req, res) {
     headers: {
       'Authorization': `Bearer ${ACCESS_TOKEN}`,
       'Content-Type': 'application/json',
-      'X-Idempotency-Key': Date.now().toString(), // Evita duplicidade
+      'X-Idempotency-Key': Date.now().toString(),
       'Content-Length': Buffer.byteLength(postData)
     }
   };
@@ -50,28 +59,27 @@ export default async function handler(req, res) {
       mpRes.on('data', (chunk) => { data += chunk; });
       mpRes.on('end', () => {
         try {
-            const json = JSON.parse(data);
-            // Se sucesso (200 ou 201)
-            if (mpRes.statusCode >= 200 && mpRes.statusCode < 300) {
-                res.status(200).json(json);
-            } else {
-                // Retorna o erro exato do Mercado Pago para o frontend ver
-                console.error("Erro MP Backend:", json);
-                res.status(mpRes.statusCode).json(json); 
-            }
-            resolve();
+          const jsonResponse = JSON.parse(data);
+          if (mpRes.statusCode >= 200 && mpRes.statusCode < 300) {
+            res.status(200).json(jsonResponse);
+          } else {
+            console.error("Erro MP:", jsonResponse);
+            res.status(mpRes.statusCode).json(jsonResponse);
+          }
+          resolve();
         } catch (e) {
-            res.status(500).json({ error: 'Erro de parse', details: data });
-            resolve();
+          res.status(500).json({ error: 'Erro no parse do JSON MP', details: data });
+          resolve();
         }
       });
     });
-    
+
     mpReq.on('error', (e) => {
-      res.status(500).json({ error: 'Erro de conexão' });
+      console.error(e);
+      res.status(500).json({ error: 'Erro de conexão com Mercado Pago' });
       resolve();
     });
-    
+
     mpReq.write(postData);
     mpReq.end();
   });
