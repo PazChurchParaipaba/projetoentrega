@@ -28,8 +28,8 @@ export default async function handler(req, res) {
 
   const { transaction_amount, description, email } = body;
   
-  // SEU TOKEN (Lado do Servidor)
-  const ACCESS_TOKEN = 'APP_USR-5291120312583168-122012-3c60a971b1784e8f822b55e09634c8b3-3081057062';
+  // SEU TOKEN DE TESTE (Atualizado)
+  const ACCESS_TOKEN = 'TEST-1174857331903554-122013-f01b6851dd5d57f3b197bf4f7a5384e3-3082316443';
 
   // 3. Monta os dados para o Mercado Pago
   const postData = JSON.stringify({
