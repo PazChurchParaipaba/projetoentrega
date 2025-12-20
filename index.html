@@ -687,7 +687,10 @@
         const CONFIG = {
             sbUrl: 'https://groezaseypdbpgymgpvo.supabase.co',
             sbKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdyb2V6YXNleXBkYnBneW1ncHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNjkxNjYsImV4cCI6MjA4MTY0NTE2Nn0.5U5QeoGmZn_i9Y8POoUCkatBUAdSW-cjHRyfxpm_pyM',
+            
+            // CHAVE DE PRODUÇÃO (Conforme sua imagem)
             mpPublicKey: 'APP_USR-834374cc-7e6d-494f-9842-49a7e3e57357',
+            
             // Token Mapbox (Substitua pelo seu)
             mapboxToken: 'pk.eyJ1IjoiZXhhbXBsZXVzZXIiLCJhIjoiY2p5Y3Z6eG9jMDFlazNnbzQ4a3R4bWk4ZyJ9.ExampleTokenPlaceholder' 
         };
@@ -932,26 +935,74 @@
                     if (App.state.brickController) App.state.brickController.unmount();
                 },
                 renderBrick: async (amount) => {
+                    // Proteção: Valor mínimo de R$ 1,00 para evitar erros no MP
+                    if (amount < 1) amount = 1;
+
                     const builder = mp.bricks();
                     App.state.brickController = await builder.create("payment", "payment-brick_container", {
-                        initialization: { amount: amount, payer: { email: App.state.profile.email } },
-                        customization: { paymentMethods: { ticket: "all", bankTransfer: "all", creditCard: "all", debitCard: "all", maxInstallments: 3 } },
+                        initialization: { 
+                            amount: amount, 
+                            payer: { 
+                                email: App.state.profile.email || 'guest@nexlog.com',
+                                // REMOVIDO "entityType" PARA ACEITAR CPF E CNPJ
+                            } 
+                        },
+                        customization: { 
+                            paymentMethods: { 
+                                ticket: "all", 
+                                bankTransfer: "all", 
+                                creditCard: "all", 
+                                debitCard: "all", 
+                                maxInstallments: 3 
+                            },
+                            visual: {
+                                style: {
+                                    theme: 'default' // Tema padrão é mais estável
+                                }
+                            }
+                        },
                         callbacks: {
-                            onReady: () => {},
+                            onReady: () => { console.log("Brick pronto"); },
                             onError: (error) => {
-                                console.error(error);
+                                console.error("Erro no Brick:", error);
                                 App.utils.toast("Erro no formulário de pagamento.", "error");
                             },
                             onSubmit: async ({ formData }) => {
                                 return new Promise((resolve, reject) => {
-                                    fetch("/api/pix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData) })
-                                    .then(r => r.json())
-                                    .then(data => {
-                                        if (data.status === 'approved') { App.utils.toast("Aprovado!", "success"); App.payment.finalizeSuccess(); resolve(); } 
-                                        else if (data.status === 'pending' && data.payment_method_id === 'pix') { App.payment.showPixScreen(data); resolve(); }
-                                        else { App.utils.toast("Recusado.", "error"); reject(); }
+                                    fetch("/api/pix", { 
+                                        method: "POST", 
+                                        headers: { "Content-Type": "application/json" }, 
+                                        body: JSON.stringify(formData) 
                                     })
-                                    .catch(() => { App.utils.toast("Erro conexão", "error"); reject(); });
+                                    .then(async (response) => {
+                                        const data = await response.json();
+                                        if (!response.ok) {
+                                            // Se o backend der erro (500 ou 400), mostramos aqui
+                                            console.error("Erro Backend:", data);
+                                            App.utils.toast(data.message || "Erro ao processar pagamento", "error");
+                                            reject();
+                                            return;
+                                        }
+                                        
+                                        if (data.status === 'approved') { 
+                                            App.utils.toast("Pagamento Aprovado!", "success"); 
+                                            App.payment.finalizeSuccess(); 
+                                            resolve(); 
+                                        } 
+                                        else if (data.status === 'pending' && data.payment_method_id === 'pix') { 
+                                            App.payment.showPixScreen(data); 
+                                            resolve(); 
+                                        }
+                                        else { 
+                                            App.utils.toast("Pagamento recusado ou em análise.", "warning"); 
+                                            reject(); 
+                                        }
+                                    })
+                                    .catch((err) => { 
+                                        console.error(err);
+                                        App.utils.toast("Erro de conexão com o servidor.", "error"); 
+                                        reject(); 
+                                    });
                                 });
                             }
                         }
