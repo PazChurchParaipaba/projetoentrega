@@ -4,19 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#2563eb">
-    <meta name="description" content="NexLog - Logística inteligente para qualquer tipo de serviço e entrega.">
-    <title>NexLog | Sistema Integrado</title>
+    <meta name="description" content="NexLog - O maior marketplace de logística de móveis e montagem.">
+    <title>NexLog | Sistema Integrado Profissional</title>
     
     <link rel="manifest" id="dynamic-manifest">
     <link rel="apple-touch-icon" href="https://placehold.co/192x192/2563eb/white?text=NX">
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
     <script src="https://sdk.mercadopago.com/js/v2"></script>
-    
     <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
@@ -42,8 +39,10 @@
             --info-bg: #e0f2fe;
             --radius-sm: 8px;
             --radius-md: 12px;
+            --radius-lg: 16px;
             --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
             --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
             --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             --nav-height: 70px;
         }
@@ -60,7 +59,7 @@
             background-color: var(--background);
             color: var(--text-main);
             min-height: 100vh;
-            padding-bottom: 80px; 
+            padding-bottom: 90px; /* Espaço extra para mobile nav */
             overflow-x: hidden;
         }
 
@@ -217,7 +216,7 @@
 
         /* HEADER */
         header {
-            background: rgba(255, 255, 255, 0.9); 
+            background: rgba(255, 255, 255, 0.95); 
             backdrop-filter: blur(10px);
             border-bottom: 1px solid var(--border); 
             padding: 0 5%; 
@@ -480,12 +479,12 @@
                 <div class="container">
                     <h1 style="font-size: 2.5rem; margin-bottom: 1rem; color: var(--text-main);">Logística Inteligente <br><span style="color:var(--primary)">Para Todos os Serviços</span></h1>
                     <p style="max-width: 600px; margin: 0 auto 2rem auto; font-size: 1.1rem;">
-                        Conectando grandes lojas a motoristas parceiros e prestadores de serviço em todo o Brasil.
-                        A solução completa para qualquer tipo de entrega.
+                        Conectando grandes lojas a motoristas parceiros e montadores especializados.
+                        A solução completa para entregar e montar sonhos.
                     </p>
                     <div style="display: flex; gap: 1rem; justify-content: center;">
                         <button class="btn btn-primary" onclick="App.router.go('auth')">Acessar Plataforma</button>
-                        <button class="btn btn-secondary" onclick="document.getElementById('catalog-anchor').scrollIntoView({behavior:'smooth'})">Ver Serviços</button>
+                        <button class="btn btn-secondary" onclick="document.getElementById('catalog-anchor').scrollIntoView({behavior:'smooth'})">Ver Ofertas</button>
                     </div>
                 </div>
             </div>
@@ -565,7 +564,7 @@
                     <p>Controle de produtos e despachos</p>
                 </div>
                 <button class="btn btn-primary" onclick="App.store.openAddModal()">
-                    <i class="ri-add-line"></i> Novo Serviço/Produto
+                    <i class="ri-add-line"></i> Novo Serviço
                 </button>
             </div>
             <div class="grid grid-2">
@@ -683,15 +682,15 @@
     </div>
 
     <script>
-        // --- 1. CONFIGURAÇÃO ---
+        // CONFIGURAÇÃO
         const CONFIG = {
             sbUrl: 'https://groezaseypdbpgymgpvo.supabase.co',
             sbKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdyb2V6YXNleXBkYnBneW1ncHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNjkxNjYsImV4cCI6MjA4MTY0NTE2Nn0.5U5QeoGmZn_i9Y8POoUCkatBUAdSW-cjHRyfxpm_pyM',
             
-            // CHAVE DE PRODUÇÃO (Conforme sua imagem)
+            // Credenciais de PRODUÇÃO
             mpPublicKey: 'APP_USR-834374cc-7e6d-494f-9842-49a7e3e57357',
             
-            // Token Mapbox (Substitua pelo seu)
+            // Mapbox Token
             mapboxToken: 'pk.eyJ1IjoiZXhhbXBsZXVzZXIiLCJhIjoiY2p5Y3Z6eG9jMDFlazNnbzQ4a3R4bWk4ZyJ9.ExampleTokenPlaceholder' 
         };
         
@@ -710,7 +709,8 @@
                 activeOrder: null,
                 storeId: null,
                 pendingPayment: null,
-                brickController: null
+                brickController: null,
+                pixInterval: null // Controle do Polling
             },
             
             init: async () => {
@@ -782,11 +782,10 @@
                     let html = '';
                     
                     if(role === 'loja_admin') {
-                        // Segurança de Token mantida (Banco de dados)
                         html = `
                             <div class="input-wrapper"><label>Nome da Loja</label><input id="reg-store-name" class="input-field" placeholder="Ex: NexLog Center"></div>
                             <div class="input-wrapper"><label>CNPJ</label><input id="reg-cnpj" class="input-field" placeholder="00.000.000/0000-00"></div>
-                            <div class="input-wrapper" style="border: 2px dashed var(--primary); padding: 10px; border-radius: 8px; background: var(--primary-light);">
+                            <div class="input-wrapper" style="border: 2px dashed var(--primary); padding: 10px; border-radius: 8px; background: var(--info-bg);">
                                 <label style="color:var(--primary)">🔑 Token de Autorização</label>
                                 <input id="reg-token" class="input-field" placeholder="Código fornecido pelo Admin">
                                 <p class="text-xs text-muted">Cadastro restrito. Insira sua matrícula/token.</p>
@@ -832,9 +831,6 @@
 
                     if(!email || !pass || !name) return App.utils.toast('Preencha os campos corretamente', 'error');
                     
-                    // AQUI REMOVI A VALIDAÇÃO DO BRASILAPI QUE ESTAVA DANDO 404
-                    // A validação do token da loja continua porque é interna do Supabase
-
                     try {
                         if (role === 'loja_admin') {
                             const token = document.getElementById('reg-token').value.trim();
@@ -933,76 +929,30 @@
                 close: () => {
                     document.getElementById('payment-modal').style.display = 'none';
                     if (App.state.brickController) App.state.brickController.unmount();
+                    if (App.state.pixInterval) clearInterval(App.state.pixInterval); 
                 },
                 renderBrick: async (amount) => {
-                    // Proteção: Valor mínimo de R$ 1,00 para evitar erros no MP
-                    if (amount < 1) amount = 1;
-
+                    if (amount < 1) amount = 1; 
                     const builder = mp.bricks();
                     App.state.brickController = await builder.create("payment", "payment-brick_container", {
                         initialization: { 
                             amount: amount, 
-                            payer: { 
-                                email: App.state.profile.email || 'guest@nexlog.com',
-                                // REMOVIDO "entityType" PARA ACEITAR CPF E CNPJ
-                            } 
+                            payer: { email: App.state.profile.email || 'guest@nexlog.com' } 
                         },
-                        customization: { 
-                            paymentMethods: { 
-                                ticket: "all", 
-                                bankTransfer: "all", 
-                                creditCard: "all", 
-                                debitCard: "all", 
-                                maxInstallments: 3 
-                            },
-                            visual: {
-                                style: {
-                                    theme: 'default' // Tema padrão é mais estável
-                                }
-                            }
-                        },
+                        customization: { paymentMethods: { ticket: "all", bankTransfer: "all", creditCard: "all", debitCard: "all", maxInstallments: 3 }, visual: { style: { theme: 'default' } } },
                         callbacks: {
-                            onReady: () => { console.log("Brick pronto"); },
-                            onError: (error) => {
-                                console.error("Erro no Brick:", error);
-                                App.utils.toast("Erro no formulário de pagamento.", "error");
-                            },
+                            onReady: () => console.log("Brick Ready"),
+                            onError: (e) => console.error(e),
                             onSubmit: async ({ formData }) => {
                                 return new Promise((resolve, reject) => {
-                                    fetch("/api/pix", { 
-                                        method: "POST", 
-                                        headers: { "Content-Type": "application/json" }, 
-                                        body: JSON.stringify(formData) 
-                                    })
-                                    .then(async (response) => {
-                                        const data = await response.json();
-                                        if (!response.ok) {
-                                            // Se o backend der erro (500 ou 400), mostramos aqui
-                                            console.error("Erro Backend:", data);
-                                            App.utils.toast(data.message || "Erro ao processar pagamento", "error");
-                                            reject();
-                                            return;
-                                        }
-                                        
-                                        if (data.status === 'approved') { 
-                                            App.utils.toast("Pagamento Aprovado!", "success"); 
-                                            App.payment.finalizeSuccess(); 
-                                            resolve(); 
-                                        } 
-                                        else if (data.status === 'pending' && data.payment_method_id === 'pix') { 
-                                            App.payment.showPixScreen(data); 
-                                            resolve(); 
-                                        }
-                                        else { 
-                                            App.utils.toast("Pagamento recusado ou em análise.", "warning"); 
-                                            reject(); 
-                                        }
-                                    })
-                                    .catch((err) => { 
-                                        console.error(err);
-                                        App.utils.toast("Erro de conexão com o servidor.", "error"); 
-                                        reject(); 
-                                    });
+                                    fetch("/api/pix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData) })
+                                    .then(async r => {
+                                        const data = await r.json();
+                                        if(!r.ok) { App.utils.toast(data.message || "Erro MP", "error"); reject(); return; }
+                                        if(data.status === 'approved') { App.utils.toast("Aprovado!", "success"); App.payment.finalizeSuccess(); resolve(); }
+                                        else if(data.status === 'pending' && data.payment_method_id === 'pix') { App.payment.showPixScreen(data); resolve(); }
+                                        else { App.utils.toast("Recusado", "error"); reject(); }
+                                    }).catch(() => { App.utils.toast("Erro Conexão", "error"); reject(); });
                                 });
                             }
                         }
@@ -1011,21 +961,42 @@
                 showPixScreen: (data) => {
                     document.getElementById('payment-brick_container').style.display = 'none';
                     const qr = data.point_of_interaction.transaction_data;
-                    const div = document.createElement('div'); div.id = 'pix-display-area'; div.style.textAlign='center';
+                    const div = document.createElement('div'); div.id='pix-display-area'; div.style.textAlign='center';
                     div.innerHTML = `
                         <div style="background:#f1f5f9; padding:20px; border-radius:12px; margin-bottom:15px;">
-                            <img src="data:image/png;base64,${qr.qr_code_base64}" style="width:200px; height:200px;">
+                            <img src="data:image/png;base64,${qr.qr_code_base64}" style="width:200px">
                         </div>
-                        <p class="text-xs">Copie e Cole: ${qr.qr_code}</p>
-                        <button class="btn btn-success btn-full" onclick="App.payment.finalizeSuccess()">Já paguei</button>
+                        <p class="text-xs">Copie e Cole: <input value="${qr.qr_code}" readonly style="width:100%"></p>
+                        <div style="margin-top:20px; color:var(--primary)">
+                            <i class="ri-loader-4-line spin" style="font-size:2rem"></i>
+                            <p>Aguardando pagamento...</p>
+                        </div>
+                        <button class="btn btn-success btn-full" onclick="App.payment.finalizeSuccess()">Já Paguei (Manual)</button>
                     `;
                     document.querySelector('#payment-modal .modal-body').appendChild(div);
+                    
+                    // START POLLING (AUTOMATIC CHECK)
+                    App.payment.startPolling(data.id);
+                },
+                startPolling: (paymentId) => {
+                    if(App.state.pixInterval) clearInterval(App.state.pixInterval);
+                    App.state.pixInterval = setInterval(async () => {
+                        try {
+                            const res = await fetch(`/api/pix?id=${paymentId}`);
+                            const data = await res.json();
+                            if(data.status === 'approved') {
+                                clearInterval(App.state.pixInterval);
+                                App.utils.toast("Pagamento confirmado!", "success");
+                                App.payment.finalizeSuccess();
+                            }
+                        } catch(e) { console.error("Polling error", e); }
+                    }, 3000); // Check every 3 seconds
                 },
                 finalizeSuccess: async () => {
                     App.payment.close();
                     const { orderPayload } = App.state.pendingPayment;
                     await _sb.from('orders').insert({ cliente_id: App.state.user.id, product_id: orderPayload.product_id, store_id: orderPayload.store_id, endereco_destino: orderPayload.address, requer_montagem: orderPayload.requer_montagem, taxa_servico: orderPayload.taxa, status: 'pendente' });
-                    App.utils.toast('Pedido realizado!', 'success'); App.router.go('cliente'); App.client.init();
+                    App.utils.toast('Pedido Feito!', 'success'); App.router.go('cliente'); App.client.init();
                 }
             },
 
@@ -1033,30 +1004,24 @@
                 init: async () => {
                     const { data: orders } = await _sb.from('orders').select('*, products(nome)').eq('cliente_id', App.state.user.id).order('created_at', {ascending:false});
                     document.getElementById('client-orders-list').innerHTML = orders?.map(o => `
-                        <div class="card"><div style="display:flex; justify-content:space-between;"><strong>${o.products?.nome}</strong><span class="badge status-${o.status}">${o.status}</span></div>
-                        <p class="text-sm">${o.endereco_destino}</p>
-                        ${['em_rota', 'aceito', 'concluido'].includes(o.status) ? `<button class="btn btn-success btn-sm btn-full" onclick="App.map.open('${o.id}', false)">Rastrear</button>` : ''}</div>
-                    `).join('') || '<p>Sem pedidos.</p>';
+                        <div class="card" style="margin-bottom:1rem"><strong>${o.products?.nome}</strong><p>${o.endereco_destino}</p><span class="badge status-${o.status}">${o.status}</span>${['em_rota','aceito'].includes(o.status)?`<button class="btn btn-success btn-sm btn-full" onclick="App.map.open('${o.id}', false)">Rastrear</button>`:''}</div>`).join('') || '<p>Sem pedidos</p>';
                 },
                 confirmOrder: async (pid, sid, price) => {
                     if(!App.state.user) { App.router.go('auth'); return; }
-                    const address = prompt("Endereço de Entrega Completo:"); // Revertido para Prompt simples
-                    if(!address) return;
-                    const total = price * 1.15; 
-                    App.payment.open(total, { product_id: pid, store_id: sid, basePrice: price, address, requer_montagem: false, taxa: price*0.15 });
+                    const address = prompt("Endereço:"); if(!address) return;
+                    const total = price * 1.15; App.payment.open(total, { product_id: pid, store_id: sid, basePrice: price, address, requer_montagem: false, taxa: price*0.15 });
                 }
             },
 
             provider: {
                 init: async () => {
-                    const role = App.state.profile.role;
-                    document.getElementById('provider-role-label').innerText = role.toUpperCase();
+                    const role = App.state.profile.role; document.getElementById('provider-role-label').innerText = role.toUpperCase();
                     const { data: jobs } = await _sb.from('orders').select('*, products(nome), stores(nome_loja)').or(`status.eq.aguardando_prestador,prestador_id.eq.${App.state.user.id}`);
-                    const filtered = (jobs || []).filter(j => j.prestador_id === App.state.user.id || (j.status === 'aguardando_prestador' && (role!=='montador' || j.requer_montagem)));
+                    const filtered = (jobs||[]).filter(j => j.prestador_id === App.state.user.id || (j.status === 'aguardando_prestador' && (role!=='montador' || j.requer_montagem)));
                     document.getElementById('provider-jobs-list').innerHTML = filtered.map(j => {
                         const isMine = j.prestador_id === App.state.user.id;
-                        return `<div class="card" style="${isMine?'border-color:var(--success)':''}"><div style="display:flex; justify-content:space-between;"><span class="badge ${isMine?'status-aceito':'status-pendente'}">${isMine?'ACEITO':'DISPONÍVEL'}</span><strong>R$ ${j.taxa_servico.toFixed(2)}</strong></div><h4>${j.products?.nome}</h4><p class="text-sm">${j.stores?.nome_loja} -> ${j.endereco_destino}</p><hr style="margin:10px 0; border:0; border-top:1px solid #eee;">${!isMine ? `<button class="btn btn-primary btn-full" onclick="App.provider.accept('${j.id}')">Aceitar</button>` : `<button class="btn btn-success btn-full" onclick="App.map.open('${j.id}', true, '${j.endereco_destino}')">Navegar</button>`}</div>`;
-                    }).join('') || '<p>Sem serviços.</p>';
+                        return `<div class="card" style="${isMine?'border-color:var(--success)':''}"><h4>${j.products?.nome}</h4><p>${j.stores?.nome_loja} -> ${j.endereco_destino}</p><span class="badge ${isMine?'status-aceito':'status-pendente'}">${isMine?'ACEITO':'NOVO'}</span>${!isMine?`<button class="btn btn-primary btn-full" onclick="App.provider.accept('${j.id}')">Aceitar</button>`:`<button class="btn btn-success btn-full" onclick="App.map.open('${j.id}', true, '${j.endereco_destino}')">Navegar</button>`}</div>`;
+                    }).join('') || '<p>Sem ofertas</p>';
                 },
                 accept: async (id) => { await _sb.from('orders').update({ prestador_id: App.state.user.id, status: 'aceito' }).eq('id', id); App.utils.toast('Aceito!', 'success'); App.provider.init(); }
             },
@@ -1068,60 +1033,24 @@
                     document.getElementById('btn-start-gps').style.display = isDriver ? 'block' : 'none';
                     document.getElementById('btn-end-gps').style.display = 'none';
                     setTimeout(() => {
-                        if(!App.state.mapInstance) { 
-                            App.state.mapInstance = L.map('map').setView([-23.55, -46.63], 13); 
-                            
-                            // INTEGRAÇÃO MAPBOX (MANTIDA CONFORME PEDIDO)
-                            // Se você não tiver a chave ainda, ele vai usar o OpenStreetMap padrão para não quebrar.
-                            let tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-                            if (CONFIG.mapboxToken.includes('pk.')) {
-                                tileUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${CONFIG.mapboxToken}`;
-                            }
-                            L.tileLayer(tileUrl, { attribution: 'Mapbox / OpenStreetMap' }).addTo(App.state.mapInstance); 
+                        if(!App.state.mapInstance) { App.state.mapInstance = L.map('map').setView([-23.55, -46.63], 13); 
+                        
+                        // MAPBOX INTEGRATION
+                        let tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+                        if (CONFIG.mapboxToken.includes('pk.')) {
+                            tileUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${CONFIG.mapboxToken}`;
                         }
-                        App.state.mapInstance.invalidateSize();
-                        if(!isDriver) App.map.watchOrder(id);
+                        L.tileLayer(tileUrl, { attribution: 'Map' }).addTo(App.state.mapInstance); }
+                        
+                        App.state.mapInstance.invalidateSize(); if(!isDriver) App.map.watchOrder(id);
                     }, 500);
                 },
-                watchOrder: (id) => {
-                    _sb.channel(`track-${id}`).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, (payload) => {
-                        const { lat_atual, lng_atual, status } = payload.new;
-                        if(status==='em_rota') App.utils.toast('Saiu para entrega!', 'info');
-                        if(status==='concluido') { App.utils.toast('Entregue!', 'success'); document.getElementById('map-status-badge').innerText="Concluído"; }
-                        if(lat_atual) App.map.updatePin(lat_atual, lng_atual);
-                    }).subscribe();
-                },
-                startGPS: () => {
-                    document.getElementById('btn-start-gps').style.display='none'; document.getElementById('btn-end-gps').style.display='block';
-                    _sb.from('orders').update({ status: 'em_rota' }).eq('id', App.state.activeOrder);
-                    App.state.watchId = navigator.geolocation.watchPosition(async (pos) => {
-                        const { latitude, longitude } = pos.coords; App.map.updatePin(latitude, longitude);
-                        await _sb.from('orders').update({ lat_atual: latitude, lng_atual: longitude }).eq('id', App.state.activeOrder);
-                    }, e=>console.log(e), {enableHighAccuracy:true});
-                },
-                finishDelivery: async () => {
-                    if(confirm("Finalizar?")) {
-                        navigator.geolocation.clearWatch(App.state.watchId);
-                        await _sb.from('orders').update({ status: 'concluido' }).eq('id', App.state.activeOrder);
-                        App.utils.toast("Finalizado!", "success"); App.map.close(); App.provider.init();
-                    }
-                },
+                watchOrder: (id) => { _sb.channel(`track-${id}`).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, (payload) => { const { lat_atual, lng_atual, status } = payload.new; if(status==='em_rota') App.utils.toast('Em rota!', 'info'); if(status==='concluido') { App.utils.toast('Entregue!', 'success'); document.getElementById('map-status-badge').innerText="Concluído"; } if(lat_atual) App.map.updatePin(lat_atual, lng_atual); }).subscribe(); },
+                startGPS: () => { document.getElementById('btn-start-gps').style.display='none'; document.getElementById('btn-end-gps').style.display='block'; _sb.from('orders').update({ status: 'em_rota' }).eq('id', App.state.activeOrder); App.state.watchId = navigator.geolocation.watchPosition(async (pos) => { const { latitude, longitude } = pos.coords; App.map.updatePin(latitude, longitude); await _sb.from('orders').update({ lat_atual: latitude, lng_atual: longitude }).eq('id', App.state.activeOrder); }, e=>console.log(e), {enableHighAccuracy:true}); },
+                finishDelivery: async () => { if(confirm("Finalizar?")) { navigator.geolocation.clearWatch(App.state.watchId); await _sb.from('orders').update({ status: 'concluido' }).eq('id', App.state.activeOrder); App.utils.toast("Finalizado!", "success"); App.map.close(); App.provider.init(); } },
                 updatePin: (lat, lng) => { if(App.state.marker) App.state.marker.setLatLng([lat,lng]); else App.state.marker=L.marker([lat,lng]).addTo(App.state.mapInstance); App.state.mapInstance.setView([lat,lng], 16); },
                 close: () => { document.getElementById('map-modal').style.display='none'; if(App.state.watchId) navigator.geolocation.clearWatch(App.state.watchId); _sb.removeAllChannels(); }
             },
-
-            catalog: { fetchPublic: async () => {
-                const { data } = await _sb.from('products').select('*, stores(nome_loja)');
-                document.getElementById('public-catalog').innerHTML = data?.map(p => `
-                    <div class="card">
-                        <div style="height:180px; background:#f1f5f9; margin:-1.5rem -1.5rem 1rem -1.5rem; display:flex; align-items:center; justify-content:center; overflow:hidden;">
-                            <img src="${p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto'}" style="width:100%; height:100%; object-fit:cover;">
-                        </div>
-                        <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div>
-                        <h4>${p.nome}</h4><h2>R$ ${p.preco.toFixed(2)}</h2>
-                        <button class="btn btn-secondary btn-full" style="margin-top:10px" onclick="App.client.confirmOrder('${p.id}', '${p.store_id}', ${p.preco})">Contratar</button>
-                    </div>`).join('') || '<p>Sem ofertas.</p>';
-            }},
 
             utils: {
                 toast: (msg, type='success') => { const c = document.getElementById('toast-container'); const e = document.createElement('div'); e.className=`toast ${type}`; e.innerHTML=`<span>${msg}</span>`; c.appendChild(e); setTimeout(()=>e.remove(), 4000); },
