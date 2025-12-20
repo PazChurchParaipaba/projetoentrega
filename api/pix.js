@@ -2,37 +2,32 @@ const https = require('https');
 
 export default async function handler(req, res) {
   // 1. Configuração de CORS (Segurança de Acesso)
-  // Permite que seu Front-end se comunique com este Back-end
   res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*'); 
+  res.setHeader('Access-Control-Allow-Origin', '*'); // Em produção, considere restringir para seu domínio
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
   res.setHeader(
     'Access-Control-Allow-Headers',
     'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
   );
 
-  // Resposta rápida para requisições de pre-flight (OPTIONS)
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
-  // Validação do Método HTTP
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Validação do Corpo da Requisição
   const body = req.body;
   if (!body) {
     return res.status(400).json({ error: 'Nenhum dado recebido.' });
   }
 
-  // --- CONFIGURAÇÃO DO MERCADO PAGO ---
-  // SEU ACCESS TOKEN DE TESTE (Troque pelo de Produção quando for lançar)
-  const ACCESS_TOKEN = 'TEST-1174857331903554-122013-f01b6851dd5d57f3b197bf4f7a5384e3-3082316443';
+  // --- CONFIGURAÇÃO DO MERCADO PAGO (PRODUÇÃO) ---
+  // Substituído pelo ACCESS TOKEN da imagem fornecida
+  const ACCESS_TOKEN = 'APP_USR-1174857331903554-122013-4081678527cfa85bbe7a6d6a5a262861-3082316443';
 
   // 2. Preparação do Objeto de Pagamento
-  // Limpeza preventiva de CPF
   let cleanCPF = '';
   if (body.payer && body.payer.identification && body.payer.identification.number) {
       cleanCPF = body.payer.identification.number.replace(/\D/g, '');
@@ -40,11 +35,11 @@ export default async function handler(req, res) {
 
   const paymentData = {
     transaction_amount: Number(body.transaction_amount),
-    token: body.token, // Token do cartão (se houver)
+    token: body.token,
     description: "Serviço NexLog",
     installments: Number(body.installments),
     payment_method_id: body.payment_method_id,
-    issuer_id: body.issuer_id, // Banco emissor
+    issuer_id: body.issuer_id,
     payer: {
       email: body.payer.email,
       entity_type: 'individual',
@@ -54,7 +49,6 @@ export default async function handler(req, res) {
         number: cleanCPF
       }
     },
-    // Configurações Adicionais para garantir a transação
     capture: true,
     binary_mode: false,
     statement_descriptor: "NEXLOG APP"
@@ -69,12 +63,12 @@ export default async function handler(req, res) {
     headers: {
       'Authorization': `Bearer ${ACCESS_TOKEN}`,
       'Content-Type': 'application/json',
-      'X-Idempotency-Key': Date.now().toString(), // Evita duplicação de pagamentos
+      'X-Idempotency-Key': Date.now().toString(),
       'Content-Length': Buffer.byteLength(postData)
     }
   };
 
-  // 3. Envio da Requisição para o Mercado Pago
+  // 3. Envio da Requisição
   return new Promise((resolve, reject) => {
     const mpReq = https.request(options, (mpRes) => {
       let data = '';
@@ -87,12 +81,10 @@ export default async function handler(req, res) {
         try {
           const jsonResponse = JSON.parse(data);
           
-          // Verificação de Sucesso (Status 2xx)
           if (mpRes.statusCode >= 200 && mpRes.statusCode < 300) {
             res.status(200).json(jsonResponse);
             resolve();
           } else {
-            // Log de Erro para Debug
             console.error("Erro MP:", jsonResponse); 
             res.status(mpRes.statusCode).json(jsonResponse);
             resolve();
