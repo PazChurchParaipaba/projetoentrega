@@ -19,21 +19,24 @@ export default async function handler(req, res) {
   // SEU ACCESS TOKEN DE TESTE
   const ACCESS_TOKEN = 'TEST-1174857331903554-122013-f01b6851dd5d57f3b197bf4f7a5384e3-3082316443';
 
-  // 2. Prepara os dados para enviar ao Mercado Pago
-  // O frontend (Brick) já manda a estrutura quase pronta, só precisamos adicionar o Payer se faltar
-  // e garantir que o transaction_amount seja número.
-  
+  // 2. Prepara os dados
   const paymentData = {
     transaction_amount: Number(body.transaction_amount),
-    token: body.token, // Token do cartão (se houver)
+    token: body.token, // O token do cartão (crédito ou débito)
     description: body.description,
-    installments: Number(body.installments), // Parcelas
-    payment_method_id: body.payment_method_id, // "pix", "bolbradesco", "master", etc
+    installments: Number(body.installments),
+    payment_method_id: body.payment_method_id, // Ex: 'debvisa', 'debmaster', 'pix', etc.
     issuer_id: body.issuer_id, // Banco emissor
     payer: {
       email: body.payer.email,
+      // OBRIGATÓRIO PARA DÉBITO E CRÉDITO:
+      entity_type: 'individual', 
+      type: 'customer',
       identification: body.payer.identification
-    }
+    },
+    // Garante captura automática (essencial para débito)
+    capture: true,
+    binary_mode: false 
   };
 
   const postData = JSON.stringify(paymentData);
@@ -58,9 +61,16 @@ export default async function handler(req, res) {
       mpRes.on('end', () => {
         try {
           const jsonResponse = JSON.parse(data);
-          // Retorna o status que o MP devolveu (201 criado, 400 erro, etc)
-          res.status(mpRes.statusCode).json(jsonResponse);
-          resolve();
+          
+          // Status 200 ou 201 significa que o pedido foi criado no MP
+          if (mpRes.statusCode >= 200 && mpRes.statusCode < 300) {
+            res.status(200).json(jsonResponse);
+            resolve();
+          } else {
+            console.error("Erro MP:", jsonResponse); 
+            res.status(mpRes.statusCode).json(jsonResponse);
+            resolve();
+          }
         } catch (e) {
           res.status(500).json({ error: 'Erro ao processar resposta do MP', details: data });
           resolve();
