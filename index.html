@@ -10,8 +10,9 @@
     <title>NexLog | Sistema Integrado Profissional</title>
     
     <link rel="manifest" id="dynamic-manifest">
+    
+    <link rel="icon" type="image/png" href="https://placehold.co/192x192/2563eb/white?text=NX"> 
     <link rel="apple-touch-icon" href="https://placehold.co/192x192/2563eb/white?text=NX">
-    <link rel="icon" type="image/png" href="https://placehold.co/32x32/2563eb/white?text=NX">
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
@@ -27,8 +28,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        /* 1. VARIÁVEIS DE TEMA (ROOT)
-           Centralização de cores, espaçamentos e efeitos visuais.
+        /* ==========================================================================
+           1. VARIÁVEIS DE TEMA (ROOT)
+           ==========================================================================
         */
         :root {
             /* Palette de Cores Primárias */
@@ -85,8 +87,9 @@
             --mobile-nav-height: 65px;
         }
 
-        /* 2. RESET E BASE
-           Normalização de elementos HTML.
+        /* ==========================================================================
+           2. RESET E BASE
+           ==========================================================================
         */
         * {
             margin: 0;
@@ -105,13 +108,15 @@
             background-color: var(--background);
             color: var(--text-main);
             min-height: 100vh;
-            padding-bottom: calc(var(--mobile-nav-height) + 20px); /* Espaço extra para menu mobile */
+            padding-bottom: calc(var(--mobile-nav-height) + 20px);
             overflow-x: hidden;
             line-height: 1.5;
             -webkit-font-smoothing: antialiased;
         }
 
-        /* 3. TIPOGRAFIA 
+        /* ==========================================================================
+           3. TIPOGRAFIA 
+           ==========================================================================
         */
         h1, h2, h3, h4, h5, h6 {
             font-weight: 800;
@@ -125,6 +130,7 @@
         h2 { font-size: 1.875rem; }
         h3 { font-size: 1.5rem; }
         h4 { font-size: 1.25rem; }
+        h5 { font-size: 1rem; }
 
         p {
             color: var(--text-muted);
@@ -140,7 +146,9 @@
         .text-primary { color: var(--primary); }
         .text-white { color: white; }
 
-        /* 4. COMPONENTES DE INTERFACE: BOTÕES 
+        /* ==========================================================================
+           4. COMPONENTES: BOTÕES 
+           ==========================================================================
         */
         .btn {
             display: inline-flex;
@@ -159,7 +167,7 @@
             overflow: hidden;
             text-decoration: none;
             user-select: none;
-            width: 100%; /* Padrão Mobile First */
+            width: 100%;
         }
 
         .btn:active {
@@ -173,7 +181,6 @@
             filter: grayscale(1);
         }
 
-        /* Variantes de Botões */
         .btn-primary {
             background: var(--primary);
             color: white;
@@ -220,13 +227,20 @@
             color: white;
         }
 
+        .btn-warning {
+            background: var(--warning);
+            color: #78350f;
+        }
+
         .btn-sm {
             padding: 0.5rem 1rem;
             font-size: 0.85rem;
             width: auto;
         }
 
-        /* 5. COMPONENTES: FORMULÁRIOS E INPUTS 
+        /* ==========================================================================
+           5. COMPONENTES: FORMULÁRIOS 
+           ==========================================================================
         */
         .input-wrapper {
             margin-bottom: 1.25rem;
@@ -252,7 +266,7 @@
             transition: var(--transition);
             font-family: inherit;
             color: var(--text-main);
-            appearance: none; /* Remove estilo nativo de select */
+            appearance: none;
         }
 
         .input-field::placeholder {
@@ -272,24 +286,26 @@
             background-size: 1em;
         }
         
-        /* Checkbox customizado para promoção */
         .checkbox-wrapper {
             display: flex;
             align-items: center;
             gap: 10px;
             margin-bottom: 1rem;
-            background: #fff8f8; /* Destaque leve */
+            background: #fff8f8;
             padding: 10px;
             border-radius: var(--radius-sm);
             border: 1px dashed var(--danger);
         }
+        
         .checkbox-wrapper input[type="checkbox"] {
             width: 20px;
             height: 20px;
             accent-color: var(--danger);
         }
 
-        /* 6. COMPONENTES: CARDS E CONTAINERS 
+        /* ==========================================================================
+           6. COMPONENTES: CARDS E LAYOUT 
+           ==========================================================================
         */
         .container {
             max-width: 1200px;
@@ -329,7 +345,7 @@
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         }
         
-        /* Dashboard Métricas */
+        /* Métricas */
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -348,10 +364,23 @@
             border: 1px solid var(--border);
             text-align: center;
         }
-        .metric-card h5 { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 5px; }
-        .metric-card .value { color: var(--primary-dark); font-size: 1.5rem; font-weight: 800; }
+        
+        .metric-card h5 { 
+            color: var(--text-muted); 
+            font-size: 0.85rem; 
+            text-transform: uppercase; 
+            margin-bottom: 5px; 
+        }
+        
+        .metric-card .value { 
+            color: var(--primary-dark); 
+            font-size: 1.5rem; 
+            font-weight: 800; 
+        }
 
-        /* 7. COMPONENTES: BADGES (STATUS) 
+        /* ==========================================================================
+           7. BADGES 
+           ==========================================================================
         */
         .badge {
             display: inline-flex;
@@ -368,7 +397,16 @@
         .status-aceito { background: var(--info-bg); color: var(--info-dark); }
         .status-em_rota { background: #dbeafe; color: #1e40af; animation: pulse 2s infinite; }
         .status-concluido { background: var(--success-bg); color: var(--success-dark); }
-        .badge-promo { background: var(--danger); color: white; position: absolute; top: 10px; left: 10px; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        
+        .badge-promo { 
+            background: var(--danger); 
+            color: white; 
+            position: absolute; 
+            top: 10px; 
+            left: 10px; 
+            z-index: 10; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
+        }
 
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
@@ -376,7 +414,9 @@
             100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
         }
 
-        /* 8. HEADER, NAVEGAÇÃO E LOGO
+        /* ==========================================================================
+           8. HEADER 
+           ==========================================================================
         */
         header {
             background: rgba(255, 255, 255, 0.95);
@@ -400,7 +440,7 @@
         }
         
         .logo-img {
-            height: 80px;
+            height: 60px; /* Aumentado conforme solicitado */
             width: auto;
             object-fit: contain;
         }
@@ -412,7 +452,6 @@
             letter-spacing: -0.05em;
         }
 
-        /* Navegação Inferior (Mobile) */
         .bottom-nav {
             display: none;
             position: fixed;
@@ -443,24 +482,20 @@
             border: none;
         }
 
-        .nav-item i {
-            font-size: 1.35rem;
-            margin-bottom: 2px;
-        }
-
         .nav-item.active {
             color: var(--primary);
             font-weight: 700;
             transform: translateY(-2px);
         }
 
-        /* Responsividade da Navegação */
         @media (max-width: 768px) {
             .bottom-nav { display: flex; }
             .desktop-only { display: none !important; }
         }
 
-        /* 9. SISTEMA DE VIEWS (SPA - SINGLE PAGE APPLICATION) 
+        /* ==========================================================================
+           9. VIEWS
+           ==========================================================================
         */
         .view-section {
             display: none;
@@ -476,7 +511,9 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* 10. CATEGORIAS (MENU DESLIZANTE)
+        /* ==========================================================================
+           10. CATEGORIAS 
+           ==========================================================================
         */
         .category-scroll {
             display: flex;
@@ -510,7 +547,9 @@
             box-shadow: var(--shadow-md);
         }
 
-        /* 11. AUTH & ROLES 
+        /* ==========================================================================
+           11. AUTH E CADASTRO
+           ==========================================================================
         */
         .auth-card {
             max-width: 420px;
@@ -556,7 +595,6 @@
             margin-bottom: 0.5rem;
         }
 
-        /* Container da Câmera (Validação) */
         .camera-container {
             background: #000;
             border-radius: var(--radius-md);
@@ -585,8 +623,10 @@
             text-align: center;
             font-weight: 600;
         }
-        
-        /* 12. SISTEMA DE MODAIS 
+
+        /* ==========================================================================
+           12. MODAIS E CHAT
+           ==========================================================================
         */
         .modal-overlay {
             position: fixed;
@@ -639,54 +679,51 @@
             background: white;
         }
 
-        /* Estilização Específica do Mapa */
-        #map-modal .modal-content {
-            height: 90%;
-        }
+        #map-modal .modal-content { height: 90%; }
+        #map { flex: 1; width: 100%; background: #e2e8f0; min-height: 300px; z-index: 1; }
 
-        #map {
-            flex: 1;
-            width: 100%;
-            background: #e2e8f0;
-            min-height: 300px;
-            z-index: 1;
-        }
-        
-        /* Estilização Chat */
+        /* Estilos do Chat */
         .chat-messages {
             height: 300px;
             overflow-y: auto;
             border: 1px solid var(--border);
             background: #f9f9f9;
-            padding: 10px;
+            padding: 15px;
             border-radius: var(--radius-sm);
             margin-bottom: 10px;
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
+        
         .chat-bubble {
-            padding: 8px 12px;
+            padding: 10px 14px;
             border-radius: 12px;
             max-width: 80%;
             font-size: 0.9rem;
+            word-wrap: break-word;
         }
+        
         .chat-bubble.mine {
             align-self: flex-end;
             background: var(--primary);
             color: white;
             border-bottom-right-radius: 2px;
         }
+        
         .chat-bubble.theirs {
             align-self: flex-start;
-            background: #e2e8f0;
+            background: white;
+            border: 1px solid #e2e8f0;
             color: var(--text-main);
             border-bottom-left-radius: 2px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
-        /* 13. UTILITÁRIOS E FEEDBACK 
+        /* ==========================================================================
+           13. UTILS E EXTRAS
+           ==========================================================================
         */
-        /* Toasts */
         .toast-container {
             position: fixed;
             bottom: 90px;
@@ -713,7 +750,6 @@
             font-weight: 500;
         }
 
-        .toast i { font-size: 1.25rem; }
         .toast.error { border-left-color: var(--danger); color: var(--danger-dark); }
         .toast.success { border-left-color: var(--success); color: var(--success-dark); }
         .toast.info { border-left-color: var(--info); color: var(--info-dark); }
@@ -723,7 +759,6 @@
             to { transform: translateX(0); opacity: 1; }
         }
 
-        /* PWA Banner */
         .pwa-banner {
             position: fixed;
             top: 80px;
@@ -742,11 +777,9 @@
             box-shadow: var(--shadow-lg);
         }
         
-        /* Spinners e Loaders */
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         
-        /* Secure Box (Para chaves salvas) */
         .secure-box {
             background: #f0fdf4;
             border: 1px solid #bbf7d0;
@@ -757,7 +790,6 @@
             animation: fadeIn 0.5s;
         }
         
-        /* Brick Container do Mercado Pago */
         #payment-brick_container { min-height: 300px; }
     </style>
 </head>
@@ -777,7 +809,7 @@
 
     <header>
         <div class="brand">
-            <img src="logo.png" alt="NexLog Logo" class="logo-img" onerror="this.style.display='none'; document.getElementById('txt-logo').style.display='block'">
+            <img src="https://placehold.co/192x192/2563eb/white?text=NX" alt="NexLog Logo" class="logo-img" onerror="this.style.display='none'; document.getElementById('txt-logo').style.display='block'">
             <span id="txt-logo" class="brand-text" style="display:none;">NexLog</span>
         </div>
         <div id="header-actions" class="text-sm font-bold text-primary desktop-only"></div>
@@ -790,7 +822,7 @@
                 <div class="container" style="padding-top: 10px; padding-bottom: 0;">
                     <div class="category-scroll" id="category-list">
                         <button class="cat-pill active" onclick="App.catalog.filter('Todos', this)">Todos</button>
-                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1054,6 +1086,42 @@
         </div>
     </div>
 
+    <div id="budget-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Calculadora de Orçamento</h3>
+                <button class="btn btn-secondary btn-sm" onclick="document.getElementById('budget-modal').style.display='none'">Fechar</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="budget-prod-id">
+                <input type="hidden" id="budget-store-id">
+                <input type="hidden" id="budget-base-price"> <input type="hidden" id="budget-labor-val"> <input type="hidden" id="budget-labor-type"> <div class="input-wrapper">
+                    <label>Metragem da Área (m²)</label>
+                    <input type="number" id="budget-area" class="input-field" placeholder="Ex: 25" oninput="App.client.calculateBudget()">
+                </div>
+                
+                <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; margin-top:10px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                        <span>Custo Material:</span>
+                        <span id="display-material">R$ 0,00</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px; color:var(--info-dark);">
+                        <span>Custo Mão de Obra:</span>
+                        <span id="display-labor">R$ 0,00</span>
+                    </div>
+                    <hr style="margin:10px 0; border-color:#e2e8f0;">
+                    <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.2rem; color:var(--primary);">
+                        <span>Total Orçado:</span>
+                        <span id="display-total">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-success btn-full" onclick="App.client.finishBudgetOrder()">Fechar Pedido com Orçamento</button>
+            </div>
+        </div>
+    </div>
+
     <div id="product-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -1083,12 +1151,35 @@
                     </div>
                 </div>
 
+                <div id="gesso-options-area" style="display:none; background:#fefce8; padding:15px; border-radius:8px; border:1px solid #fde047; margin-bottom:1rem;">
+                    <h5 style="color:var(--warning-dark)">Configuração de Orçamento (Gesso)</h5>
+                    <p class="text-xs text-muted">Defina os custos para o cálculo automático do cliente.</p>
+                    
+                    <div class="input-wrapper">
+                        <label>Preço do Metro Quadrado (Material)</label>
+                        <input type="number" id="gesso-price-m2" class="input-field" placeholder="0.00">
+                    </div>
+                    
+                    <div class="input-wrapper">
+                        <label>Valor da Mão de Obra</label>
+                        <input type="number" id="gesso-labor-val" class="input-field" placeholder="0.00">
+                    </div>
+                    
+                    <div class="input-wrapper">
+                        <label>Tipo de Cobrança da Mão de Obra</label>
+                        <select id="gesso-labor-type" class="input-field">
+                            <option value="fixed">Valor Fixo (R$ por m²)</option>
+                            <option value="percent">Porcentagem (%) sobre o Material</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div class="input-wrapper">
                     <label>Nome do Item</label>
                     <input type="text" id="new-prod-name" class="input-field" placeholder="Ex: Transporte de Sofá">
                 </div>
                 <div class="input-wrapper">
-                    <label>Preço (R$)</label>
+                    <label>Preço Base (ou de Exibição)</label>
                     <input type="number" id="new-prod-price" class="input-field" placeholder="0.00">
                 </div>
                 
@@ -1113,12 +1204,12 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Chat de Dúvidas</h3>
-                <button class="btn btn-secondary btn-sm" onclick="document.getElementById('chat-modal').style.display='none'">Fechar</button>
+                <button class="btn btn-secondary btn-sm" onclick="App.chat.close()">Fechar</button>
             </div>
             <div class="modal-body">
                 <p class="text-sm text-muted">Tire suas dúvidas sobre reservas e serviços diretamente com o estabelecimento.</p>
                 <div id="chat-msgs" class="chat-messages">
-                    <div style="text-align:center; padding:20px; color:#aaa;">Inicie a conversa...</div>
+                    <div style="text-align:center; padding:20px; color:#aaa;">Carregando mensagens...</div>
                 </div>
                 <div style="display:flex; gap:10px;">
                     <input type="text" id="chat-input" class="input-field" placeholder="Digite sua dúvida...">
@@ -1147,7 +1238,7 @@
     </div>
 
     <script>
-        // --- 1. CONFIGURAÇÃO ---
+        // --- 1. CONFIGURAÇÃO GERAL ---
         const CONFIG = {
             // URL e Chave do Supabase (Banco de Dados)
             sbUrl: 'https://groezaseypdbpgymgpvo.supabase.co',
@@ -1159,10 +1250,10 @@
             // Token Mapbox
             mapboxToken: 'pk.eyJ1IjoiZXhhbXBsZXVzZXIiLCJhIjoiY2p5Y3Z6eG9jMDFlazNnbzQ4a3R4bWk4ZyJ9.ExampleTokenPlaceholder',
             
-            // LISTA DE CATEGORIAS SOLICITADA
+            // LISTA DE CATEGORIAS
             categories: [
-                'Hoteis/Pousadas', 
-                'Serviços de Gesso', 
+                'Serviços de Gesso', // Categoria com lógica especial de orçamento
+                'Hoteis/Pousadas', // Categoria com lógica especial de datas
                 'Manutenção Eletrodomésticos', 
                 'Serviços de Manutenção', 
                 'Serviços de Pedreiros', 
@@ -1180,7 +1271,23 @@
 
         // --- APP CONTROLLER ---
         const App = {
-            state: { user: null, profile: null, tempRole: null, deferredPrompt: null, mapInstance: null, marker: null, watchId: null, activeOrder: null, storeId: null, pendingPayment: null, brickController: null, pixInterval: null, activeChatStore: null },
+            state: { 
+                user: null, 
+                profile: null, 
+                tempRole: null, 
+                deferredPrompt: null, 
+                mapInstance: null, 
+                marker: null, 
+                watchId: null, 
+                activeOrder: null, 
+                storeId: null, 
+                pendingPayment: null, 
+                brickController: null, 
+                pixInterval: null, 
+                activeChatStore: null, 
+                chatSub: null,
+                currentBudgetTotal: 0 
+            },
             
             init: async () => {
                 App.utils.setupPWA();
@@ -1252,10 +1359,9 @@
                     let html = '';
                     
                     if(role === 'loja_admin') {
-                        // ADICIONADO CAMPO DE WHATSAPP DA LOJA
+                        // Inclui WhatsApp no cadastro de loja
                         html = `<div class="input-wrapper"><label>Nome da Loja</label><input id="reg-store-name" class="input-field" placeholder="Ex: NexLog Center"></div><div class="input-wrapper"><label>WhatsApp da Loja</label><input id="reg-whatsapp" class="input-field" placeholder="(00) 00000-0000"></div><div class="input-wrapper"><label>CNPJ</label><input id="reg-cnpj" class="input-field" placeholder="00.000.000/0000-00"></div><div class="input-wrapper" style="border: 2px dashed var(--primary); padding: 10px; border-radius: 8px; background: var(--info-bg);"><label style="color:var(--primary)">🔑 Token de Autorização</label><input id="reg-token" class="input-field" placeholder="Código fornecido pelo Admin"><p class="text-xs text-muted">Cadastro restrito. Insira sua matrícula/token.</p></div>`;
                     } else if (role === 'motorista' || role === 'montador') {
-                        // ADICIONADO CAMPO DE CHAVE PIX NO CADASTRO
                         html = `<div class="input-wrapper"><label>CPF</label><input id="reg-cpf" class="input-field" placeholder="000.000.000-00"></div><div class="input-wrapper"><label>Sua Chave Pix (Para Receber)</label><input id="reg-pix" class="input-field" placeholder="Email, CPF ou Aleatória"></div><div class="camera-container" id="cam-box"><video id="cam-video" autoplay playsinline></video><div class="camera-overlay">Selfie com capacete (validação facial)</div></div><div id="verified-msg" style="display:none; color:var(--success); font-weight:bold; margin-bottom:1rem;">✅ Identidade Confirmada</div><button class="btn btn-secondary btn-full" id="btn-cam" onclick="App.auth.runCamera()">Validar Identidade (Obrigatório)</button>`;
                     } else {
                          html = `<div class="input-wrapper"><label>CPF</label><input id="reg-cpf" class="input-field" placeholder="000.000.000-00"></div>`;
@@ -1294,6 +1400,7 @@
                         if (role === 'loja_admin') {
                             const token = document.getElementById('reg-token').value.trim();
                             if (!token) throw new Error("Token de autorização é obrigatório");
+                            // Verifica Token
                             const { error: tokenError } = await _sb.rpc('validate_store_token', { token_input: token });
                             if (tokenError) throw new Error(tokenError.message);
                         }
@@ -1302,14 +1409,13 @@
                             nome_completo: name, email: email, password: pass, role: role,
                             cpf: document.getElementById('reg-cpf')?.value || null,
                             cnpj: document.getElementById('reg-cnpj')?.value || null,
-                            chave_pix: document.getElementById('reg-pix')?.value || null, // SALVA PIX DO MOTORISTA
+                            chave_pix: document.getElementById('reg-pix')?.value || null, 
                             is_verified: document.getElementById('verified-msg')?.style.display === 'block'
                         }).select().single();
 
                         if(error) throw error;
                         
                         if(role === 'loja_admin') {
-                            // Salva WhatsApp da Loja
                             await _sb.from('stores').insert({ 
                                 admin_id: newUser.id, 
                                 nome_loja: document.getElementById('reg-store-name').value, 
@@ -1331,7 +1437,6 @@
                     if(error || !data) { App.utils.toast('Dados incorretos', 'error'); } 
                     else { App.state.user = { id: data.id }; App.state.profile = data; localStorage.setItem('logimoveis_session', JSON.stringify(data)); App.utils.toast('Bem-vindo!', 'success'); App.router.renderNav(); App.router.goDashboard(); }
                 },
-                // NOVA FUNÇÃO: RECUPERAÇÃO DE SENHA POR CPF E EMAIL
                 recoverPassword: async () => {
                     const email = document.getElementById('rec-email').value.trim();
                     const cpf = document.getElementById('rec-cpf').value.trim();
@@ -1341,7 +1446,6 @@
                     const { data, error } = await _sb.from('profiles').select('id').eq('email', email).eq('cpf', cpf).maybeSingle();
                     
                     if(data) {
-                        // Simulação de envio de email (necessitaria backend real para envio seguro)
                         App.utils.toast('Link de redefinição enviado para seu email!', 'success');
                         App.auth.switchView('login');
                     } else {
@@ -1361,7 +1465,7 @@
                     }
                     App.state.storeId = store.id;
 
-                    // 1. LOGICA DE SEGURANÇA DAS CHAVES
+                    // Logica de Chaves e Parceiro
                     if(store.mp_access_token) {
                         document.getElementById('store-keys-area').style.display = 'none';
                         document.getElementById('store-keys-locked').style.display = 'block';
@@ -1370,16 +1474,13 @@
                         document.getElementById('store-keys-locked').style.display = 'none';
                     }
 
-                    // 2. MOSTRAR PARCEIRO VINCULADO
                     if(store.parceiro_exclusivo_id) {
                         const {data: p} = await _sb.from('profiles').select('nome_completo, email').eq('id', store.parceiro_exclusivo_id).single();
                         if(p) document.getElementById('active-partner-display').innerText = `Parceiro Vinculado: ${p.nome_completo} (${p.email})`;
                     }
 
-                    // Carrega Pedidos
+                    // Carrega Pedidos e Métricas
                     const { data: orders } = await _sb.from('orders').select('*, products(nome), profiles!orders_cliente_id_fkey(nome_completo), prestador:profiles!orders_prestador_id_fkey(nome_completo, chave_pix)').eq('store_id', store.id).order('created_at', { ascending: false });
-                    
-                    // CALCULA MÉTRICAS
                     App.store.calcMetrics(orders || []);
                     
                     document.getElementById('store-orders-list').innerHTML = orders?.map(o => {
@@ -1403,7 +1504,6 @@
                         </div>`;
                     }).join('') || '<p class="text-sm">Nenhum pedido.</p>';
                     
-                    // Carrega Produtos para Edição
                     App.store.loadMyProducts();
                 },
                 calcMetrics: (orders) => {
@@ -1411,18 +1511,12 @@
                     let dayTotal = 0, weekTotal = 0, monthTotal = 0;
                     
                     orders.forEach(o => {
-                        // Considera apenas pedidos pagos/concluídos/aceitos para a métrica de vendas
                         if(['aceito', 'concluido', 'em_rota', 'aguardando_prestador'].includes(o.status)) {
                             const orderDate = new Date(o.created_at);
-                            const val = o.taxa_servico / 0.15; // Reverte o cálculo da taxa (15%) para achar valor original aproximado ou usa valor da venda se tiver salvo
+                            const val = o.taxa_servico / 0.15; 
                             
-                            // Dia
                             if(orderDate.toDateString() === now.toDateString()) dayTotal += val;
-                            
-                            // Mês
                             if(orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear()) monthTotal += val;
-                            
-                            // Semana (Simples - últimos 7 dias)
                             const diffTime = Math.abs(now - orderDate);
                             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
                             if(diffDays <= 7) weekTotal += val;
@@ -1452,7 +1546,13 @@
                     document.getElementById('new-prod-name').value = "";
                     document.getElementById('new-prod-price').value = "";
                     document.getElementById('new-prod-promo').checked = false;
-                    document.getElementById('hotel-dates-area').style.display = 'none';
+                    
+                    // Reset campos Gesso
+                    document.getElementById('gesso-price-m2').value = "";
+                    document.getElementById('gesso-labor-val').value = "";
+                    
+                    document.getElementById('new-prod-cat').value = CONFIG.categories[0];
+                    App.store.checkCategory(CONFIG.categories[0]);
                     document.getElementById('product-modal').style.display = 'flex';
                 },
                 openEditProduct: (p) => {
@@ -1463,44 +1563,29 @@
                     document.getElementById('new-prod-name').value = p.nome;
                     document.getElementById('new-prod-price').value = p.preco;
                     document.getElementById('new-prod-promo').checked = p.promocao;
+                    
+                    // Popula dados de Gesso se existirem
+                    if(p.gesso_info) {
+                        const g = JSON.parse(p.gesso_info);
+                        document.getElementById('gesso-price-m2').value = g.price_m2 || "";
+                        document.getElementById('gesso-labor-val').value = g.labor_val || "";
+                        document.getElementById('gesso-labor-type').value = g.labor_type || "fixed";
+                    }
+                    
                     App.store.checkCategory(p.categoria);
-                    // Se tiver datas salvas, popularia aqui
                     document.getElementById('product-modal').style.display = 'flex';
                 },
                 closeProductModal: () => document.getElementById('product-modal').style.display = 'none',
                 checkCategory: (cat) => {
-                    // SE FOR HOTEL, MOSTRA DATAS
+                    // Esconde todas as áreas especiais primeiro
+                    document.getElementById('hotel-dates-area').style.display = 'none';
+                    document.getElementById('gesso-options-area').style.display = 'none';
+                    
                     if(cat === 'Hoteis/Pousadas') {
                         document.getElementById('hotel-dates-area').style.display = 'block';
-                    } else {
-                        document.getElementById('hotel-dates-area').style.display = 'none';
+                    } else if (cat === 'Serviços de Gesso') {
+                        document.getElementById('gesso-options-area').style.display = 'block';
                     }
-                },
-                saveCredentials: async () => {
-                    const acc = document.getElementById('store-access-token').value.trim();
-                    const pub = document.getElementById('store-public-key').value.trim();
-                    if(!acc || !pub) return App.utils.toast("Preencha ambas as chaves!", "error");
-                    
-                    await _sb.from('stores').update({ mp_access_token: acc, mp_public_key: pub }).eq('id', App.state.storeId);
-                    App.utils.toast("Chaves salvas e protegidas!", "success");
-                    App.store.init();
-                },
-                resetKeys: async () => {
-                    if(confirm("Isso pausará seus recebimentos. Continuar?")) {
-                        await _sb.from('stores').update({ mp_access_token: null, mp_public_key: null }).eq('id', App.state.storeId);
-                        App.store.init();
-                    }
-                },
-                linkPartner: async () => {
-                    const email = document.getElementById('partner-email-input').value.trim();
-                    if(!email) return App.utils.toast("Digite o email do motorista", "error");
-                    
-                    const { data: user } = await _sb.from('profiles').select('id').eq('email', email).single();
-                    if(!user) return App.utils.toast("Motorista não encontrado no sistema.", "error");
-                    
-                    await _sb.from('stores').update({ parceiro_exclusivo_id: user.id }).eq('id', App.state.storeId);
-                    App.utils.toast("Parceiro vinculado com sucesso!", "success");
-                    App.store.init();
                 },
                 submitProduct: async () => {
                     const id = document.getElementById('edit-prod-id').value;
@@ -1510,11 +1595,21 @@
                     const promo = document.getElementById('new-prod-promo').checked;
                     const file = document.getElementById('new-prod-file').files[0];
                     
-                    // Dados de Hotel
+                    // Dados Hotel
                     const dateStart = document.getElementById('hotel-start-date').value;
                     const dateEnd = document.getElementById('hotel-end-date').value;
                     let disp = null;
                     if(cat === 'Hoteis/Pousadas' && dateStart && dateEnd) disp = `${dateStart}|${dateEnd}`;
+
+                    // Dados Gesso
+                    let gessoInfo = null;
+                    if(cat === 'Serviços de Gesso') {
+                        gessoInfo = JSON.stringify({
+                            price_m2: document.getElementById('gesso-price-m2').value,
+                            labor_val: document.getElementById('gesso-labor-val').value,
+                            labor_type: document.getElementById('gesso-labor-type').value
+                        });
+                    }
 
                     if (!nome || !preco) return App.utils.toast("Preencha nome e preço", "error");
                     
@@ -1531,8 +1626,9 @@
                         nome, 
                         preco: parseFloat(preco), 
                         categoria: cat, 
-                        promocao: promo,
-                        disponibilidade: disp // Salva intervalo de datas
+                        promocao: promo, 
+                        disponibilidade: disp,
+                        gesso_info: gessoInfo // Salva JSON de gesso
                     };
                     if(imageUrl) payload.imagem_url = imageUrl;
 
@@ -1547,6 +1643,29 @@
                     
                     App.store.closeProductModal(); 
                     App.catalog.fetchPublic(); 
+                    App.store.init();
+                },
+                saveCredentials: async () => {
+                    const acc = document.getElementById('store-access-token').value.trim();
+                    const pub = document.getElementById('store-public-key').value.trim();
+                    if(!acc || !pub) return App.utils.toast("Preencha ambas as chaves!", "error");
+                    await _sb.from('stores').update({ mp_access_token: acc, mp_public_key: pub }).eq('id', App.state.storeId);
+                    App.utils.toast("Chaves salvas e protegidas!", "success");
+                    App.store.init();
+                },
+                resetKeys: async () => {
+                    if(confirm("Isso pausará seus recebimentos. Continuar?")) {
+                        await _sb.from('stores').update({ mp_access_token: null, mp_public_key: null }).eq('id', App.state.storeId);
+                        App.store.init();
+                    }
+                },
+                linkPartner: async () => {
+                    const email = document.getElementById('partner-email-input').value.trim();
+                    if(!email) return App.utils.toast("Digite o email do motorista", "error");
+                    const { data: user } = await _sb.from('profiles').select('id').eq('email', email).single();
+                    if(!user) return App.utils.toast("Motorista não encontrado no sistema.", "error");
+                    await _sb.from('stores').update({ parceiro_exclusivo_id: user.id }).eq('id', App.state.storeId);
+                    App.utils.toast("Parceiro vinculado com sucesso!", "success");
                     App.store.init();
                 },
                 dispatch: async (id) => {
@@ -1634,6 +1753,72 @@
                     mpInstance = new MercadoPago(publicKeyToUse);
                     const address = prompt("Endereço de Entrega Completo:"); if(!address) return;
                     App.payment.open(price * 1.15, { product_id: pid, store_id: sid, basePrice: price, address, requer_montagem: false, taxa: price*0.15 });
+                },
+                // --- LÓGICA DE ORÇAMENTO (GESSO) ---
+                openBudget: (p) => {
+                    if(!App.state.user) { App.router.go('auth'); return; }
+                    
+                    const g = JSON.parse(p.gesso_info);
+                    
+                    // Salva dados no hidden para cálculo
+                    document.getElementById('budget-prod-id').value = p.id;
+                    document.getElementById('budget-store-id').value = p.store_id;
+                    document.getElementById('budget-base-price').value = g.price_m2;
+                    document.getElementById('budget-labor-val').value = g.labor_val;
+                    document.getElementById('budget-labor-type').value = g.labor_type;
+                    
+                    document.getElementById('budget-area').value = "";
+                    document.getElementById('display-material').innerText = "R$ 0,00";
+                    document.getElementById('display-labor').innerText = "R$ 0,00";
+                    document.getElementById('display-total').innerText = "R$ 0,00";
+                    
+                    document.getElementById('budget-modal').style.display = 'flex';
+                },
+                calculateBudget: () => {
+                    const area = parseFloat(document.getElementById('budget-area').value) || 0;
+                    const priceM2 = parseFloat(document.getElementById('budget-base-price').value) || 0;
+                    const laborVal = parseFloat(document.getElementById('budget-labor-val').value) || 0;
+                    const laborType = document.getElementById('budget-labor-type').value;
+                    
+                    // Cálculo Material
+                    const materialCost = area * priceM2;
+                    
+                    // Cálculo Mão de Obra
+                    let laborCost = 0;
+                    if(laborType === 'fixed') {
+                        // Valor fixo por m2
+                        laborCost = area * laborVal;
+                    } else {
+                        // Porcentagem sobre o material
+                        laborCost = materialCost * (laborVal / 100);
+                    }
+                    
+                    const total = materialCost + laborCost;
+                    App.state.currentBudgetTotal = total;
+                    
+                    document.getElementById('display-material').innerText = `R$ ${materialCost.toFixed(2)}`;
+                    document.getElementById('display-labor').innerText = `R$ ${laborCost.toFixed(2)}`;
+                    document.getElementById('display-total').innerText = `R$ ${total.toFixed(2)}`;
+                },
+                finishBudgetOrder: async () => {
+                    const total = App.state.currentBudgetTotal;
+                    if(total <= 0) return alert("Por favor, calcule a área primeiro.");
+                    
+                    const pid = document.getElementById('budget-prod-id').value;
+                    const sid = document.getElementById('budget-store-id').value;
+                    
+                    document.getElementById('budget-modal').style.display = 'none';
+                    
+                    // Inicia Pagamento com valor calculado
+                    const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', sid).single();
+                    const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
+                    mpInstance = new MercadoPago(publicKeyToUse);
+                    
+                    const address = prompt("Endereço de Entrega/Serviço:"); 
+                    if(!address) return;
+                    
+                    // Taxa 0 pois o orçamento já deve cobrir tudo (ou ajuste conforme regra de negócio)
+                    App.payment.open(total, { product_id: pid, store_id: sid, basePrice: total, address, requer_montagem: false, taxa: 0 });
                 }
             },
 
@@ -1670,28 +1855,66 @@
             },
             
             chat: {
-                open: (storeId) => {
-                    App.state.activeChatStore = storeId;
+                open: async (storeId) => {
+                    if(!App.state.user) return App.router.go('auth');
+                    App.state.chatStoreId = storeId;
                     document.getElementById('chat-modal').style.display = 'flex';
-                    App.chat.loadMessages();
-                },
-                loadMessages: () => {
-                    // Simulação visual de chat - na pratica conectaria no Supabase
                     const msgs = document.getElementById('chat-msgs');
-                    msgs.innerHTML = `
-                        <div class="chat-bubble theirs">Olá! Como posso ajudar com sua reserva?</div>
-                    `;
+                    msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Carregando histórico...</div>';
+                    
+                    // 1. Carregar histórico (Tabela messages criada no SQL)
+                    const { data } = await _sb.from('messages')
+                        .select('*')
+                        .eq('store_id', storeId)
+                        .eq('client_id', App.state.user.id)
+                        .order('created_at', { ascending: true });
+                    
+                    msgs.innerHTML = '';
+                    if(data && data.length > 0) {
+                        data.forEach(m => App.chat.renderMsg(m));
+                    } else {
+                        msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Inicie a conversa...</div>';
+                    }
+
+                    // 2. Realtime Subscription
+                    if(App.state.chatSub) _sb.removeChannel(App.state.chatSub);
+                    App.state.chatSub = _sb.channel('public:messages')
+                        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `store_id=eq.${storeId}` }, 
+                        (payload) => {
+                            // Filtra para mostrar apenas mensagens deste chat específico
+                            if(payload.new.client_id === App.state.user.id) {
+                                // Limpa mensagem de "Inicie a conversa" se existir
+                                if(msgs.innerText === "Inicie a conversa...") msgs.innerHTML = "";
+                                App.chat.renderMsg(payload.new);
+                            }
+                        })
+                        .subscribe();
                 },
-                send: () => {
-                    const inp = document.getElementById('chat-input');
-                    if(!inp.value) return;
-                    const msgs = document.getElementById('chat-msgs');
-                    msgs.innerHTML += `<div class="chat-bubble mine">${inp.value}</div>`;
-                    inp.value = '';
-                    setTimeout(() => {
-                         msgs.innerHTML += `<div class="chat-bubble theirs">Recebemos sua dúvida! Em breve responderemos.</div>`;
-                         msgs.scrollTop = msgs.scrollHeight;
-                    }, 1000);
+                send: async () => {
+                    const txt = document.getElementById('chat-input').value;
+                    if(!txt) return;
+                    
+                    // Salva no banco (o Realtime vai atualizar a tela automaticamente)
+                    await _sb.from('messages').insert({
+                        store_id: App.state.chatStoreId,
+                        client_id: App.state.user.id,
+                        sender_id: App.state.user.id,
+                        content: txt
+                    });
+                    document.getElementById('chat-input').value = '';
+                },
+                renderMsg: (msg) => {
+                    const div = document.createElement('div');
+                    const isMine = msg.sender_id === App.state.user.id;
+                    div.className = `chat-bubble ${isMine ? 'mine' : 'theirs'}`;
+                    div.innerText = msg.content;
+                    const container = document.getElementById('chat-msgs');
+                    container.appendChild(div);
+                    container.scrollTop = container.scrollHeight;
+                },
+                close: () => {
+                    document.getElementById('chat-modal').style.display = 'none';
+                    if(App.state.chatSub) _sb.removeChannel(App.state.chatSub);
                 }
             },
 
@@ -1725,7 +1948,7 @@
                     if(App.catalog.currentCat !== 'Todos') query = query.eq('categoria', App.catalog.currentCat);
                     const { data } = await query;
                     
-                    // SEPARA EM PROMOÇÃO E NORMAL SE HOUVER PROMOÇÃO
+                    // SEPARA EM PROMOÇÃO E NORMAL
                     const promos = data?.filter(p => p.promocao);
                     const normal = data?.filter(p => !p.promocao);
                     
@@ -1745,13 +1968,23 @@
                 renderCard: (p) => {
                     let hotelBtn = '';
                     let dispInfo = '';
-                    // Se for Hotel, mostra botão de chat e info de datas
+                    let actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick="App.client.confirmOrder('${p.id}', '${p.store_id}', ${p.preco})">Contratar Serviço</button>`;
+
+                    // Lógica para Hotel
                     if(p.categoria === 'Hoteis/Pousadas') {
                          hotelBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>`;
                          if(p.disponibilidade) {
                              const [start, end] = p.disponibilidade.split('|');
-                             dispInfo = `<div class="text-xs" style="background:#f0f9ff; padding:5px; border-radius:4px; margin-top:5px; color:#0369a1;">📅 Disp: ${start.split('-').reverse().join('/')} até ${end.split('-').reverse().join('/')}</div>`;
+                             // Formata data simples
+                             const fmt = d => d.split('-').reverse().join('/');
+                             dispInfo = `<div class="text-xs" style="background:#f0f9ff; padding:5px; border-radius:4px; margin-top:5px; color:#0369a1;">📅 Disp: ${fmt(start)} até ${fmt(end)}</div>`;
                          }
+                    }
+
+                    // Lógica para Gesso (Orçamento)
+                    if(p.categoria === 'Serviços de Gesso' && p.gesso_info) {
+                        actionBtn = `<button class="btn btn-warning btn-full" style="margin-top:10px" onclick='App.client.openBudget(${JSON.stringify(p)})'>Fazer Orçamento</button>`;
+                        dispInfo = `<div class="text-xs" style="color:#854d0e; margin-top:5px;">Orçamento por m²</div>`;
                     }
 
                     return `
@@ -1761,11 +1994,11 @@
                             <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div>
                             <h4>${p.nome}</h4><h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
                             ${dispInfo}
-                            <button class="btn btn-secondary btn-full" style="margin-top:10px" onclick="App.client.confirmOrder('${p.id}', '${p.store_id}', ${p.preco})">Contratar Serviço</button>
+                            ${actionBtn}
                             ${hotelBtn}
                         </div>`;
                 },
-                fetchPublic: async () => { App.catalog.load(); } // Alias para load inicial
+                fetchPublic: async () => { App.catalog.load(); }
             },
 
             utils: {
