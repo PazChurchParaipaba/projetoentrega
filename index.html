@@ -1405,6 +1405,7 @@
                             if (tokenError) throw new Error(tokenError.message);
                         }
 
+                        // 1. Cria o perfil do usuário
                         const { data: newUser, error } = await _sb.from('profiles').insert({
                             nome_completo: name, email: email, password: pass, role: role,
                             cpf: document.getElementById('reg-cpf')?.value || null,
@@ -1415,13 +1416,24 @@
 
                         if(error) throw error;
                         
+                        // 2. Se for lojista, cria a loja IMEDIATAMENTE com o nome correto
                         if(role === 'loja_admin') {
-                            await _sb.from('stores').insert({ 
+                            const storeName = document.getElementById('reg-store-name').value.trim();
+                            const whatsApp = document.getElementById('reg-whatsapp').value.trim();
+                            const cnpj = document.getElementById('reg-cnpj').value.trim();
+
+                            const { error: storeError } = await _sb.from('stores').insert({ 
                                 admin_id: newUser.id, 
-                                nome_loja: document.getElementById('reg-store-name').value, 
-                                cnpj: document.getElementById('reg-cnpj').value,
-                                whatsapp: document.getElementById('reg-whatsapp').value
+                                nome_loja: storeName || "Minha Loja Nova", // Fallback seguro, mas tenta usar o nome
+                                cnpj: cnpj,
+                                whatsapp: whatsApp
                             });
+
+                            if(storeError) {
+                                console.error("Erro ao criar loja:", storeError);
+                                alert("Usuário criado, mas erro ao criar loja: " + storeError.message);
+                                return; // Para aqui se der erro na loja
+                            }
                         }
 
                         App.utils.toast('Cadastro realizado com sucesso!', 'success');
@@ -1459,10 +1471,18 @@
                 init: async () => {
                     if (!App.state.user) return;
                     let { data: store } = await _sb.from('stores').select('*').eq('admin_id', App.state.user.id).maybeSingle();
+                    
+                    // CORREÇÃO: Não cria loja padrão "Minha Loja" se ela não existir. 
+                    // Assume-se que o cadastro criou corretamente. Se falhou, avisa.
                     if (!store) {
-                        const { data: newStore } = await _sb.from('stores').insert({ admin_id: App.state.user.id, nome_loja: 'Minha Loja' }).select().single();
+                        // Tenta criar apenas se realmente não existir, mas usa um nome genérico provisório
+                        // Idealmente isso não deve acontecer se o cadastro funcionou.
+                        console.warn("Loja não encontrada para este usuário. Verifique o cadastro.");
+                        // Opcional: Criar fallback ou pedir para completar cadastro
+                        const { data: newStore } = await _sb.from('stores').insert({ admin_id: App.state.user.id, nome_loja: 'Loja (Complete o Cadastro)' }).select().single();
                         store = newStore;
                     }
+                    
                     App.state.storeId = store.id;
 
                     // Logica de Chaves e Parceiro
@@ -1566,10 +1586,12 @@
                     
                     // Popula dados de Gesso se existirem
                     if(p.gesso_info) {
-                        const g = JSON.parse(p.gesso_info);
-                        document.getElementById('gesso-price-m2').value = g.price_m2 || "";
-                        document.getElementById('gesso-labor-val').value = g.labor_val || "";
-                        document.getElementById('gesso-labor-type').value = g.labor_type || "fixed";
+                        try {
+                            const g = typeof p.gesso_info === 'string' ? JSON.parse(p.gesso_info) : p.gesso_info;
+                            document.getElementById('gesso-price-m2').value = g.price_m2 || "";
+                            document.getElementById('gesso-labor-val').value = g.labor_val || "";
+                            document.getElementById('gesso-labor-type').value = g.labor_type || "fixed";
+                        } catch(e) { console.error("Erro ao parsear gesso_info", e); }
                     }
                     
                     App.store.checkCategory(p.categoria);
@@ -1588,6 +1610,12 @@
                     }
                 },
                 submitProduct: async () => {
+                    // VERIFICAÇÃO CRÍTICA DO STORE_ID
+                    if(!App.state.storeId) {
+                        alert("Erro crítico: ID da Loja não encontrado. Tente sair e entrar novamente.");
+                        return;
+                    }
+
                     const id = document.getElementById('edit-prod-id').value;
                     const nome = document.getElementById('new-prod-name').value;
                     const preco = document.getElementById('new-prod-price').value;
@@ -1632,18 +1660,24 @@
                     };
                     if(imageUrl) payload.imagem_url = imageUrl;
 
+                    let res;
                     if(id) {
-                        await _sb.from('products').update(payload).eq('id', id);
-                        App.utils.toast('Produto atualizado!', 'success');
+                        res = await _sb.from('products').update(payload).eq('id', id);
                     } else {
-                        if(!imageUrl) payload.imagem_url = 'https://placehold.co/400x300?text=NexLog';
-                        await _sb.from('products').insert(payload);
-                        App.utils.toast('Produto cadastrado!', 'success');
+                        // Se não tiver imagem, usa placeholder
+                        if(!imageUrl && !id) payload.imagem_url = 'https://placehold.co/400x300?text=NexLog';
+                        res = await _sb.from('products').insert(payload);
                     }
-                    
-                    App.store.closeProductModal(); 
-                    App.catalog.fetchPublic(); 
-                    App.store.init();
+
+                    if(res.error) { 
+                        console.error("Erro Supabase:", res.error); 
+                        alert("Erro ao salvar produto no banco de dados: " + res.error.message + "\nDetalhes: " + res.error.details); 
+                    } else {
+                        alert("Produto salvo com sucesso!");
+                        App.store.closeProductModal(); 
+                        App.catalog.fetchPublic(); 
+                        App.store.init();
+                    }
                 },
                 saveCredentials: async () => {
                     const acc = document.getElementById('store-access-token').value.trim();
@@ -1758,7 +1792,7 @@
                 openBudget: (p) => {
                     if(!App.state.user) { App.router.go('auth'); return; }
                     
-                    const g = JSON.parse(p.gesso_info);
+                    const g = typeof p.gesso_info === 'string' ? JSON.parse(p.gesso_info) : p.gesso_info;
                     
                     // Salva dados no hidden para cálculo
                     document.getElementById('budget-prod-id').value = p.id;
