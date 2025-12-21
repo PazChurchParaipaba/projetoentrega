@@ -11,8 +11,8 @@
     
     <link rel="manifest" id="dynamic-manifest">
     
-    <link rel="icon" type="image/png" href="https://placehold.co/192x192/2563eb/white?text=NX"> 
-    <link rel="apple-touch-icon" href="https://placehold.co/192x192/2563eb/white?text=NX">
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/PazChurchParaipaba/projetoentrega/refs/heads/main/logo.png"> 
+    <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/PazChurchParaipaba/projetoentrega/refs/heads/main/logo.png">
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
@@ -745,6 +745,29 @@
             flex-direction: column;
             gap: 10px;
         }
+        
+        /* ITEM DE HISTÓRICO DE CHAT */
+        .chat-history-item {
+            background: white;
+            padding: 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .chat-history-item:hover {
+            background: var(--background);
+        }
+        .chat-user-info div:first-child {
+            font-weight: bold;
+            color: var(--text-main);
+        }
+        .chat-user-info div:last-child {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
 
         /* ==========================================================================
            13. UTILS E EXTRAS
@@ -837,7 +860,7 @@
 
     <header>
         <div class="brand">
-            <img src="https://placehold.co/192x192/2563eb/white?text=NX" alt="NexLog Logo" class="logo-img" onerror="this.style.display='none'; document.getElementById('txt-logo').style.display='block'">
+            <img src="https://raw.githubusercontent.com/PazChurchParaipaba/projetoentrega/refs/heads/main/logo.png" alt="NexLog Logo" class="logo-img" onerror="this.style.display='none'; document.getElementById('txt-logo').style.display='block'">
             <span id="txt-logo" class="brand-text" style="display:none;">NexLog</span>
         </div>
         <div id="header-actions" class="text-sm font-bold text-primary desktop-only"></div>
@@ -1032,6 +1055,13 @@
                 </div>
 
                 <div>
+                    <div class="card" style="margin-bottom:1.5rem; border-color:var(--info);">
+                        <h4 style="color:var(--info-dark)"><i class="ri-chat-history-line"></i> Minhas Conversas</h4>
+                        <div id="store-chat-list" style="max-height: 250px; overflow-y: auto;">
+                            <p class="text-sm text-muted">Carregando conversas...</p>
+                        </div>
+                    </div>
+
                     <div class="card">
                         <h4 style="margin-bottom:1rem; color:var(--primary)">Pedidos em Aberto</h4>
                         <div id="store-orders-list">
@@ -1052,6 +1082,14 @@
                 <h2>Meus Pedidos</h2>
                 <p>Acompanhe suas compras e serviços contratados</p>
             </div>
+            
+            <div class="card" style="margin-bottom:2rem; border-color:var(--info);">
+                <h4 style="color:var(--info-dark)"><i class="ri-chat-history-line"></i> Minhas Conversas</h4>
+                <div id="client-chat-list" class="grid grid-2">
+                    <p class="text-sm text-muted">Carregando conversas...</p>
+                </div>
+            </div>
+
             <div id="client-orders-list" class="grid grid-2"></div>
             <div style="margin-top:3rem; text-align:center;">
                 <button class="btn btn-secondary" onclick="App.router.go('home')">
@@ -1556,6 +1594,9 @@
                     App.store.loadMyProducts();
                     // INICIA O LISTENER DE MENSAGENS PARA O LOJISTA
                     App.store.listenMessages();
+                    
+                    // CARREGA HISTORICO DE CONVERSAS (LOJA)
+                    App.chat.loadHistory('loja');
                 },
                 // NOVA FUNÇÃO: Escuta mensagens para o lojista
                 listenMessages: () => {
@@ -1825,6 +1866,9 @@
                     const { data: orders } = await _sb.from('orders').select('*, products(nome)').eq('cliente_id', App.state.user.id).order('created_at', {ascending:false});
                     document.getElementById('client-orders-list').innerHTML = orders?.map(o => `
                         <div class="card" style="margin-bottom:1rem"><div style="display:flex; justify-content:space-between; margin-bottom:0.5rem"><strong>${o.products?.nome}</strong><span class="badge status-${o.status}">${o.status}</span></div><p class="text-sm">${o.endereco_destino}</p>${['em_rota', 'aceito', 'concluido'].includes(o.status) ? `<button class="btn btn-success btn-sm btn-full" onclick="App.map.open('${o.id}', false)">Rastrear Entrega</button>` : ''}</div>`).join('') || '<p>Nenhum pedido.</p>';
+                    
+                    // CARREGA HISTORICO DE CONVERSAS (CLIENTE)
+                    App.chat.loadHistory('client');
                 },
                 confirmOrder: async (pid, sid, price, category) => { // CATEGORIA ADICIONADA AQUI
                     if(!App.state.user) { App.router.go('auth'); return; }
@@ -1993,6 +2037,74 @@
                             }
                         })
                         .subscribe();
+                },
+                // NOVA FUNÇÃO: CARREGA O HISTÓRICO DE CONVERSAS NO PAINEL
+                loadHistory: async (viewType) => {
+                    const myId = App.state.user.id;
+                    let html = '';
+                    
+                    // Busca as últimas 50 mensagens envolvendo o usuário para determinar contatos recentes
+                    // (O ideal seria uma query DISTINCT no Supabase, mas faremos processamento simples aqui)
+                    let query = _sb.from('messages').select('*, profiles:sender_id(nome_completo), stores:store_id(nome_loja)').order('created_at', {ascending:false}).limit(50);
+                    
+                    if(viewType === 'loja') query = query.eq('store_id', App.state.storeId);
+                    else query = query.eq('client_id', myId);
+                    
+                    const { data } = await query;
+                    
+                    if(!data || data.length === 0) {
+                        html = '<p class="text-sm text-muted">Nenhuma conversa iniciada.</p>';
+                    } else {
+                        const uniqueContacts = new Set();
+                        
+                        data.forEach(msg => {
+                            let contactId, contactName, type;
+                            
+                            if(viewType === 'loja') {
+                                // Sou Loja, quero ver Clientes únicos
+                                contactId = msg.client_id;
+                                // Se quem enviou foi o cliente, pego o nome dele. Se fui eu, pego o nome do sender original se nao for eu?
+                                // Simplificação: vamos buscar o nome do cliente depois se necessário, ou usar o sender
+                                // Aqui usaremos sender_id SE sender != eu, ou deduzir
+                                contactName = (msg.sender_id !== myId) ? msg.profiles?.nome_completo : "Cliente";
+                            } else {
+                                // Sou Cliente, quero ver Lojas únicas
+                                contactId = msg.store_id;
+                                contactName = msg.stores?.nome_loja;
+                            }
+                            
+                            // Adiciona apenas se ainda não listou este contato
+                            if(!uniqueContacts.has(contactId)) {
+                                uniqueContacts.add(contactId);
+                                
+                                // Renderiza item da lista
+                                if(viewType === 'loja') {
+                                    html += `
+                                        <div class="chat-history-item" onclick="App.chat.open('${App.state.storeId}', '${contactId}')">
+                                            <div class="chat-user-info">
+                                                <div><i class="ri-user-line"></i> Cliente</div>
+                                                <div class="text-xs">Clique para abrir</div>
+                                            </div>
+                                            <i class="ri-arrow-right-s-line"></i>
+                                        </div>
+                                    `;
+                                } else {
+                                    html += `
+                                        <div class="chat-history-item" onclick="App.chat.open('${contactId}')">
+                                            <div class="chat-user-info">
+                                                <div><i class="ri-store-line"></i> ${contactName || 'Loja'}</div>
+                                                <div class="text-xs">Clique para abrir</div>
+                                            </div>
+                                            <i class="ri-arrow-right-s-line"></i>
+                                        </div>
+                                    `;
+                                }
+                            }
+                        });
+                    }
+                    
+                    if(viewType === 'loja') document.getElementById('store-chat-list').innerHTML = html;
+                    else document.getElementById('client-chat-list').innerHTML = html;
                 },
                 send: async () => {
                     const txt = document.getElementById('chat-input').value;
