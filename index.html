@@ -797,6 +797,27 @@
                     <i class="ri-add-line"></i> Novo Serviço/Produto
                 </button>
             </div>
+
+            <div class="card" style="margin-bottom: 2rem; border-left: 5px solid var(--success);">
+                <h4><i class="ri-bank-card-line"></i> Configuração de Recebimento</h4>
+                <p class="text-sm">
+                    Para receber os pagamentos automaticamente em sua conta, cole abaixo suas chaves de <strong>Produção</strong> do Mercado Pago.
+                    Você encontra isso em <a href="https://www.mercadopago.com.br/developers/panel" target="_blank">Suas Integrações</a>.
+                </p>
+                
+                <div class="input-wrapper">
+                    <label>Public Key (Chave Pública)</label>
+                    <input type="text" id="store-public-key" class="input-field" placeholder="Ex: APP_USR-aaaaaaaa-bbbb-cccc...">
+                </div>
+
+                <div class="input-wrapper">
+                    <label>Access Token (Token de Acesso)</label>
+                    <input type="password" id="store-access-token" class="input-field" placeholder="Ex: APP_USR-12345678-xxxx...">
+                </div>
+                
+                <button class="btn btn-success btn-sm" onclick="App.store.saveCredentials()">Salvar Credenciais</button>
+            </div>
+
             <div class="grid grid-2">
                 <div class="card">
                     <h4 style="margin-bottom:1rem; color:var(--primary)">Pedidos Pendentes</h4>
@@ -921,16 +942,19 @@
             sbUrl: 'https://groezaseypdbpgymgpvo.supabase.co',
             sbKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdyb2V6YXNleXBkYnBneW1ncHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNjkxNjYsImV4cCI6MjA4MTY0NTE2Nn0.5U5QeoGmZn_i9Y8POoUCkatBUAdSW-cjHRyfxpm_pyM',
             
-            // Chave Pública de PRODUÇÃO do Mercado Pago
-            mpPublicKey: 'APP_USR-834374cc-7e6d-494f-9842-49a7e3e57357',
+            // Chave Pública de PRODUÇÃO do Administrador (Fallback/Padrão)
+            // Se a loja não tiver chave, usaremos esta
+            adminPublicKey: 'APP_USR-834374cc-7e6d-494f-9842-49a7e3e57357',
             
             // Token Mapbox (Substitua pelo seu se tiver, senão usa OpenStreetMap)
             mapboxToken: 'pk.eyJ1IjoiZXhhbXBsZXVzZXIiLCJhIjoiY2p5Y3Z6eG9jMDFlazNnbzQ4a3R4bWk4ZyJ9.ExampleTokenPlaceholder' 
         };
         
-        // Inicializa Clientes
         const _sb = supabase.createClient(CONFIG.sbUrl, CONFIG.sbKey);
-        const mp = new MercadoPago(CONFIG.mpPublicKey);
+        
+        // Inicializamos a variável global do Mercado Pago, mas não a instância ainda
+        // A instância será criada dinamicamente na hora do checkout (para usar a chave da loja)
+        let mpInstance = null;
 
         // --- APP CONTROLLER ---
         const App = {
@@ -1133,12 +1157,17 @@
             store: {
                 init: async () => {
                     if (!App.state.user) return;
-                    let { data: store } = await _sb.from('stores').select('id').eq('admin_id', App.state.user.id).maybeSingle();
+                    let { data: store } = await _sb.from('stores').select('*').eq('admin_id', App.state.user.id).maybeSingle();
                     if (!store) {
                         const { data: newStore } = await _sb.from('stores').insert({ admin_id: App.state.user.id, nome_loja: 'Minha Loja' }).select().single();
                         store = newStore;
                     }
                     App.state.storeId = store.id;
+                    
+                    // PREENCHE OS CAMPOS DE CREDENCIAIS SE JÁ EXISTIREM NO BANCO
+                    if(store.mp_access_token) document.getElementById('store-access-token').value = store.mp_access_token;
+                    if(store.mp_public_key) document.getElementById('store-public-key').value = store.mp_public_key;
+
                     const { data: orders } = await _sb.from('orders').select('*, products(nome), profiles!orders_cliente_id_fkey(nome_completo)').eq('store_id', store.id).order('created_at', { ascending: false });
                     const pending = orders?.filter(o => o.status === 'pendente') || [];
                     const history = orders?.filter(o => o.status !== 'pendente') || [];
@@ -1153,6 +1182,22 @@
                     document.getElementById('store-history-list').innerHTML = history.map(o => `<div class="card" style="margin-bottom:0.5rem; padding:10px;"><span class="text-sm font-bold">${o.products?.nome}</span> <span class="badge status-${o.status}">${o.status}</span></div>`).join('') || '<p class="text-xs">Vazio.</p>';
                 },
                 openAddModal: () => document.getElementById('product-modal').style.display = 'flex',
+                
+                // SALVA AS CREDENCIAIS DA LOJA NO SUPABASE
+                saveCredentials: async () => {
+                    const access = document.getElementById('store-access-token').value.trim();
+                    const pub = document.getElementById('store-public-key').value.trim();
+                    
+                    if(!access || !pub) return App.utils.toast("Preencha as duas chaves!", "error");
+                    
+                    const { error } = await _sb.from('stores')
+                        .update({ mp_access_token: access, mp_public_key: pub })
+                        .eq('id', App.state.storeId);
+                        
+                    if(error) App.utils.toast("Erro ao salvar", "error");
+                    else App.utils.toast("Credenciais salvas! Agora você recebe direto.", "success");
+                },
+
                 submitProduct: async () => {
                     const nome = document.getElementById('new-prod-name').value;
                     const preco = document.getElementById('new-prod-price').value;
@@ -1182,6 +1227,8 @@
                     document.getElementById('payment-brick_container').innerHTML = '';
                     const oldPix = document.getElementById('pix-display-area'); if(oldPix) oldPix.remove();
                     document.getElementById('payment-brick_container').style.display = 'block';
+                    
+                    // Renderiza o Brick (Agora ele usa a chave da loja, se existir)
                     App.payment.renderBrick(total);
                 },
                 close: () => {
@@ -1190,17 +1237,15 @@
                     if (App.state.pixInterval) clearInterval(App.state.pixInterval); 
                 },
                 renderBrick: async (amount) => {
-                    // Prevenção de erro: Força valor mínimo visual para o boleto aparecer, se necessário.
-                    if (amount < 1) amount = 1;
+                    if (amount < 5) amount = 5; // Mínimo de R$ 5,00 visualmente
 
-                    const builder = mp.bricks();
+                    // Usa a instância MP criada dinamicamente (com a chave da loja ou admin)
+                    const builder = mpInstance.bricks();
+                    
                     App.state.brickController = await builder.create("payment", "payment-brick_container", {
                         initialization: { 
                             amount: amount, 
-                            payer: { 
-                                email: App.state.profile.email || 'guest@nexlog.com'
-                                // entityType removido para aceitar CPF e CNPJ dinamicamente
-                            } 
+                            payer: { email: App.state.profile.email || 'guest@nexlog.com' } 
                         },
                         customization: { 
                             paymentMethods: { 
@@ -1216,8 +1261,11 @@
                         },
                         callbacks: {
                             onReady: () => console.log("Brick Ready"),
-                            onError: (e) => console.error(e), // Log de erros do SDK (SVG)
+                            onError: (e) => console.error(e),
                             onSubmit: async ({ formData }) => {
+                                // ENVIA O STORE_ID JUNTO PARA O BACKEND
+                                formData.store_id = App.state.pendingPayment.orderPayload.store_id;
+
                                 return new Promise((resolve, reject) => {
                                     fetch("/api/pix", { 
                                         method: "POST", 
@@ -1227,7 +1275,6 @@
                                     .then(async r => {
                                         const data = await r.json();
                                         if(!r.ok) { 
-                                            // Exibe erro vindo do backend
                                             App.utils.toast(data.message || "Erro ao processar", "error"); 
                                             console.error("Backend Error:", data);
                                             reject(); 
@@ -1240,7 +1287,6 @@
                                             resolve(); 
                                         }
                                         else if(data.status === 'pending' && data.payment_method_id === 'pix') { 
-                                            // SUCESSO DO PIX: MOSTRA TELA E INICIA POLLING
                                             App.payment.showPixScreen(data); 
                                             resolve(); 
                                         }
@@ -1260,7 +1306,6 @@
                     });
                 },
                 
-                // TELA DE PIX COM POLLING
                 showPixScreen: (data) => {
                     document.getElementById('payment-brick_container').style.display = 'none';
                     const qr = data.point_of_interaction.transaction_data;
@@ -1269,7 +1314,7 @@
                     div.style.textAlign='center';
                     
                     div.innerHTML = `
-                        <div style="background:#f8fafc; padding:20px; border-radius:12px; margin-bottom:15px; border:2px dashed #cbd5e1;">
+                        <div style="background:#f1f5f9; padding:20px; border-radius:12px; margin-bottom:15px; border:2px dashed #cbd5e1;">
                             <img src="data:image/png;base64,${qr.qr_code_base64}" style="width:220px; height:220px; border-radius:8px;">
                         </div>
                         <p class="text-xs" style="margin-bottom:5px">Código Copia e Cola:</p>
@@ -1283,28 +1328,28 @@
                     `;
                     document.querySelector('#payment-modal .modal-body').appendChild(div);
                     
-                    // INICIA VERIFICAÇÃO AUTOMÁTICA (POLLING)
-                    App.payment.startPolling(data.id);
+                    // Inicia Polling passando o StoreID para verificar na conta certa
+                    App.payment.startPolling(data.id, App.state.pendingPayment.orderPayload.store_id);
                 },
                 
-                // FUNÇÃO DE POLLING
-                startPolling: (paymentId) => {
+                startPolling: (paymentId, storeId) => {
                     if (App.state.pixInterval) clearInterval(App.state.pixInterval);
                     
                     App.state.pixInterval = setInterval(async () => {
                         try {
-                            const res = await fetch(`/api/pix?id=${paymentId}`);
+                            // Passa o store_id para o GET também
+                            const res = await fetch(`/api/pix?id=${paymentId}&store_id=${storeId}`);
                             const data = await res.json();
                             
                             if (data.status === 'approved') {
-                                clearInterval(App.state.pixInterval); // Para o loop
+                                clearInterval(App.state.pixInterval);
                                 App.utils.toast("Pagamento confirmado com sucesso!", "success");
-                                App.payment.finalizeSuccess(); // Finaliza
+                                App.payment.finalizeSuccess();
                             }
                         } catch (e) {
                             console.error("Polling error", e);
                         }
-                    }, 3000); // Verifica a cada 3 segundos
+                    }, 3000); 
                 },
                 
                 finalizeSuccess: async () => {
@@ -1340,11 +1385,28 @@
                         </div>
                     `).join('') || '<p>Nenhum pedido encontrado.</p>';
                 },
+                
+                // LÓGICA DE SPLIT NO CHECKOUT
                 confirmOrder: async (pid, sid, price) => {
                     if(!App.state.user) { App.router.go('auth'); return; }
+                    
+                    // 1. Busca a PUBLIC KEY da loja no Supabase
+                    const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', sid).single();
+                    
+                    // 2. Define qual chave usar (Da Loja ou a Admin como fallback)
+                    const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
+                    
+                    console.log("Inicializando Mercado Pago com chave:", publicKeyToUse);
+
+                    // 3. Inicializa (ou reinicializa) o Mercado Pago com a chave correta
+                    mpInstance = new MercadoPago(publicKeyToUse);
+                    
                     const address = prompt("Endereço de Entrega Completo:"); 
                     if(!address) return;
+                    
                     const total = price * 1.15; // 15% taxa
+                    
+                    // 4. Abre o pagamento
                     App.payment.open(total, { product_id: pid, store_id: sid, basePrice: price, address, requer_montagem: false, taxa: price*0.15 });
                 }
             },
