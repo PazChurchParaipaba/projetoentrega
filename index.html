@@ -4,14 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#2563eb">
-    <meta name="description" content="NexLog - Soluções logísticas inteligentes para entregas, mudanças e serviços gerais.">
+    <meta name="description" content="NexLog - A maior plataforma de logística e serviços integrados do Brasil.">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>NexLog | Logística Inteligente</title>
+    <title>NexLog | Sistema Integrado Profissional</title>
     
     <link rel="manifest" id="dynamic-manifest">
     <link rel="apple-touch-icon" href="https://placehold.co/192x192/2563eb/white?text=NX">
-    
+    <link rel="icon" type="image/png" href="https://placehold.co/32x32/2563eb/white?text=NX">
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -26,28 +27,28 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        /* 1. VARIÁVEIS GLOBAIS E RESET 
-           Definição de cores, espaçamentos e sombras padrão.
+        /* 1. VARIÁVEIS DE TEMA (ROOT)
+           Centralização de cores, espaçamentos e efeitos visuais.
         */
         :root {
-            /* Cores Primárias */
+            /* Palette de Cores Primárias */
             --primary: #2563eb;
             --primary-dark: #1e40af;
             --primary-light: #eff6ff;
-            --accent: #3b82f6;
+            --primary-fade: rgba(37, 99, 235, 0.1);
 
             /* Cores de Interface */
-            --secondary: #64748b;
             --surface: #ffffff;
             --background: #f8fafc;
             --border: #e2e8f0;
+            --divider: #cbd5e1;
             
             /* Tipografia */
             --text-main: #0f172a;
             --text-muted: #64748b;
             --text-light: #94a3b8;
 
-            /* Cores de Estado */
+            /* Cores Semânticas (Estados) */
             --success: #10b981;
             --success-bg: #dcfce7;
             --success-dark: #047857;
@@ -64,26 +65,29 @@
             --info-bg: #e0f2fe;
             --info-dark: #0369a1;
 
-            /* Layout e Formas */
+            /* Medidas e Layout */
             --radius-sm: 8px;
             --radius-md: 12px;
             --radius-lg: 16px;
             --radius-full: 9999px;
             
-            /* Sombras */
+            /* Sombras (Depth) */
             --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
             --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
             --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+            --shadow-float: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
             
-            /* Animações */
+            /* Animações e Transições */
             --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             
-            /* Tamanhos Fixos */
+            /* Dimensões Fixas */
             --nav-height: 70px;
-            --mobile-nav-height: 60px;
+            --mobile-nav-height: 65px;
         }
 
-        /* Reset Básico */
+        /* 2. RESET E BASE
+           Normalização de elementos HTML.
+        */
         * {
             margin: 0;
             padding: 0;
@@ -93,25 +97,27 @@
         
         html {
             scroll-behavior: smooth;
+            font-size: 16px;
         }
 
         body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: var(--background);
             color: var(--text-main);
             min-height: 100vh;
-            padding-bottom: 90px; /* Espaço para a barra de navegação móvel */
+            padding-bottom: calc(var(--mobile-nav-height) + 20px); /* Espaço extra para menu mobile */
             overflow-x: hidden;
             line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* 2. TIPOGRAFIA 
+        /* 3. TIPOGRAFIA 
         */
         h1, h2, h3, h4, h5, h6 {
-            font-weight: 700;
-            letter-spacing: -0.025em;
+            font-weight: 800;
+            letter-spacing: -0.03em;
             line-height: 1.2;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
             color: var(--text-main);
         }
 
@@ -132,26 +138,28 @@
         .text-center { text-align: center; }
         .font-bold { font-weight: 700; }
         .text-primary { color: var(--primary); }
+        .text-white { color: white; }
 
-        /* 3. COMPONENTES: BOTÕES 
+        /* 4. COMPONENTES DE INTERFACE: BOTÕES 
         */
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
+            gap: 0.6rem;
             padding: 0.875rem 1.5rem;
             border-radius: var(--radius-sm);
             font-weight: 600;
             font-size: 0.95rem;
             cursor: pointer;
             transition: var(--transition);
-            border: none;
+            border: 1px solid transparent;
             outline: none;
             position: relative;
             overflow: hidden;
             text-decoration: none;
             user-select: none;
+            width: 100%; /* Padrão Mobile First */
         }
 
         .btn:active {
@@ -159,11 +167,13 @@
         }
 
         .btn:disabled {
-            opacity: 0.7;
+            opacity: 0.6;
             cursor: not-allowed;
             pointer-events: none;
+            filter: grayscale(1);
         }
 
+        /* Variantes de Botões */
         .btn-primary {
             background: var(--primary);
             color: white;
@@ -177,7 +187,7 @@
 
         .btn-secondary {
             background: white;
-            border: 1px solid var(--border);
+            border-color: var(--border);
             color: var(--text-main);
         }
 
@@ -204,18 +214,19 @@
         .btn-success:hover {
             background: var(--success-dark);
         }
-
-        .btn-full {
-            width: 100%;
-            display: flex;
+        
+        .btn-info {
+            background: var(--info);
+            color: white;
         }
 
         .btn-sm {
             padding: 0.5rem 1rem;
             font-size: 0.85rem;
+            width: auto;
         }
 
-        /* 4. COMPONENTES: FORMULÁRIOS 
+        /* 5. COMPONENTES: FORMULÁRIOS E INPUTS 
         */
         .input-wrapper {
             margin-bottom: 1.25rem;
@@ -241,6 +252,7 @@
             transition: var(--transition);
             font-family: inherit;
             color: var(--text-main);
+            appearance: none; /* Remove estilo nativo de select */
         }
 
         .input-field::placeholder {
@@ -252,8 +264,15 @@
             box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
             outline: none;
         }
+        
+        select.input-field {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            background-size: 1em;
+        }
 
-        /* 5. COMPONENTES: CARDS E CONTAINERS 
+        /* 6. COMPONENTES: CARDS E CONTAINERS 
         */
         .container {
             max-width: 1200px;
@@ -293,7 +312,7 @@
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         }
 
-        /* 6. COMPONENTES: BADGES (STATUS) 
+        /* 7. COMPONENTES: BADGES (STATUS) 
         */
         .badge {
             display: inline-flex;
@@ -306,26 +325,10 @@
             letter-spacing: 0.05em;
         }
 
-        .status-pendente {
-            background: var(--warning-bg);
-            color: var(--warning-dark);
-        }
-
-        .status-aceito {
-            background: var(--info-bg);
-            color: var(--info-dark);
-        }
-
-        .status-em_rota {
-            background: #dbeafe;
-            color: #1e40af;
-            animation: pulse 2s infinite;
-        }
-
-        .status-concluido {
-            background: var(--success-bg);
-            color: var(--success-dark);
-        }
+        .status-pendente { background: var(--warning-bg); color: var(--warning-dark); }
+        .status-aceito { background: var(--info-bg); color: var(--info-dark); }
+        .status-em_rota { background: #dbeafe; color: #1e40af; animation: pulse 2s infinite; }
+        .status-concluido { background: var(--success-bg); color: var(--success-dark); }
 
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
@@ -333,7 +336,7 @@
             100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
         }
 
-        /* 7. ESTRUTURA: HEADER E NAVEGAÇÃO 
+        /* 8. HEADER, NAVEGAÇÃO E LOGO
         */
         header {
             background: rgba(255, 255, 255, 0.95);
@@ -351,17 +354,22 @@
         }
 
         .brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .logo-img {
+            height: 40px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .brand-text {
             font-size: 1.5rem;
             font-weight: 800;
             color: var(--primary);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
             letter-spacing: -0.05em;
-        }
-
-        .brand i {
-            font-size: 1.75rem;
         }
 
         /* Navegação Inferior (Mobile) */
@@ -391,6 +399,8 @@
             padding: 0.5rem;
             cursor: pointer;
             transition: var(--transition);
+            background: none;
+            border: none;
         }
 
         .nav-item i {
@@ -410,7 +420,7 @@
             .desktop-only { display: none !important; }
         }
 
-        /* 8. SISTEMA DE VIEWS (SPA) 
+        /* 9. SISTEMA DE VIEWS (SPA - SINGLE PAGE APPLICATION) 
         */
         .view-section {
             display: none;
@@ -426,7 +436,41 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* 9. TELAS ESPECÍFICAS: AUTH & ROLES 
+        /* 10. CATEGORIAS (MENU DESLIZANTE)
+        */
+        .category-scroll {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding: 10px 0;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+            white-space: nowrap;
+        }
+        .category-scroll::-webkit-scrollbar { display: none; }
+
+        .cat-pill {
+            padding: 8px 16px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 99px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .cat-pill:hover, .cat-pill.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* 11. AUTH & ROLES 
         */
         .auth-card {
             max-width: 420px;
@@ -502,7 +546,7 @@
             font-weight: 600;
         }
         
-        /* 10. SISTEMA DE MODAIS 
+        /* 12. SISTEMA DE MODAIS 
         */
         .modal-overlay {
             position: fixed;
@@ -528,7 +572,7 @@
             display: flex;
             flex-direction: column;
             max-height: 90vh;
-            box-shadow: var(--shadow-lg);
+            box-shadow: var(--shadow-float);
             animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
@@ -568,8 +612,9 @@
             z-index: 1;
         }
 
-        /* 11. NOTIFICAÇÕES (TOASTS) 
+        /* 13. UTILITÁRIOS E FEEDBACK 
         */
+        /* Toasts */
         .toast-container {
             position: fixed;
             bottom: 90px;
@@ -596,32 +641,17 @@
             font-weight: 500;
         }
 
-        .toast i {
-            font-size: 1.25rem;
-        }
-
-        .toast.error {
-            border-left-color: var(--danger);
-            color: var(--danger-dark);
-        }
-
-        .toast.success {
-            border-left-color: var(--success);
-            color: var(--success-dark);
-        }
-
-        .toast.info {
-            border-left-color: var(--info);
-            color: var(--info-dark);
-        }
+        .toast i { font-size: 1.25rem; }
+        .toast.error { border-left-color: var(--danger); color: var(--danger-dark); }
+        .toast.success { border-left-color: var(--success); color: var(--success-dark); }
+        .toast.info { border-left-color: var(--info); color: var(--info-dark); }
 
         @keyframes slideInRight {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
 
-        /* 12. PWA BANNER 
-        */
+        /* PWA Banner */
         .pwa-banner {
             position: fixed;
             top: 80px;
@@ -640,21 +670,23 @@
             box-shadow: var(--shadow-lg);
         }
         
-        /* 13. UTILITÁRIOS 
-        */
-        .spin {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        /* Spinners e Loaders */
+        .spin { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        /* Secure Box (Para chaves salvas) */
+        .secure-box {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            color: #166534;
+            animation: fadeIn 0.5s;
         }
         
-        /* Ajuste para inputs do Brick Mercado Pago */
-        #payment-brick_container {
-            min-height: 300px;
-        }
+        /* Brick Container do Mercado Pago */
+        #payment-brick_container { min-height: 300px; }
     </style>
 </head>
 <body>
@@ -673,40 +705,33 @@
 
     <header>
         <div class="brand">
-            <i class="ri-truck-fill"></i> NexLog
+            <img src="logo.png" alt="NexLog Logo" class="logo-img" onerror="this.style.display='none'; document.getElementById('txt-logo').style.display='block'">
+            <span id="txt-logo" class="brand-text" style="display:none;">NexLog</span>
         </div>
-        <div id="header-actions" class="desktop-only"></div>
+        <div id="header-user" class="text-sm font-bold text-primary desktop-only"></div>
     </header>
 
     <main>
         
         <section id="view-home" class="view-section active">
-            <div style="background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%); padding: 5rem 1.5rem; text-align: center; margin-bottom: 2rem;">
-                <div class="container">
-                    <h1 style="font-size: 2.75rem; margin-bottom: 1.25rem; color: var(--text-main);">
-                        Logística Inteligente <br><span style="color:var(--primary)">Para Todos os Serviços</span>
-                    </h1>
-                    <p style="max-width: 650px; margin: 0 auto 2.5rem auto; font-size: 1.15rem;">
-                        Conectando grandes lojas, motoristas parceiros e prestadores de serviço em todo o Brasil.
-                        A solução completa para qualquer tipo de entrega, montagem ou serviço.
-                    </p>
-                    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                        <button class="btn btn-primary" onclick="App.router.go('auth')">Acessar Plataforma</button>
-                        <button class="btn btn-secondary" onclick="document.getElementById('catalog-anchor').scrollIntoView({behavior:'smooth'})">Ver Serviços Disponíveis</button>
-                    </div>
+            <div style="background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 5px 0; position:sticky; top:70px; z-index:90; border-bottom:1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                <div class="container" style="padding-top: 10px; padding-bottom: 0;">
+                    <div class="category-scroll" id="category-list">
+                        <button class="cat-pill active" onclick="App.catalog.filter('Todos', this)">Todos</button>
+                        </div>
                 </div>
             </div>
-            
-            <div class="container" id="catalog-anchor">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
-                    <h3>Destaques das Lojas Parceiras</h3>
-                    <span class="badge status-aceito">Ofertas Atualizadas</span>
+
+            <div class="container">
+                <div style="margin-bottom: 2rem; text-align: center;">
+                    <h1 style="font-size: 2rem;">Encontre Profissionais e Serviços</h1>
+                    <p>Logística inteligente para o que você precisar.</p>
                 </div>
                 
                 <div id="public-catalog" class="grid grid-3">
                     <div class="card" style="text-align:center; padding:4rem;">
                         <i class="ri-loader-4-line spin" style="font-size:2.5rem; color:var(--primary)"></i>
-                        <p style="margin-top:1rem;">Carregando catálogo...</p>
+                        <p style="margin-top:1rem;">Carregando ofertas...</p>
                     </div>
                 </div>
             </div>
@@ -790,45 +815,66 @@
         <section id="view-loja" class="view-section container">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
                 <div>
-                    <h2>Gestão da Loja</h2>
-                    <p>Controle de produtos, serviços e despachos</p>
+                    <h2>Painel da Loja</h2>
+                    <p>Gestão completa do seu negócio</p>
                 </div>
-                <button class="btn btn-primary" onclick="App.store.openAddModal()">
-                    <i class="ri-add-line"></i> Novo Serviço/Produto
+                <button class="btn btn-primary" onclick="App.store.openProductModal()">
+                    <i class="ri-add-line"></i> Novo Serviço
                 </button>
             </div>
 
-            <div class="card" style="margin-bottom: 2rem; border-left: 5px solid var(--success);">
-                <h4><i class="ri-bank-card-line"></i> Configuração de Recebimento</h4>
-                <p class="text-sm">
-                    Para receber os pagamentos automaticamente em sua conta, cole abaixo suas chaves de <strong>Produção</strong> do Mercado Pago.
-                    Você encontra isso em <a href="https://www.mercadopago.com.br/developers/panel" target="_blank">Suas Integrações</a>.
-                </p>
-                
-                <div class="input-wrapper">
-                    <label>Public Key (Chave Pública)</label>
-                    <input type="text" id="store-public-key" class="input-field" placeholder="Ex: APP_USR-aaaaaaaa-bbbb-cccc...">
-                </div>
-
-                <div class="input-wrapper">
-                    <label>Access Token (Token de Acesso)</label>
-                    <input type="password" id="store-access-token" class="input-field" placeholder="Ex: APP_USR-12345678-xxxx...">
-                </div>
-                
-                <button class="btn btn-success btn-sm" onclick="App.store.saveCredentials()">Salvar Credenciais</button>
-            </div>
-
             <div class="grid grid-2">
-                <div class="card">
-                    <h4 style="margin-bottom:1rem; color:var(--primary)">Pedidos Pendentes</h4>
-                    <div id="store-orders-list">
-                        <p class="text-sm">Carregando pedidos...</p>
+                <div>
+                    <div class="card" style="border-left: 5px solid var(--success);">
+                        <h4><i class="ri-bank-card-line"></i> Recebimento Automático</h4>
+                        
+                        <div id="store-keys-area">
+                            <p class="text-sm">
+                                Para o dinheiro cair direto na sua conta, cole suas chaves de <strong>Produção</strong> do Mercado Pago.
+                                <a href="https://www.mercadopago.com.br/developers/panel" target="_blank" style="color:var(--primary)">Pegar minhas chaves</a>.
+                            </p>
+                            <div class="input-wrapper">
+                                <label>Public Key</label>
+                                <input type="text" id="store-public-key" class="input-field" placeholder="APP_USR-...">
+                            </div>
+                            <div class="input-wrapper">
+                                <label>Access Token</label>
+                                <input type="password" id="store-access-token" class="input-field" placeholder="APP_USR-...">
+                            </div>
+                            <button class="btn btn-success btn-sm" onclick="App.store.saveCredentials()">Salvar e Ativar</button>
+                        </div>
+                        
+                        <div id="store-keys-locked" style="display:none;" class="secure-box">
+                            <i class="ri-shield-check-line" style="font-size:2.5rem; margin-bottom:10px;"></i><br>
+                            <strong>Pagamentos Ativos</strong><br>
+                            <span class="text-sm">Suas chaves estão configuradas e ocultas por segurança. O split de pagamento está funcionando.</span><br>
+                            <button class="btn btn-secondary btn-sm" style="margin-top:15px; width:auto;" onclick="App.store.resetKeys()">Redefinir Chaves</button>
+                        </div>
+                    </div>
+
+                    <div class="card" style="border-left: 5px solid var(--info); margin-top: 1.5rem;">
+                        <h4><i class="ri-team-line"></i> Parceiro Exclusivo</h4>
+                        <p class="text-sm">Vincule um motorista ou montador pelo email. Seus serviços aparecerão <strong>apenas</strong> para ele.</p>
+                        <div style="display:flex; gap:10px; margin-bottom:10px;">
+                            <input id="partner-email-input" class="input-field" placeholder="Email do parceiro cadastrado">
+                            <button class="btn btn-info btn-sm" style="width:auto;" onclick="App.store.linkPartner()">Vincular</button>
+                        </div>
+                        <div id="active-partner-display" style="font-weight:bold; color:var(--info-dark); font-size:0.9rem; margin-top:5px;"></div>
                     </div>
                 </div>
-                <div class="card">
-                    <h4 style="margin-bottom:1rem; color:var(--text-muted)">Histórico de Vendas</h4>
-                    <div id="store-history-list">
-                        <p class="text-sm">Carregando histórico...</p>
+
+                <div>
+                    <div class="card">
+                        <h4 style="margin-bottom:1rem; color:var(--primary)">Pedidos em Aberto</h4>
+                        <div id="store-orders-list">
+                            <p class="text-sm">Carregando...</p>
+                        </div>
+                    </div>
+                    <div class="card" style="margin-top:1.5rem;">
+                        <h4 style="color:var(--text-muted)">Histórico Recente</h4>
+                        <div id="store-history-list">
+                            <p class="text-sm">Vazio.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -842,7 +888,7 @@
             <div id="client-orders-list" class="grid grid-2"></div>
             <div style="margin-top:3rem; text-align:center;">
                 <button class="btn btn-secondary" onclick="App.router.go('home')">
-                    <i class="ri-search-line"></i> Ir para o Catálogo de Serviços
+                    <i class="ri-search-line"></i> Voltar ao Catálogo
                 </button>
             </div>
         </section>
@@ -856,9 +902,20 @@
                     </div>
                     <div class="badge status-aceito"><i class="ri-wifi-line"></i> Online</div>
                 </div>
+                
+                <hr style="border-color:rgba(255,255,255,0.1); margin:15px 0;">
+                
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <span class="text-xs" style="opacity:0.7">Sua Chave Pix (Para Receber Comissão):</span><br>
+                        <strong id="provider-pix-display" style="font-family:monospace; font-size:1.1rem;">Não cadastrada</strong>
+                    </div>
+                    <button class="btn btn-sm btn-secondary" style="width:auto; padding:5px 10px;" onclick="App.provider.updatePix()">Alterar</button>
+                </div>
             </div>
+
             <h3>Oportunidades Disponíveis</h3>
-            <p>Serviços próximos aguardando aceite.</p>
+            <p class="text-sm text-muted">Serviços próximos ou exclusivos para você.</p>
             <div id="provider-jobs-list" class="grid grid-2"></div>
         </section>
     </main>
@@ -870,7 +927,7 @@
             <div class="modal-header">
                 <div>
                     <h3>Navegação GPS</h3>
-                    <p id="map-dest-address" class="text-xs text-muted" style="margin:0; font-family: monospace;"></p>
+                    <p id="map-dest-address" class="text-xs text-muted" style="margin:0;"></p>
                 </div>
                 <button class="btn btn-secondary btn-sm" onclick="App.map.close()">Fechar</button>
             </div>
@@ -898,6 +955,11 @@
             </div>
             <div class="modal-body">
                 <div class="input-wrapper">
+                    <label>Categoria/Setor</label>
+                    <select id="new-prod-cat" class="input-field">
+                        </select>
+                </div>
+                <div class="input-wrapper">
                     <label>Nome do Item</label>
                     <input type="text" id="new-prod-name" class="input-field" placeholder="Ex: Transporte de Sofá">
                 </div>
@@ -912,7 +974,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-primary btn-full" onclick="App.store.submitProduct()">Salvar Serviço</button>
+                <button class="btn btn-primary btn-full" onclick="App.store.submitProduct()">Publicar Serviço</button>
             </div>
         </div>
     </div>
@@ -920,7 +982,7 @@
     <div id="payment-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Finalizar Compra</h3>
+                <h3>Pagamento Seguro</h3>
                 <button class="btn btn-secondary btn-sm" onclick="App.payment.close()">Cancelar</button>
             </div>
             <div class="modal-body">
@@ -943,39 +1005,38 @@
             sbKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdyb2V6YXNleXBkYnBneW1ncHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNjkxNjYsImV4cCI6MjA4MTY0NTE2Nn0.5U5QeoGmZn_i9Y8POoUCkatBUAdSW-cjHRyfxpm_pyM',
             
             // Chave Pública de PRODUÇÃO do Administrador (Fallback/Padrão)
-            // Se a loja não tiver chave, usaremos esta
             adminPublicKey: 'APP_USR-834374cc-7e6d-494f-9842-49a7e3e57357',
             
-            // Token Mapbox (Substitua pelo seu se tiver, senão usa OpenStreetMap)
-            mapboxToken: 'pk.eyJ1IjoiZXhhbXBsZXVzZXIiLCJhIjoiY2p5Y3Z6eG9jMDFlazNnbzQ4a3R4bWk4ZyJ9.ExampleTokenPlaceholder' 
+            // Token Mapbox
+            mapboxToken: 'pk.eyJ1IjoiZXhhbXBsZXVzZXIiLCJhIjoiY2p5Y3Z6eG9jMDFlazNnbzQ4a3R4bWk4ZyJ9.ExampleTokenPlaceholder',
+            
+            // LISTA DE CATEGORIAS SOLICITADA
+            categories: [
+                'Hoteis/Pousadas', 
+                'Serviços de Gesso', 
+                'Manutenção Eletrodomésticos', 
+                'Serviços de Manutenção', 
+                'Serviços de Pedreiros', 
+                'Serviços de Pintores', 
+                'Materiais de Construção', 
+                'Eletrodomésticos',
+                'Fretes e Mudanças',
+                'Jardinagem',
+                'Outros'
+            ]
         };
         
         const _sb = supabase.createClient(CONFIG.sbUrl, CONFIG.sbKey);
-        
-        // Inicializamos a variável global do Mercado Pago, mas não a instância ainda
-        // A instância será criada dinamicamente na hora do checkout (para usar a chave da loja)
-        let mpInstance = null;
+        let mpInstance = null; // Instância dinâmica do Mercado Pago
 
         // --- APP CONTROLLER ---
         const App = {
-            state: {
-                user: null,
-                profile: null,
-                tempRole: null,
-                deferredPrompt: null,
-                mapInstance: null,
-                marker: null,
-                watchId: null,
-                activeOrder: null,
-                storeId: null,
-                pendingPayment: null,
-                brickController: null,
-                pixInterval: null // Controle do Intervalo de Verificação (Polling)
-            },
+            state: { user: null, profile: null, tempRole: null, deferredPrompt: null, mapInstance: null, marker: null, watchId: null, activeOrder: null, storeId: null, pendingPayment: null, brickController: null, pixInterval: null },
             
-            // Inicialização
             init: async () => {
                 App.utils.setupPWA();
+                App.utils.setupCategories(); // Popula os selects e menus de categoria
+
                 const savedUser = localStorage.getItem('logimoveis_session');
                 if(savedUser) {
                     const profile = JSON.parse(savedUser);
@@ -989,7 +1050,6 @@
                 }
             },
 
-            // Lógica PWA
             pwa: {
                 install: () => {
                     if (App.state.deferredPrompt) {
@@ -1002,53 +1062,33 @@
                 }
             },
 
-            // Roteamento SPA
             router: {
                 go: (viewId) => {
                     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
                     document.getElementById(`view-${viewId}`).classList.add('active');
                     window.scrollTo(0,0);
                     App.router.renderNav();
-                    
                     if(viewId === 'home') App.catalog.fetchPublic();
                 },
                 renderNav: () => {
                     const header = document.getElementById('header-actions');
                     const mobile = document.getElementById('mobile-nav');
-                    
                     if(App.state.user && App.state.profile) {
-                        // Logado
-                        header.innerHTML = `
-                            <div style="display:flex; align-items:center; gap:1rem;">
-                                <div class="text-xs text-muted desktop-only">${App.state.profile.nome_completo || 'Usuário'}</div>
-                                <button class="btn btn-secondary btn-sm" onclick="App.router.goDashboard()">Painel</button>
-                                <button class="btn btn-danger btn-sm" onclick="App.auth.logout()">Sair</button>
-                            </div>
-                        `;
-                        mobile.innerHTML = `
-                            <div class="nav-item" onclick="App.router.go('home')"><i class="ri-store-line"></i><span>Loja</span></div>
-                            <div class="nav-item active" onclick="App.router.goDashboard()"><i class="ri-dashboard-line"></i><span>Painel</span></div>
-                            <div class="nav-item" onclick="App.auth.logout()"><i class="ri-logout-box-line"></i><span>Sair</span></div>
-                        `;
+                        header.innerHTML = `<div style="display:flex; align-items:center; gap:1rem;"><div class="text-xs text-muted desktop-only">${App.state.profile.nome_completo.split(' ')[0]}</div><button class="btn btn-secondary btn-sm" onclick="App.router.goDashboard()">Painel</button><button class="btn btn-danger btn-sm" onclick="App.auth.logout()">Sair</button></div>`;
+                        mobile.innerHTML = `<div class="nav-item" onclick="App.router.go('home')"><i class="ri-store-line"></i><span>Loja</span></div><div class="nav-item active" onclick="App.router.goDashboard()"><i class="ri-dashboard-line"></i><span>Painel</span></div><div class="nav-item" onclick="App.auth.logout()"><i class="ri-logout-box-line"></i><span>Sair</span></div>`;
                     } else {
-                        // Não Logado
                         header.innerHTML = `<button class="btn btn-primary btn-sm" onclick="App.router.go('auth')">Entrar / Cadastrar</button>`;
-                        mobile.innerHTML = `
-                            <div class="nav-item active" onclick="App.router.go('home')"><i class="ri-store-line"></i><span>Início</span></div>
-                            <div class="nav-item" onclick="App.router.go('auth')"><i class="ri-user-line"></i><span>Conta</span></div>
-                        `;
+                        mobile.innerHTML = `<div class="nav-item active" onclick="App.router.go('home')"><i class="ri-store-line"></i><span>Início</span></div><div class="nav-item" onclick="App.router.go('auth')"><i class="ri-user-line"></i><span>Conta</span></div>`;
                     }
                 },
                 goDashboard: () => {
                     const role = App.state.profile?.role;
                     if(role === 'loja_admin') { App.store.init(); App.router.go('loja'); }
                     else if(role === 'cliente') { App.client.init(); App.router.go('cliente'); }
-                    else if(role === 'motorista' || role === 'montador') { App.provider.init(); App.router.go('provider'); }
-                    else App.router.go('home');
+                    else { App.provider.init(); App.router.go('provider'); }
                 }
             },
 
-            // Autenticação
             auth: {
                 switchView: (view) => {
                     ['login', 'roles', 'register'].forEach(v => document.getElementById(`auth-state-${v}`).style.display = 'none');
@@ -1063,23 +1103,11 @@
                     let html = '';
                     
                     if(role === 'loja_admin') {
-                        html = `
-                            <div class="input-wrapper"><label>Nome da Loja</label><input id="reg-store-name" class="input-field" placeholder="Ex: NexLog Center"></div>
-                            <div class="input-wrapper"><label>CNPJ</label><input id="reg-cnpj" class="input-field" placeholder="00.000.000/0000-00"></div>
-                            <div class="input-wrapper" style="border: 2px dashed var(--primary); padding: 10px; border-radius: 8px; background: var(--info-bg);">
-                                <label style="color:var(--primary)">🔑 Token de Autorização</label>
-                                <input id="reg-token" class="input-field" placeholder="Código fornecido pelo Admin">
-                                <p class="text-xs text-muted">Cadastro restrito. Insira sua matrícula/token.</p>
-                            </div>
-                        `;
-                    } else if (role === 'motorista') {
-                        html = `
-                            <div class="input-wrapper"><label>CPF</label><input id="reg-cpf" class="input-field" placeholder="000.000.000-00"></div>
-                            <div class="camera-container" id="cam-box"><video id="cam-video" autoplay playsinline></video><div class="camera-overlay">Selfie com capacete (validação facial)</div></div>
-                            <div id="verified-msg" style="display:none; color:var(--success); font-weight:bold; margin-bottom:1rem;">✅ Identidade Confirmada</div>
-                            <button class="btn btn-secondary btn-full" id="btn-cam" onclick="App.auth.runCamera()">Validar Identidade (Obrigatório)</button>
-                        `;
-                    } else if (role === 'cliente') {
+                        html = `<div class="input-wrapper"><label>Nome da Loja</label><input id="reg-store-name" class="input-field" placeholder="Ex: NexLog Center"></div><div class="input-wrapper"><label>CNPJ</label><input id="reg-cnpj" class="input-field" placeholder="00.000.000/0000-00"></div><div class="input-wrapper" style="border: 2px dashed var(--primary); padding: 10px; border-radius: 8px; background: var(--info-bg);"><label style="color:var(--primary)">🔑 Token de Autorização</label><input id="reg-token" class="input-field" placeholder="Código fornecido pelo Admin"><p class="text-xs text-muted">Cadastro restrito. Insira sua matrícula/token.</p></div>`;
+                    } else if (role === 'motorista' || role === 'montador') {
+                        // ADICIONADO CAMPO DE CHAVE PIX NO CADASTRO
+                        html = `<div class="input-wrapper"><label>CPF</label><input id="reg-cpf" class="input-field" placeholder="000.000.000-00"></div><div class="input-wrapper"><label>Sua Chave Pix (Para Receber)</label><input id="reg-pix" class="input-field" placeholder="Email, CPF ou Aleatória"></div><div class="camera-container" id="cam-box"><video id="cam-video" autoplay playsinline></video><div class="camera-overlay">Selfie com capacete (validação facial)</div></div><div id="verified-msg" style="display:none; color:var(--success); font-weight:bold; margin-bottom:1rem;">✅ Identidade Confirmada</div><button class="btn btn-secondary btn-full" id="btn-cam" onclick="App.auth.runCamera()">Validar Identidade (Obrigatório)</button>`;
+                    } else {
                          html = `<div class="input-wrapper"><label>CPF</label><input id="reg-cpf" class="input-field" placeholder="000.000.000-00"></div>`;
                     }
                     container.innerHTML = html;
@@ -1113,7 +1141,6 @@
                     if(!email || !pass || !name) return App.utils.toast('Preencha os campos corretamente', 'error');
                     
                     try {
-                        // Validação de Token (Loja)
                         if (role === 'loja_admin') {
                             const token = document.getElementById('reg-token').value.trim();
                             if (!token) throw new Error("Token de autorização é obrigatório");
@@ -1125,6 +1152,7 @@
                             nome_completo: name, email: email, password: pass, role: role,
                             cpf: document.getElementById('reg-cpf')?.value || null,
                             cnpj: document.getElementById('reg-cnpj')?.value || null,
+                            chave_pix: document.getElementById('reg-pix')?.value || null, // SALVA PIX DO MOTORISTA
                             is_verified: document.getElementById('verified-msg')?.style.display === 'block'
                         }).select().single();
 
@@ -1163,46 +1191,86 @@
                         store = newStore;
                     }
                     App.state.storeId = store.id;
-                    
-                    // PREENCHE OS CAMPOS DE CREDENCIAIS SE JÁ EXISTIREM NO BANCO
-                    if(store.mp_access_token) document.getElementById('store-access-token').value = store.mp_access_token;
-                    if(store.mp_public_key) document.getElementById('store-public-key').value = store.mp_public_key;
 
-                    const { data: orders } = await _sb.from('orders').select('*, products(nome), profiles!orders_cliente_id_fkey(nome_completo)').eq('store_id', store.id).order('created_at', { ascending: false });
-                    const pending = orders?.filter(o => o.status === 'pendente') || [];
-                    const history = orders?.filter(o => o.status !== 'pendente') || [];
-                    document.getElementById('store-orders-list').innerHTML = pending.map(o => `
-                        <div class="card" style="margin-bottom:1rem; border-left: 4px solid var(--warning);">
-                            <div class="badge status-pendente">Aguardando Coleta</div>
-                            <h4 style="margin-top:0.5rem">${o.products?.nome}</h4>
+                    // 1. LOGICA DE SEGURANÇA DAS CHAVES (ESCONDER SE EXISTIR)
+                    if(store.mp_access_token) {
+                        document.getElementById('store-keys-area').style.display = 'none';
+                        document.getElementById('store-keys-locked').style.display = 'block';
+                    } else {
+                        document.getElementById('store-keys-area').style.display = 'block';
+                        document.getElementById('store-keys-locked').style.display = 'none';
+                    }
+
+                    // 2. MOSTRAR PARCEIRO VINCULADO
+                    if(store.parceiro_exclusivo_id) {
+                        const {data: p} = await _sb.from('profiles').select('nome_completo, email').eq('id', store.parceiro_exclusivo_id).single();
+                        if(p) document.getElementById('active-partner-display').innerText = `Parceiro Vinculado: ${p.nome_completo} (${p.email})`;
+                    }
+
+                    // Carrega Pedidos (e mostra PIX do Prestador)
+                    const { data: orders } = await _sb.from('orders').select('*, products(nome), profiles!orders_cliente_id_fkey(nome_completo), prestador:profiles!orders_prestador_id_fkey(nome_completo, chave_pix)').eq('store_id', store.id).order('created_at', { ascending: false });
+                    
+                    document.getElementById('store-orders-list').innerHTML = orders?.map(o => {
+                        // 3. MOSTRAR DADOS DO PRESTADOR PARA PAGAMENTO DA COMISSÃO
+                        let providerHtml = '';
+                        if(o.prestador) {
+                            providerHtml = `
+                                <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:8px; margin-top:10px; font-size:0.85rem;">
+                                    <strong>Prestador:</strong> ${o.prestador.nome_completo}<br>
+                                    <strong>Chave Pix:</strong> <span style="font-family:monospace; background:#fff; padding:2px 5px; border-radius:4px;">${o.prestador.chave_pix || 'Não inf.'}</span><br>
+                                    <span style="color:var(--success-dark); font-weight:bold;">Pagar Comissão</span>
+                                </div>
+                            `;
+                        }
+
+                        return `
+                        <div class="card" style="margin-bottom:1rem; border-left: 4px solid ${o.status==='pendente'?'var(--warning)':'var(--success)'};">
+                            <div style="display:flex; justify-content:space-between"><strong>${o.products?.nome}</strong><span class="badge status-${o.status}">${o.status}</span></div>
                             <p class="text-sm">Cliente: ${o.profiles?.nome_completo}</p>
-                            <p class="text-xs text-muted">Destino: ${o.endereco_destino}</p>
-                            <button class="btn btn-primary btn-sm btn-full" onclick="App.store.dispatch('${o.id}')">Confirmar e Notificar</button>
-                        </div>`).join('') || '<p class="text-sm">Nenhum pedido pendente.</p>';
-                    document.getElementById('store-history-list').innerHTML = history.map(o => `<div class="card" style="margin-bottom:0.5rem; padding:10px;"><span class="text-sm font-bold">${o.products?.nome}</span> <span class="badge status-${o.status}">${o.status}</span></div>`).join('') || '<p class="text-xs">Vazio.</p>';
+                            ${o.status === 'pendente' ? `<button class="btn btn-primary btn-sm btn-full" onclick="App.store.dispatch('${o.id}')">Liberar para Entrega</button>` : ''}
+                            ${providerHtml}
+                        </div>`;
+                    }).join('') || '<p class="text-sm">Nenhum pedido.</p>';
                 },
                 openAddModal: () => document.getElementById('product-modal').style.display = 'flex',
                 
-                // SALVA AS CREDENCIAIS DA LOJA NO SUPABASE
+                // SALVAR CHAVES NO BANCO
                 saveCredentials: async () => {
-                    const access = document.getElementById('store-access-token').value.trim();
+                    const acc = document.getElementById('store-access-token').value.trim();
                     const pub = document.getElementById('store-public-key').value.trim();
+                    if(!acc || !pub) return App.utils.toast("Preencha ambas as chaves!", "error");
                     
-                    if(!access || !pub) return App.utils.toast("Preencha as duas chaves!", "error");
+                    await _sb.from('stores').update({ mp_access_token: acc, mp_public_key: pub }).eq('id', App.state.storeId);
+                    App.utils.toast("Chaves salvas e protegidas!", "success");
+                    App.store.init();
+                },
+                resetKeys: async () => {
+                    if(confirm("Isso pausará seus recebimentos. Continuar?")) {
+                        await _sb.from('stores').update({ mp_access_token: null, mp_public_key: null }).eq('id', App.state.storeId);
+                        App.store.init();
+                    }
+                },
+
+                // VINCULAR MOTORISTA
+                linkPartner: async () => {
+                    const email = document.getElementById('partner-email-input').value.trim();
+                    if(!email) return App.utils.toast("Digite o email do motorista", "error");
                     
-                    const { error } = await _sb.from('stores')
-                        .update({ mp_access_token: access, mp_public_key: pub })
-                        .eq('id', App.state.storeId);
-                        
-                    if(error) App.utils.toast("Erro ao salvar", "error");
-                    else App.utils.toast("Credenciais salvas! Agora você recebe direto.", "success");
+                    const { data: user } = await _sb.from('profiles').select('id').eq('email', email).single();
+                    if(!user) return App.utils.toast("Motorista não encontrado no sistema.", "error");
+                    
+                    await _sb.from('stores').update({ parceiro_exclusivo_id: user.id }).eq('id', App.state.storeId);
+                    App.utils.toast("Parceiro vinculado com sucesso!", "success");
+                    App.store.init();
                 },
 
                 submitProduct: async () => {
                     const nome = document.getElementById('new-prod-name').value;
                     const preco = document.getElementById('new-prod-price').value;
+                    const cat = document.getElementById('new-prod-cat').value; // CATEGORIA
                     const file = document.getElementById('new-prod-file').files[0];
                     if (!nome || !preco) return App.utils.toast("Preencha nome e preço", "error");
+                    
                     let imageUrl = 'https://placehold.co/400x300?text=NexLog';
                     if (file) {
                         App.utils.toast("Enviando imagem...", "info");
@@ -1210,8 +1278,8 @@
                         const { error: upErr } = await _sb.storage.from('produtos').upload(fileName, file);
                         if (!upErr) imageUrl = _sb.storage.from('produtos').getPublicUrl(fileName).data.publicUrl;
                     }
-                    const { error } = await _sb.from('products').insert({ store_id: App.state.storeId, nome, preco: parseFloat(preco), imagem_url: imageUrl });
-                    if(!error) { App.utils.toast('Produto cadastrado!', 'success'); document.getElementById('product-modal').style.display = 'none'; App.catalog.fetchPublic(); App.store.init(); }
+                    await _sb.from('products').insert({ store_id: App.state.storeId, nome, preco: parseFloat(preco), categoria: cat, imagem_url: imageUrl });
+                    App.utils.toast('Produto cadastrado!', 'success'); document.getElementById('product-modal').style.display = 'none'; App.catalog.fetchPublic(); App.store.init();
                 },
                 dispatch: async (id) => {
                     await _sb.from('orders').update({ status: 'aguardando_prestador', data_agendada: new Date().toISOString() }).eq('id', id);
@@ -1227,8 +1295,6 @@
                     document.getElementById('payment-brick_container').innerHTML = '';
                     const oldPix = document.getElementById('pix-display-area'); if(oldPix) oldPix.remove();
                     document.getElementById('payment-brick_container').style.display = 'block';
-                    
-                    // Renderiza o Brick (Agora ele usa a chave da loja, se existir)
                     App.payment.renderBrick(total);
                 },
                 close: () => {
@@ -1237,136 +1303,53 @@
                     if (App.state.pixInterval) clearInterval(App.state.pixInterval); 
                 },
                 renderBrick: async (amount) => {
-                    if (amount < 5) amount = 5; // Mínimo de R$ 5,00 visualmente
-
-                    // Usa a instância MP criada dinamicamente (com a chave da loja ou admin)
+                    if (amount < 5) amount = 5; 
                     const builder = mpInstance.bricks();
-                    
                     App.state.brickController = await builder.create("payment", "payment-brick_container", {
-                        initialization: { 
-                            amount: amount, 
-                            payer: { email: App.state.profile.email || 'guest@nexlog.com' } 
-                        },
-                        customization: { 
-                            paymentMethods: { 
-                                ticket: "all", 
-                                bankTransfer: "all", 
-                                creditCard: "all", 
-                                debitCard: "all", 
-                                maxInstallments: 3 
-                            }, 
-                            visual: { 
-                                style: { theme: 'default' } 
-                            } 
-                        },
+                        initialization: { amount: amount, payer: { email: App.state.profile.email || 'guest@nexlog.com' } },
+                        customization: { paymentMethods: { ticket: "all", bankTransfer: "all", creditCard: "all", debitCard: "all", maxInstallments: 3 }, visual: { style: { theme: 'default' } } },
                         callbacks: {
                             onReady: () => console.log("Brick Ready"),
                             onError: (e) => console.error(e),
                             onSubmit: async ({ formData }) => {
-                                // ENVIA O STORE_ID JUNTO PARA O BACKEND
-                                formData.store_id = App.state.pendingPayment.orderPayload.store_id;
-
+                                formData.store_id = App.state.pendingPayment.orderPayload.store_id; // SPLIT
                                 return new Promise((resolve, reject) => {
-                                    fetch("/api/pix", { 
-                                        method: "POST", 
-                                        headers: { "Content-Type": "application/json" }, 
-                                        body: JSON.stringify(formData) 
-                                    })
+                                    fetch("/api/pix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData) })
                                     .then(async r => {
                                         const data = await r.json();
-                                        if(!r.ok) { 
-                                            App.utils.toast(data.message || "Erro ao processar", "error"); 
-                                            console.error("Backend Error:", data);
-                                            reject(); 
-                                            return; 
-                                        }
-                                        
-                                        if(data.status === 'approved') { 
-                                            App.utils.toast("Aprovado!", "success"); 
-                                            App.payment.finalizeSuccess(); 
-                                            resolve(); 
-                                        }
-                                        else if(data.status === 'pending' && data.payment_method_id === 'pix') { 
-                                            App.payment.showPixScreen(data); 
-                                            resolve(); 
-                                        }
-                                        else { 
-                                            App.utils.toast("Pagamento recusado.", "error"); 
-                                            reject(); 
-                                        }
-                                    })
-                                    .catch((err) => { 
-                                        console.error(err);
-                                        App.utils.toast("Erro de Conexão", "error"); 
-                                        reject(); 
-                                    });
+                                        if(!r.ok) { App.utils.toast(data.message || "Erro", "error"); reject(); return; }
+                                        if(data.status === 'approved') { App.utils.toast("Aprovado!", "success"); App.payment.finalizeSuccess(); resolve(); }
+                                        else if(data.status === 'pending' && data.payment_method_id === 'pix') { App.payment.showPixScreen(data); resolve(); }
+                                        else { App.utils.toast("Recusado.", "error"); reject(); }
+                                    }).catch(() => { App.utils.toast("Erro Conexão", "error"); reject(); });
                                 });
                             }
                         }
                     });
                 },
-                
                 showPixScreen: (data) => {
                     document.getElementById('payment-brick_container').style.display = 'none';
                     const qr = data.point_of_interaction.transaction_data;
-                    const div = document.createElement('div'); 
-                    div.id = 'pix-display-area'; 
-                    div.style.textAlign='center';
-                    
-                    div.innerHTML = `
-                        <div style="background:#f1f5f9; padding:20px; border-radius:12px; margin-bottom:15px; border:2px dashed #cbd5e1;">
-                            <img src="data:image/png;base64,${qr.qr_code_base64}" style="width:220px; height:220px; border-radius:8px;">
-                        </div>
-                        <p class="text-xs" style="margin-bottom:5px">Código Copia e Cola:</p>
-                        <input value="${qr.qr_code}" readonly style="width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; font-size:0.8rem; margin-bottom:15px; background:#f1f5f9;">
-                        
-                        <div style="margin-top:20px; color:var(--primary); background:var(--info-bg); padding:15px; border-radius:8px;">
-                            <i class="ri-loader-4-line spin" style="font-size:2rem"></i>
-                            <p style="margin:5px 0 0 0; font-weight:600; color:var(--info-dark)">Aguardando confirmação do banco...</p>
-                            <p class="text-xs" style="margin:0">Assim que pagar, esta tela fechará sozinha.</p>
-                        </div>
-                    `;
+                    const div = document.createElement('div'); div.id='pix-display-area'; div.style.textAlign='center';
+                    div.innerHTML = `<div style="background:#f1f5f9; padding:20px; border-radius:12px; margin-bottom:15px; border:2px dashed #cbd5e1;"><img src="data:image/png;base64,${qr.qr_code_base64}" style="width:200px"></div><p class="text-xs">Copie e Cole: <input value="${qr.qr_code}" readonly style="width:100%"></p><div style="margin-top:20px; color:var(--primary)"><i class="ri-loader-4-line spin" style="font-size:2rem"></i><p>Aguardando pagamento...</p></div>`;
                     document.querySelector('#payment-modal .modal-body').appendChild(div);
-                    
-                    // Inicia Polling passando o StoreID para verificar na conta certa
                     App.payment.startPolling(data.id, App.state.pendingPayment.orderPayload.store_id);
                 },
-                
                 startPolling: (paymentId, storeId) => {
-                    if (App.state.pixInterval) clearInterval(App.state.pixInterval);
-                    
+                    if(App.state.pixInterval) clearInterval(App.state.pixInterval);
                     App.state.pixInterval = setInterval(async () => {
                         try {
-                            // Passa o store_id para o GET também
                             const res = await fetch(`/api/pix?id=${paymentId}&store_id=${storeId}`);
                             const data = await res.json();
-                            
-                            if (data.status === 'approved') {
-                                clearInterval(App.state.pixInterval);
-                                App.utils.toast("Pagamento confirmado com sucesso!", "success");
-                                App.payment.finalizeSuccess();
-                            }
-                        } catch (e) {
-                            console.error("Polling error", e);
-                        }
+                            if(data.status === 'approved') { clearInterval(App.state.pixInterval); App.utils.toast("Confirmado!", "success"); App.payment.finalizeSuccess(); }
+                        } catch(e) {}
                     }, 3000); 
                 },
-                
                 finalizeSuccess: async () => {
                     App.payment.close();
                     const { orderPayload } = App.state.pendingPayment;
-                    await _sb.from('orders').insert({ 
-                        cliente_id: App.state.user.id, 
-                        product_id: orderPayload.product_id, 
-                        store_id: orderPayload.store_id, 
-                        endereco_destino: orderPayload.address, 
-                        requer_montagem: orderPayload.requer_montagem, 
-                        taxa_servico: orderPayload.taxa, 
-                        status: 'pendente' 
-                    });
-                    App.utils.toast('Pedido realizado!', 'success'); 
-                    App.router.go('cliente'); 
-                    App.client.init();
+                    await _sb.from('orders').insert({ cliente_id: App.state.user.id, product_id: orderPayload.product_id, store_id: orderPayload.store_id, endereco_destino: orderPayload.address, requer_montagem: orderPayload.requer_montagem, taxa_servico: orderPayload.taxa, status: 'pendente' });
+                    App.utils.toast('Pedido realizado!', 'success'); App.router.go('cliente'); App.client.init();
                 }
             },
 
@@ -1374,169 +1357,104 @@
                 init: async () => {
                     const { data: orders } = await _sb.from('orders').select('*, products(nome)').eq('cliente_id', App.state.user.id).order('created_at', {ascending:false});
                     document.getElementById('client-orders-list').innerHTML = orders?.map(o => `
-                        <div class="card" style="margin-bottom:1rem">
-                            <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem">
-                                <strong>${o.products?.nome}</strong>
-                                <span class="badge status-${o.status}">${o.status}</span>
-                            </div>
-                            <p class="text-sm">${o.endereco_destino}</p>
-                            ${['em_rota', 'aceito', 'concluido'].includes(o.status) ? 
-                                `<button class="btn btn-success btn-sm btn-full" onclick="App.map.open('${o.id}', false)">Rastrear Entrega</button>` : ''}
-                        </div>
-                    `).join('') || '<p>Nenhum pedido encontrado.</p>';
+                        <div class="card" style="margin-bottom:1rem"><div style="display:flex; justify-content:space-between; margin-bottom:0.5rem"><strong>${o.products?.nome}</strong><span class="badge status-${o.status}">${o.status}</span></div><p class="text-sm">${o.endereco_destino}</p>${['em_rota', 'aceito', 'concluido'].includes(o.status) ? `<button class="btn btn-success btn-sm btn-full" onclick="App.map.open('${o.id}', false)">Rastrear Entrega</button>` : ''}</div>`).join('') || '<p>Nenhum pedido.</p>';
                 },
-                
-                // LÓGICA DE SPLIT NO CHECKOUT
                 confirmOrder: async (pid, sid, price) => {
                     if(!App.state.user) { App.router.go('auth'); return; }
-                    
-                    // 1. Busca a PUBLIC KEY da loja no Supabase
                     const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', sid).single();
-                    
-                    // 2. Define qual chave usar (Da Loja ou a Admin como fallback)
                     const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
-                    
-                    console.log("Inicializando Mercado Pago com chave:", publicKeyToUse);
-
-                    // 3. Inicializa (ou reinicializa) o Mercado Pago com a chave correta
                     mpInstance = new MercadoPago(publicKeyToUse);
-                    
-                    const address = prompt("Endereço de Entrega Completo:"); 
-                    if(!address) return;
-                    
-                    const total = price * 1.15; // 15% taxa
-                    
-                    // 4. Abre o pagamento
-                    App.payment.open(total, { product_id: pid, store_id: sid, basePrice: price, address, requer_montagem: false, taxa: price*0.15 });
+                    const address = prompt("Endereço de Entrega Completo:"); if(!address) return;
+                    App.payment.open(price * 1.15, { product_id: pid, store_id: sid, basePrice: price, address, requer_montagem: false, taxa: price*0.15 });
                 }
             },
 
             provider: {
                 init: async () => {
-                    const role = App.state.profile.role; 
-                    document.getElementById('provider-role-label').innerText = role.toUpperCase();
-                    const { data: jobs } = await _sb.from('orders').select('*, products(nome), stores(nome_loja)').or(`status.eq.aguardando_prestador,prestador_id.eq.${App.state.user.id}`);
-                    const filtered = (jobs||[]).filter(j => j.prestador_id === App.state.user.id || (j.status === 'aguardando_prestador' && (role!=='montador' || j.requer_montagem)));
+                    const role = App.state.profile.role; document.getElementById('provider-role-label').innerText = role.toUpperCase();
+                    // MOSTRA PIX DO MOTORISTA
+                    document.getElementById('provider-pix-display').innerText = App.state.profile.chave_pix || "Toque em Alterar";
+
+                    // FILTRO DE FROTA EXCLUSIVA
+                    const { data: jobs } = await _sb.from('orders').select('*, products(nome), stores(nome_loja, parceiro_exclusivo_id)').or(`status.eq.aguardando_prestador,prestador_id.eq.${App.state.user.id}`);
+                    
+                    const filtered = (jobs||[]).filter(j => {
+                        // Se a loja tem parceiro exclusivo, só mostra se EU for ele
+                        if (j.stores?.parceiro_exclusivo_id) {
+                            return j.stores.parceiro_exclusivo_id === App.state.user.id;
+                        }
+                        // Filtro Básico de Role (Motorista não vê montagem se não quiser, etc - Simplificado aqui)
+                        return true; 
+                    });
+
                     document.getElementById('provider-jobs-list').innerHTML = filtered.map(j => {
                         const isMine = j.prestador_id === App.state.user.id;
-                        return `
-                            <div class="card" style="${isMine?'border-color:var(--success); border-left:5px solid var(--success)':''}">
-                                <h4>${j.products?.nome}</h4>
-                                <p>${j.stores?.nome_loja} -> ${j.endereco_destino}</p>
-                                <span class="badge ${isMine?'status-aceito':'status-pendente'}">${isMine?'ACEITO POR VOCÊ':'NOVA OFERTA'}</span>
-                                <hr style="margin:10px 0; border:0; border-top:1px solid #eee;">
-                                ${!isMine ? 
-                                    `<button class="btn btn-primary btn-full" onclick="App.provider.accept('${j.id}')">Aceitar Corrida</button>` 
-                                    : 
-                                    `<button class="btn btn-success btn-full" onclick="App.map.open('${j.id}', true, '${j.endereco_destino}')">
-                                        <i class="ri-navigation-line"></i> Iniciar Navegação
-                                     </button>`}
-                            </div>`;
-                    }).join('') || '<p>Nenhuma oportunidade no momento.</p>';
+                        return `<div class="card" style="${isMine?'border-color:var(--success); border-left:5px solid var(--success)':''}"><h4>${j.products?.nome}</h4><p>${j.stores?.nome_loja} -> ${j.endereco_destino}</p><span class="badge ${isMine?'status-aceito':'status-pendente'}">${isMine?'ACEITO':'NOVO'}</span><hr style="margin:10px 0; border:0; border-top:1px solid #eee;">${!isMine ? `<button class="btn btn-primary btn-full" onclick="App.provider.accept('${j.id}')">Aceitar Corrida</button>` : `<button class="btn btn-success btn-full" onclick="App.map.open('${j.id}', true, '${j.endereco_destino}')">Iniciar Navegação</button>`}</div>`;
+                    }).join('') || '<p>Sem ofertas.</p>';
                 },
-                accept: async (id) => { await _sb.from('orders').update({ prestador_id: App.state.user.id, status: 'aceito' }).eq('id', id); App.utils.toast('Serviço aceito com sucesso!', 'success'); App.provider.init(); }
+                updatePix: async () => {
+                    const key = prompt("Digite sua chave Pix para receber comissões:");
+                    if(key) {
+                        await _sb.from('profiles').update({ chave_pix: key }).eq('id', App.state.user.id);
+                        alert("Chave salva com sucesso!"); location.reload();
+                    }
+                },
+                accept: async (id) => { await _sb.from('orders').update({ prestador_id: App.state.user.id, status: 'aceito' }).eq('id', id); App.utils.toast('Aceito!', 'success'); App.provider.init(); }
             },
 
             map: {
                 open: (id, isDriver, addr='') => {
-                    App.state.activeOrder = id; 
-                    document.getElementById('map-modal').style.display='flex';
-                    const dest = document.getElementById('map-dest-address'); 
-                    if(isDriver) { dest.innerHTML=`<strong>Destino:</strong> ${addr}`; dest.style.display='block'; } else dest.style.display='none';
-                    
-                    document.getElementById('btn-start-gps').style.display = isDriver ? 'block' : 'none';
-                    document.getElementById('btn-end-gps').style.display = 'none';
-                    
+                    App.state.activeOrder = id; document.getElementById('map-modal').style.display='flex';
+                    const dest = document.getElementById('map-dest-address'); if(isDriver) { dest.innerHTML=`<strong>Destino:</strong> ${addr}`; dest.style.display='block'; } else dest.style.display='none';
+                    document.getElementById('btn-start-gps').style.display = isDriver ? 'block' : 'none'; document.getElementById('btn-end-gps').style.display = 'none';
                     setTimeout(() => {
-                        if(!App.state.mapInstance) { 
-                            App.state.mapInstance = L.map('map').setView([-23.5505, -46.6333], 13); 
-                            
-                            // Mapbox Integration
-                            let tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-                            if (CONFIG.mapboxToken.includes('pk.')) {
-                                tileUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${CONFIG.mapboxToken}`;
-                            }
-                            L.tileLayer(tileUrl, { attribution: 'Mapbox / OpenStreetMap' }).addTo(App.state.mapInstance); 
-                        }
-                        App.state.mapInstance.invalidateSize(); 
-                        if(!isDriver) App.map.watchOrder(id);
+                        if(!App.state.mapInstance) { App.state.mapInstance = L.map('map').setView([-23.5505, -46.6333], 13); let tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'; if (CONFIG.mapboxToken.includes('pk.')) tileUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${CONFIG.mapboxToken}`; L.tileLayer(tileUrl, { attribution: 'Mapbox / OpenStreetMap' }).addTo(App.state.mapInstance); }
+                        App.state.mapInstance.invalidateSize(); if(!isDriver) App.map.watchOrder(id);
                     }, 500);
                 },
-                watchOrder: (id) => { 
-                    _sb.channel(`track-${id}`).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, (payload) => { 
-                        const { lat_atual, lng_atual, status } = payload.new; 
-                        if(status==='em_rota') App.utils.toast('Motorista saiu para entrega!', 'info'); 
-                        if(status==='concluido') { App.utils.toast('Entrega Finalizada!', 'success'); document.getElementById('map-status-badge').innerText="Concluído"; } 
-                        if(lat_atual) App.map.updatePin(lat_atual, lng_atual); 
-                    }).subscribe(); 
-                },
-                startGPS: () => { 
-                    document.getElementById('btn-start-gps').style.display='none'; 
-                    document.getElementById('btn-end-gps').style.display='block'; 
-                    _sb.from('orders').update({ status: 'em_rota' }).eq('id', App.state.activeOrder); 
-                    
-                    App.state.watchId = navigator.geolocation.watchPosition(async (pos) => { 
-                        const { latitude, longitude } = pos.coords; 
-                        App.map.updatePin(latitude, longitude); 
-                        await _sb.from('orders').update({ lat_atual: latitude, lng_atual: longitude }).eq('id', App.state.activeOrder); 
-                    }, e=>console.log(e), {enableHighAccuracy:true}); 
-                },
-                finishDelivery: async () => { 
-                    if(confirm("Confirmar entrega no destino?")) { 
-                        navigator.geolocation.clearWatch(App.state.watchId); 
-                        await _sb.from('orders').update({ status: 'concluido' }).eq('id', App.state.activeOrder); 
-                        App.utils.toast("Serviço Finalizado!", "success"); 
-                        App.map.close(); 
-                        App.provider.init(); 
-                    } 
-                },
-                updatePin: (lat, lng) => { 
-                    if(App.state.marker) App.state.marker.setLatLng([lat,lng]); 
-                    else App.state.marker=L.marker([lat,lng]).addTo(App.state.mapInstance); 
-                    App.state.mapInstance.setView([lat,lng], 16); 
-                },
-                close: () => { 
-                    document.getElementById('map-modal').style.display='none'; 
-                    if(App.state.watchId) navigator.geolocation.clearWatch(App.state.watchId); 
-                    _sb.removeAllChannels(); 
-                }
+                watchOrder: (id) => { _sb.channel(`track-${id}`).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, (payload) => { const { lat_atual, lng_atual, status } = payload.new; if(status==='em_rota') App.utils.toast('Saiu para entrega!', 'info'); if(status==='concluido') { App.utils.toast('Entrega Finalizada!', 'success'); document.getElementById('map-status-badge').innerText="Concluído"; } if(lat_atual) App.map.updatePin(lat_atual, lng_atual); }).subscribe(); },
+                startGPS: () => { document.getElementById('btn-start-gps').style.display='none'; document.getElementById('btn-end-gps').style.display='block'; _sb.from('orders').update({ status: 'em_rota' }).eq('id', App.state.activeOrder); App.state.watchId = navigator.geolocation.watchPosition(async (pos) => { const { latitude, longitude } = pos.coords; App.map.updatePin(latitude, longitude); await _sb.from('orders').update({ lat_atual: latitude, lng_atual: longitude }).eq('id', App.state.activeOrder); }, e=>console.log(e), {enableHighAccuracy:true}); },
+                finishDelivery: async () => { if(confirm("Confirmar entrega?")) { navigator.geolocation.clearWatch(App.state.watchId); await _sb.from('orders').update({ status: 'concluido' }).eq('id', App.state.activeOrder); App.utils.toast("Finalizado!", "success"); App.map.close(); App.provider.init(); } },
+                updatePin: (lat, lng) => { if(App.state.marker) App.state.marker.setLatLng([lat,lng]); else App.state.marker=L.marker([lat,lng]).addTo(App.state.mapInstance); App.state.mapInstance.setView([lat,lng], 16); },
+                close: () => { document.getElementById('map-modal').style.display='none'; if(App.state.watchId) navigator.geolocation.clearWatch(App.state.watchId); _sb.removeAllChannels(); }
             },
 
-            catalog: { 
-                fetchPublic: async () => {
-                    const { data } = await _sb.from('products').select('*, stores(nome_loja)');
+            catalog: {
+                currentCat: 'Todos',
+                filter: (cat, btn) => {
+                    document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+                    if(btn) btn.classList.add('active');
+                    App.catalog.currentCat = cat;
+                    App.catalog.load();
+                },
+                load: async () => {
+                    let query = _sb.from('products').select('*, stores(nome_loja)');
+                    if(App.catalog.currentCat !== 'Todos') query = query.eq('categoria', App.catalog.currentCat);
+                    const { data } = await query;
                     document.getElementById('public-catalog').innerHTML = data?.map(p => `
                         <div class="card">
-                            <div style="height:180px; background:#f1f5f9; margin:-1.5rem -1.5rem 1rem -1.5rem; display:flex; align-items:center; justify-content:center; overflow:hidden;">
-                                <img src="${p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto'}" style="width:100%; height:100%; object-fit:cover;">
-                            </div>
+                            <div style="height:180px; background:#f1f5f9; margin:-1.5rem -1.5rem 1rem -1.5rem; display:flex; align-items:center; justify-content:center; overflow:hidden;"><img src="${p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto'}" style="width:100%; height:100%; object-fit:cover;"></div>
                             <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div>
-                            <h4>${p.nome}</h4>
-                            <h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
+                            <h4>${p.nome}</h4><h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
                             <button class="btn btn-secondary btn-full" style="margin-top:10px" onclick="App.client.confirmOrder('${p.id}', '${p.store_id}', ${p.preco})">Contratar Serviço</button>
-                        </div>`).join('') || '<p>Sem ofertas disponíveis no momento.</p>';
-                }
+                        </div>`).join('') || '<p style="grid-column:1/-1; text-align:center">Nenhuma oferta nesta categoria.</p>';
+                },
+                fetchPublic: async () => { App.catalog.load(); } // Alias para load inicial
             },
 
             utils: {
-                toast: (msg, type='success') => { 
-                    const c = document.getElementById('toast-container'); 
-                    const e = document.createElement('div'); 
-                    e.className=`toast ${type}`; 
-                    e.innerHTML=`<span>${msg}</span>`; 
-                    c.appendChild(e); 
-                    setTimeout(()=>e.remove(), 4000); 
-                },
-                setupPWA: () => { 
-                    const manifest = { "name": "NexLog", "short_name": "NexLog", "start_url": window.location.href, "display": "standalone", "background_color": "#ffffff", "theme_color": "#2563eb", "icons": [{ "src": "https://placehold.co/192x192/2563eb/white?text=NX", "sizes": "192x192", "type": "image/png" }] };
-                    const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'});
-                    document.querySelector('#dynamic-manifest').setAttribute('href', URL.createObjectURL(blob));
-                    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); App.state.deferredPrompt = e; document.getElementById('pwa-banner').style.display = 'flex'; });
+                toast: (msg, type='success') => { const c = document.getElementById('toast-container'); const e = document.createElement('div'); e.className=`toast ${type}`; e.innerHTML=`<span>${msg}</span>`; c.appendChild(e); setTimeout(()=>e.remove(), 4000); },
+                setupPWA: () => { const manifest = { "name": "NexLog", "short_name": "NexLog", "start_url": window.location.href, "display": "standalone", "background_color": "#ffffff", "theme_color": "#2563eb", "icons": [{ "src": "https://placehold.co/192x192/2563eb/white?text=NX", "sizes": "192x192", "type": "image/png" }] }; const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'}); document.querySelector('#dynamic-manifest').setAttribute('href', URL.createObjectURL(blob)); window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); App.state.deferredPrompt = e; document.getElementById('pwa-banner').style.display = 'flex'; }); },
+                setupCategories: () => {
+                    const catList = document.getElementById('category-list');
+                    const catSelect = document.getElementById('new-prod-cat');
+                    CONFIG.categories.forEach(c => {
+                        catList.innerHTML += `<button class="cat-pill" onclick="App.catalog.filter('${c}', this)">${c}</button>`;
+                        catSelect.innerHTML += `<option value="${c}">${c}</option>`;
+                    });
                 }
             }
         };
-        
-        // Inicialização do Sistema
         window.addEventListener('load', App.init);
     </script>
 </body>
