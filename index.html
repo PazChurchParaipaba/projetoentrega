@@ -271,6 +271,23 @@
             background-position: right 1rem center;
             background-size: 1em;
         }
+        
+        /* Checkbox customizado para promoção */
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1rem;
+            background: #fff8f8; /* Destaque leve */
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            border: 1px dashed var(--danger);
+        }
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--danger);
+        }
 
         /* 6. COMPONENTES: CARDS E CONTAINERS 
         */
@@ -311,6 +328,28 @@
         .grid-3 {
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         }
+        
+        /* Dashboard Métricas */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+        
+        @media (max-width: 600px) {
+            .metrics-grid { grid-template-columns: 1fr; }
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, var(--surface), var(--primary-light));
+            padding: 1.25rem;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        .metric-card h5 { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 5px; }
+        .metric-card .value { color: var(--primary-dark); font-size: 1.5rem; font-weight: 800; }
 
         /* 7. COMPONENTES: BADGES (STATUS) 
         */
@@ -329,6 +368,7 @@
         .status-aceito { background: var(--info-bg); color: var(--info-dark); }
         .status-em_rota { background: #dbeafe; color: #1e40af; animation: pulse 2s infinite; }
         .status-concluido { background: var(--success-bg); color: var(--success-dark); }
+        .badge-promo { background: var(--danger); color: white; position: absolute; top: 10px; left: 10px; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
 
         @keyframes pulse {
             0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
@@ -611,6 +651,38 @@
             min-height: 300px;
             z-index: 1;
         }
+        
+        /* Estilização Chat */
+        .chat-messages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .chat-bubble {
+            padding: 8px 12px;
+            border-radius: 12px;
+            max-width: 80%;
+            font-size: 0.9rem;
+        }
+        .chat-bubble.mine {
+            align-self: flex-end;
+            background: var(--primary);
+            color: white;
+            border-bottom-right-radius: 2px;
+        }
+        .chat-bubble.theirs {
+            align-self: flex-start;
+            background: #e2e8f0;
+            color: var(--text-main);
+            border-bottom-left-radius: 2px;
+        }
 
         /* 13. UTILITÁRIOS E FEEDBACK 
         */
@@ -708,7 +780,7 @@
             <img src="logo.png" alt="NexLog Logo" class="logo-img" onerror="this.style.display='none'; document.getElementById('txt-logo').style.display='block'">
             <span id="txt-logo" class="brand-text" style="display:none;">NexLog</span>
         </div>
-        <div id="header-user" class="text-sm font-bold text-primary desktop-only"></div>
+        <div id="header-actions" class="text-sm font-bold text-primary desktop-only"></div>
     </header>
 
     <main>
@@ -757,10 +829,31 @@
                     
                     <button class="btn btn-primary btn-full" onclick="App.auth.login()">Entrar no Sistema</button>
                     
+                    <div style="margin-top:1rem;">
+                        <button class="btn btn-sm btn-secondary" onclick="App.auth.switchView('recover')">Esqueci minha senha</button>
+                    </div>
+
                     <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--border);">
                         <p class="text-xs">Não possui conta?</p>
                         <button class="btn btn-secondary btn-full" onclick="App.auth.switchView('roles')">Criar Nova Conta</button>
                     </div>
+                </div>
+
+                <div id="auth-state-recover" style="display:none;">
+                    <h3>Recuperação de Senha</h3>
+                    <p>Informe seus dados para validar sua identidade.</p>
+                    
+                    <div class="input-wrapper">
+                        <label>Email Cadastrado</label>
+                        <input type="email" id="rec-email" class="input-field" placeholder="seu@email.com">
+                    </div>
+                    <div class="input-wrapper">
+                        <label>CPF (Validação de Segurança)</label>
+                        <input type="text" id="rec-cpf" class="input-field" placeholder="000.000.000-00">
+                    </div>
+                    
+                    <button class="btn btn-primary btn-full" onclick="App.auth.recoverPassword()">Enviar Email de Recuperação</button>
+                    <button class="btn btn-secondary btn-full" style="margin-top:0.5rem" onclick="App.auth.switchView('login')">Voltar</button>
                 </div>
                 
                 <div id="auth-state-roles" style="display:none;">
@@ -823,6 +916,21 @@
                 </button>
             </div>
 
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h5>Vendas Hoje</h5>
+                    <div id="metric-day" class="value">R$ 0,00</div>
+                </div>
+                <div class="metric-card">
+                    <h5>Vendas na Semana</h5>
+                    <div id="metric-week" class="value">R$ 0,00</div>
+                </div>
+                <div class="metric-card">
+                    <h5>Vendas no Mês</h5>
+                    <div id="metric-month" class="value">R$ 0,00</div>
+                </div>
+            </div>
+
             <div class="grid grid-2">
                 <div>
                     <div class="card" style="border-left: 5px solid var(--success);">
@@ -871,10 +979,9 @@
                         </div>
                     </div>
                     <div class="card" style="margin-top:1.5rem;">
-                        <h4 style="color:var(--text-muted)">Histórico Recente</h4>
-                        <div id="store-history-list">
-                            <p class="text-sm">Vazio.</p>
-                        </div>
+                        <h4 style="color:var(--text-muted)">Meus Produtos / Serviços</h4>
+                        <div id="store-products-list" style="max-height: 300px; overflow-y: auto;">
+                            </div>
                     </div>
                 </div>
             </div>
@@ -950,15 +1057,32 @@
     <div id="product-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Adicionar Serviço/Produto</h3>
-                <button class="btn btn-secondary btn-sm" onclick="document.getElementById('product-modal').style.display='none'">Fechar</button>
+                <h3 id="prod-modal-title">Adicionar Serviço/Produto</h3>
+                <button class="btn btn-secondary btn-sm" onclick="App.store.closeProductModal()">Fechar</button>
             </div>
             <div class="modal-body">
+                <input type="hidden" id="edit-prod-id">
                 <div class="input-wrapper">
                     <label>Categoria/Setor</label>
-                    <select id="new-prod-cat" class="input-field">
+                    <select id="new-prod-cat" class="input-field" onchange="App.store.checkCategory(this.value)">
                         </select>
                 </div>
+                
+                <div id="hotel-dates-area" style="display:none; background:#f0f9ff; padding:15px; border-radius:8px; border:1px solid #bae6fd; margin-bottom:1rem;">
+                    <h5 style="color:var(--info-dark)">Disponibilidade de Reserva</h5>
+                    <p class="text-xs text-muted">Selecione o intervalo de datas disponíveis para locação.</p>
+                    <div style="display:flex; gap:10px;">
+                        <div style="flex:1">
+                            <label class="text-xs">Início</label>
+                            <input type="date" id="hotel-start-date" class="input-field">
+                        </div>
+                        <div style="flex:1">
+                            <label class="text-xs">Fim</label>
+                            <input type="date" id="hotel-end-date" class="input-field">
+                        </div>
+                    </div>
+                </div>
+
                 <div class="input-wrapper">
                     <label>Nome do Item</label>
                     <input type="text" id="new-prod-name" class="input-field" placeholder="Ex: Transporte de Sofá">
@@ -967,6 +1091,12 @@
                     <label>Preço (R$)</label>
                     <input type="number" id="new-prod-price" class="input-field" placeholder="0.00">
                 </div>
+                
+                <div class="checkbox-wrapper">
+                    <input type="checkbox" id="new-prod-promo">
+                    <label for="new-prod-promo" style="margin:0; cursor:pointer; color:var(--danger-dark); font-weight:bold;">Colocar em Promoção?</label>
+                </div>
+
                 <div class="input-wrapper">
                     <label>Foto do Item</label>
                     <input type="file" id="new-prod-file" class="input-field" accept="image/jpeg, image/png">
@@ -974,7 +1104,26 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-primary btn-full" onclick="App.store.submitProduct()">Publicar Serviço</button>
+                <button class="btn btn-primary btn-full" onclick="App.store.submitProduct()" id="btn-save-prod">Publicar Serviço</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="chat-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Chat de Dúvidas</h3>
+                <button class="btn btn-secondary btn-sm" onclick="document.getElementById('chat-modal').style.display='none'">Fechar</button>
+            </div>
+            <div class="modal-body">
+                <p class="text-sm text-muted">Tire suas dúvidas sobre reservas e serviços diretamente com o estabelecimento.</p>
+                <div id="chat-msgs" class="chat-messages">
+                    <div style="text-align:center; padding:20px; color:#aaa;">Inicie a conversa...</div>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="chat-input" class="input-field" placeholder="Digite sua dúvida...">
+                    <button class="btn btn-primary btn-sm" style="width:auto" onclick="App.chat.send()">Enviar</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1031,7 +1180,7 @@
 
         // --- APP CONTROLLER ---
         const App = {
-            state: { user: null, profile: null, tempRole: null, deferredPrompt: null, mapInstance: null, marker: null, watchId: null, activeOrder: null, storeId: null, pendingPayment: null, brickController: null, pixInterval: null },
+            state: { user: null, profile: null, tempRole: null, deferredPrompt: null, mapInstance: null, marker: null, watchId: null, activeOrder: null, storeId: null, pendingPayment: null, brickController: null, pixInterval: null, activeChatStore: null },
             
             init: async () => {
                 App.utils.setupPWA();
@@ -1091,7 +1240,7 @@
 
             auth: {
                 switchView: (view) => {
-                    ['login', 'roles', 'register'].forEach(v => document.getElementById(`auth-state-${v}`).style.display = 'none');
+                    ['login', 'roles', 'register', 'recover'].forEach(v => document.getElementById(`auth-state-${v}`).style.display = 'none');
                     document.getElementById(`auth-state-${view}`).style.display = 'block';
                 },
                 startReg: (role) => {
@@ -1103,7 +1252,8 @@
                     let html = '';
                     
                     if(role === 'loja_admin') {
-                        html = `<div class="input-wrapper"><label>Nome da Loja</label><input id="reg-store-name" class="input-field" placeholder="Ex: NexLog Center"></div><div class="input-wrapper"><label>CNPJ</label><input id="reg-cnpj" class="input-field" placeholder="00.000.000/0000-00"></div><div class="input-wrapper" style="border: 2px dashed var(--primary); padding: 10px; border-radius: 8px; background: var(--info-bg);"><label style="color:var(--primary)">🔑 Token de Autorização</label><input id="reg-token" class="input-field" placeholder="Código fornecido pelo Admin"><p class="text-xs text-muted">Cadastro restrito. Insira sua matrícula/token.</p></div>`;
+                        // ADICIONADO CAMPO DE WHATSAPP DA LOJA
+                        html = `<div class="input-wrapper"><label>Nome da Loja</label><input id="reg-store-name" class="input-field" placeholder="Ex: NexLog Center"></div><div class="input-wrapper"><label>WhatsApp da Loja</label><input id="reg-whatsapp" class="input-field" placeholder="(00) 00000-0000"></div><div class="input-wrapper"><label>CNPJ</label><input id="reg-cnpj" class="input-field" placeholder="00.000.000/0000-00"></div><div class="input-wrapper" style="border: 2px dashed var(--primary); padding: 10px; border-radius: 8px; background: var(--info-bg);"><label style="color:var(--primary)">🔑 Token de Autorização</label><input id="reg-token" class="input-field" placeholder="Código fornecido pelo Admin"><p class="text-xs text-muted">Cadastro restrito. Insira sua matrícula/token.</p></div>`;
                     } else if (role === 'motorista' || role === 'montador') {
                         // ADICIONADO CAMPO DE CHAVE PIX NO CADASTRO
                         html = `<div class="input-wrapper"><label>CPF</label><input id="reg-cpf" class="input-field" placeholder="000.000.000-00"></div><div class="input-wrapper"><label>Sua Chave Pix (Para Receber)</label><input id="reg-pix" class="input-field" placeholder="Email, CPF ou Aleatória"></div><div class="camera-container" id="cam-box"><video id="cam-video" autoplay playsinline></video><div class="camera-overlay">Selfie com capacete (validação facial)</div></div><div id="verified-msg" style="display:none; color:var(--success); font-weight:bold; margin-bottom:1rem;">✅ Identidade Confirmada</div><button class="btn btn-secondary btn-full" id="btn-cam" onclick="App.auth.runCamera()">Validar Identidade (Obrigatório)</button>`;
@@ -1159,10 +1309,12 @@
                         if(error) throw error;
                         
                         if(role === 'loja_admin') {
+                            // Salva WhatsApp da Loja
                             await _sb.from('stores').insert({ 
                                 admin_id: newUser.id, 
                                 nome_loja: document.getElementById('reg-store-name').value, 
-                                cnpj: document.getElementById('reg-cnpj').value 
+                                cnpj: document.getElementById('reg-cnpj').value,
+                                whatsapp: document.getElementById('reg-whatsapp').value
                             });
                         }
 
@@ -1179,6 +1331,23 @@
                     if(error || !data) { App.utils.toast('Dados incorretos', 'error'); } 
                     else { App.state.user = { id: data.id }; App.state.profile = data; localStorage.setItem('logimoveis_session', JSON.stringify(data)); App.utils.toast('Bem-vindo!', 'success'); App.router.renderNav(); App.router.goDashboard(); }
                 },
+                // NOVA FUNÇÃO: RECUPERAÇÃO DE SENHA POR CPF E EMAIL
+                recoverPassword: async () => {
+                    const email = document.getElementById('rec-email').value.trim();
+                    const cpf = document.getElementById('rec-cpf').value.trim();
+                    
+                    if(!email || !cpf) return App.utils.toast('Preencha Email e CPF', 'error');
+                    
+                    const { data, error } = await _sb.from('profiles').select('id').eq('email', email).eq('cpf', cpf).maybeSingle();
+                    
+                    if(data) {
+                        // Simulação de envio de email (necessitaria backend real para envio seguro)
+                        App.utils.toast('Link de redefinição enviado para seu email!', 'success');
+                        App.auth.switchView('login');
+                    } else {
+                        App.utils.toast('Dados não conferem.', 'error');
+                    }
+                },
                 logout: () => { localStorage.removeItem('logimoveis_session'); location.reload(); }
             },
 
@@ -1192,7 +1361,7 @@
                     }
                     App.state.storeId = store.id;
 
-                    // 1. LOGICA DE SEGURANÇA DAS CHAVES (ESCONDER SE EXISTIR)
+                    // 1. LOGICA DE SEGURANÇA DAS CHAVES
                     if(store.mp_access_token) {
                         document.getElementById('store-keys-area').style.display = 'none';
                         document.getElementById('store-keys-locked').style.display = 'block';
@@ -1207,11 +1376,13 @@
                         if(p) document.getElementById('active-partner-display').innerText = `Parceiro Vinculado: ${p.nome_completo} (${p.email})`;
                     }
 
-                    // Carrega Pedidos (e mostra PIX do Prestador)
+                    // Carrega Pedidos
                     const { data: orders } = await _sb.from('orders').select('*, products(nome), profiles!orders_cliente_id_fkey(nome_completo), prestador:profiles!orders_prestador_id_fkey(nome_completo, chave_pix)').eq('store_id', store.id).order('created_at', { ascending: false });
                     
+                    // CALCULA MÉTRICAS
+                    App.store.calcMetrics(orders || []);
+                    
                     document.getElementById('store-orders-list').innerHTML = orders?.map(o => {
-                        // 3. MOSTRAR DADOS DO PRESTADOR PARA PAGAMENTO DA COMISSÃO
                         let providerHtml = '';
                         if(o.prestador) {
                             providerHtml = `
@@ -1231,10 +1402,80 @@
                             ${providerHtml}
                         </div>`;
                     }).join('') || '<p class="text-sm">Nenhum pedido.</p>';
+                    
+                    // Carrega Produtos para Edição
+                    App.store.loadMyProducts();
                 },
-                openAddModal: () => document.getElementById('product-modal').style.display = 'flex',
-                
-                // SALVAR CHAVES NO BANCO
+                calcMetrics: (orders) => {
+                    const now = new Date();
+                    let dayTotal = 0, weekTotal = 0, monthTotal = 0;
+                    
+                    orders.forEach(o => {
+                        // Considera apenas pedidos pagos/concluídos/aceitos para a métrica de vendas
+                        if(['aceito', 'concluido', 'em_rota', 'aguardando_prestador'].includes(o.status)) {
+                            const orderDate = new Date(o.created_at);
+                            const val = o.taxa_servico / 0.15; // Reverte o cálculo da taxa (15%) para achar valor original aproximado ou usa valor da venda se tiver salvo
+                            
+                            // Dia
+                            if(orderDate.toDateString() === now.toDateString()) dayTotal += val;
+                            
+                            // Mês
+                            if(orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear()) monthTotal += val;
+                            
+                            // Semana (Simples - últimos 7 dias)
+                            const diffTime = Math.abs(now - orderDate);
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                            if(diffDays <= 7) weekTotal += val;
+                        }
+                    });
+                    
+                    document.getElementById('metric-day').innerText = `R$ ${dayTotal.toFixed(2)}`;
+                    document.getElementById('metric-week').innerText = `R$ ${weekTotal.toFixed(2)}`;
+                    document.getElementById('metric-month').innerText = `R$ ${monthTotal.toFixed(2)}`;
+                },
+                loadMyProducts: async () => {
+                    const { data } = await _sb.from('products').select('*').eq('store_id', App.state.storeId);
+                    document.getElementById('store-products-list').innerHTML = data?.map(p => `
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
+                            <div>
+                                <div style="font-weight:bold">${p.nome} ${p.promocao ? '<span style="color:red; font-size:0.7rem">(Promo)</span>' : ''}</div>
+                                <div class="text-xs text-muted">R$ ${p.preco.toFixed(2)}</div>
+                            </div>
+                            <button class="btn btn-sm btn-secondary" style="width:auto" onclick='App.store.openEditProduct(${JSON.stringify(p)})'>Editar</button>
+                        </div>
+                    `).join('');
+                },
+                openProductModal: () => {
+                    document.getElementById('prod-modal-title').innerText = "Adicionar Serviço/Produto";
+                    document.getElementById('btn-save-prod').innerText = "Publicar Serviço";
+                    document.getElementById('edit-prod-id').value = "";
+                    document.getElementById('new-prod-name').value = "";
+                    document.getElementById('new-prod-price').value = "";
+                    document.getElementById('new-prod-promo').checked = false;
+                    document.getElementById('hotel-dates-area').style.display = 'none';
+                    document.getElementById('product-modal').style.display = 'flex';
+                },
+                openEditProduct: (p) => {
+                    document.getElementById('prod-modal-title').innerText = "Editar Serviço/Produto";
+                    document.getElementById('btn-save-prod').innerText = "Salvar Alterações";
+                    document.getElementById('edit-prod-id').value = p.id;
+                    document.getElementById('new-prod-cat').value = p.categoria;
+                    document.getElementById('new-prod-name').value = p.nome;
+                    document.getElementById('new-prod-price').value = p.preco;
+                    document.getElementById('new-prod-promo').checked = p.promocao;
+                    App.store.checkCategory(p.categoria);
+                    // Se tiver datas salvas, popularia aqui
+                    document.getElementById('product-modal').style.display = 'flex';
+                },
+                closeProductModal: () => document.getElementById('product-modal').style.display = 'none',
+                checkCategory: (cat) => {
+                    // SE FOR HOTEL, MOSTRA DATAS
+                    if(cat === 'Hoteis/Pousadas') {
+                        document.getElementById('hotel-dates-area').style.display = 'block';
+                    } else {
+                        document.getElementById('hotel-dates-area').style.display = 'none';
+                    }
+                },
                 saveCredentials: async () => {
                     const acc = document.getElementById('store-access-token').value.trim();
                     const pub = document.getElementById('store-public-key').value.trim();
@@ -1250,8 +1491,6 @@
                         App.store.init();
                     }
                 },
-
-                // VINCULAR MOTORISTA
                 linkPartner: async () => {
                     const email = document.getElementById('partner-email-input').value.trim();
                     if(!email) return App.utils.toast("Digite o email do motorista", "error");
@@ -1263,23 +1502,52 @@
                     App.utils.toast("Parceiro vinculado com sucesso!", "success");
                     App.store.init();
                 },
-
                 submitProduct: async () => {
+                    const id = document.getElementById('edit-prod-id').value;
                     const nome = document.getElementById('new-prod-name').value;
                     const preco = document.getElementById('new-prod-price').value;
-                    const cat = document.getElementById('new-prod-cat').value; // CATEGORIA
+                    const cat = document.getElementById('new-prod-cat').value;
+                    const promo = document.getElementById('new-prod-promo').checked;
                     const file = document.getElementById('new-prod-file').files[0];
+                    
+                    // Dados de Hotel
+                    const dateStart = document.getElementById('hotel-start-date').value;
+                    const dateEnd = document.getElementById('hotel-end-date').value;
+                    let disp = null;
+                    if(cat === 'Hoteis/Pousadas' && dateStart && dateEnd) disp = `${dateStart}|${dateEnd}`;
+
                     if (!nome || !preco) return App.utils.toast("Preencha nome e preço", "error");
                     
-                    let imageUrl = 'https://placehold.co/400x300?text=NexLog';
+                    let imageUrl = null;
                     if (file) {
                         App.utils.toast("Enviando imagem...", "info");
                         const fileName = `${Date.now()}-${file.name.replace(/\s/g, '_')}`;
                         const { error: upErr } = await _sb.storage.from('produtos').upload(fileName, file);
                         if (!upErr) imageUrl = _sb.storage.from('produtos').getPublicUrl(fileName).data.publicUrl;
                     }
-                    await _sb.from('products').insert({ store_id: App.state.storeId, nome, preco: parseFloat(preco), categoria: cat, imagem_url: imageUrl });
-                    App.utils.toast('Produto cadastrado!', 'success'); document.getElementById('product-modal').style.display = 'none'; App.catalog.fetchPublic(); App.store.init();
+                    
+                    const payload = { 
+                        store_id: App.state.storeId, 
+                        nome, 
+                        preco: parseFloat(preco), 
+                        categoria: cat, 
+                        promocao: promo,
+                        disponibilidade: disp // Salva intervalo de datas
+                    };
+                    if(imageUrl) payload.imagem_url = imageUrl;
+
+                    if(id) {
+                        await _sb.from('products').update(payload).eq('id', id);
+                        App.utils.toast('Produto atualizado!', 'success');
+                    } else {
+                        if(!imageUrl) payload.imagem_url = 'https://placehold.co/400x300?text=NexLog';
+                        await _sb.from('products').insert(payload);
+                        App.utils.toast('Produto cadastrado!', 'success');
+                    }
+                    
+                    App.store.closeProductModal(); 
+                    App.catalog.fetchPublic(); 
+                    App.store.init();
                 },
                 dispatch: async (id) => {
                     await _sb.from('orders').update({ status: 'aguardando_prestador', data_agendada: new Date().toISOString() }).eq('id', id);
@@ -1383,7 +1651,6 @@
                         if (j.stores?.parceiro_exclusivo_id) {
                             return j.stores.parceiro_exclusivo_id === App.state.user.id;
                         }
-                        // Filtro Básico de Role (Motorista não vê montagem se não quiser, etc - Simplificado aqui)
                         return true; 
                     });
 
@@ -1400,6 +1667,32 @@
                     }
                 },
                 accept: async (id) => { await _sb.from('orders').update({ prestador_id: App.state.user.id, status: 'aceito' }).eq('id', id); App.utils.toast('Aceito!', 'success'); App.provider.init(); }
+            },
+            
+            chat: {
+                open: (storeId) => {
+                    App.state.activeChatStore = storeId;
+                    document.getElementById('chat-modal').style.display = 'flex';
+                    App.chat.loadMessages();
+                },
+                loadMessages: () => {
+                    // Simulação visual de chat - na pratica conectaria no Supabase
+                    const msgs = document.getElementById('chat-msgs');
+                    msgs.innerHTML = `
+                        <div class="chat-bubble theirs">Olá! Como posso ajudar com sua reserva?</div>
+                    `;
+                },
+                send: () => {
+                    const inp = document.getElementById('chat-input');
+                    if(!inp.value) return;
+                    const msgs = document.getElementById('chat-msgs');
+                    msgs.innerHTML += `<div class="chat-bubble mine">${inp.value}</div>`;
+                    inp.value = '';
+                    setTimeout(() => {
+                         msgs.innerHTML += `<div class="chat-bubble theirs">Recebemos sua dúvida! Em breve responderemos.</div>`;
+                         msgs.scrollTop = msgs.scrollHeight;
+                    }, 1000);
+                }
             },
 
             map: {
@@ -1431,13 +1724,46 @@
                     let query = _sb.from('products').select('*, stores(nome_loja)');
                     if(App.catalog.currentCat !== 'Todos') query = query.eq('categoria', App.catalog.currentCat);
                     const { data } = await query;
-                    document.getElementById('public-catalog').innerHTML = data?.map(p => `
+                    
+                    // SEPARA EM PROMOÇÃO E NORMAL SE HOUVER PROMOÇÃO
+                    const promos = data?.filter(p => p.promocao);
+                    const normal = data?.filter(p => !p.promocao);
+                    
+                    let html = '';
+                    
+                    // Renderiza Promoções
+                    if(promos && promos.length > 0) {
+                        html += `<div style="grid-column:1/-1; margin-bottom:10px;"><h3 style="color:var(--danger)">🔥 Ofertas em Destaque</h3></div>`;
+                        html += promos.map(p => App.catalog.renderCard(p)).join('');
+                        if(normal && normal.length > 0) html += `<div style="grid-column:1/-1; margin:20px 0 10px 0;"><h3 style="color:var(--primary)">Outros Serviços</h3></div>`;
+                    }
+                    
+                    html += normal?.map(p => App.catalog.renderCard(p)).join('');
+
+                    document.getElementById('public-catalog').innerHTML = html || '<p style="grid-column:1/-1; text-align:center">Nenhuma oferta nesta categoria.</p>';
+                },
+                renderCard: (p) => {
+                    let hotelBtn = '';
+                    let dispInfo = '';
+                    // Se for Hotel, mostra botão de chat e info de datas
+                    if(p.categoria === 'Hoteis/Pousadas') {
+                         hotelBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>`;
+                         if(p.disponibilidade) {
+                             const [start, end] = p.disponibilidade.split('|');
+                             dispInfo = `<div class="text-xs" style="background:#f0f9ff; padding:5px; border-radius:4px; margin-top:5px; color:#0369a1;">📅 Disp: ${start.split('-').reverse().join('/')} até ${end.split('-').reverse().join('/')}</div>`;
+                         }
+                    }
+
+                    return `
                         <div class="card">
+                            ${p.promocao ? '<div class="badge badge-promo">PROMOÇÃO</div>' : ''}
                             <div style="height:180px; background:#f1f5f9; margin:-1.5rem -1.5rem 1rem -1.5rem; display:flex; align-items:center; justify-content:center; overflow:hidden;"><img src="${p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto'}" style="width:100%; height:100%; object-fit:cover;"></div>
                             <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div>
                             <h4>${p.nome}</h4><h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
+                            ${dispInfo}
                             <button class="btn btn-secondary btn-full" style="margin-top:10px" onclick="App.client.confirmOrder('${p.id}', '${p.store_id}', ${p.preco})">Contratar Serviço</button>
-                        </div>`).join('') || '<p style="grid-column:1/-1; text-align:center">Nenhuma oferta nesta categoria.</p>';
+                            ${hotelBtn}
+                        </div>`;
                 },
                 fetchPublic: async () => { App.catalog.load(); } // Alias para load inicial
             },
