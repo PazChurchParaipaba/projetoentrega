@@ -720,6 +720,32 @@
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
+        /* Notificações do Lojista (Chat Dock) */
+        #store-notifications {
+            position: fixed;
+            bottom: 80px; /* Acima do menu mobile se houver */
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 1999;
+            pointer-events: none; /* Deixa clicar atrás se não tiver msg */
+        }
+
+        .chat-alert-card {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+            border-left: 5px solid var(--primary);
+            width: 300px;
+            pointer-events: auto;
+            animation: slideInRight 0.3s forwards;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
         /* ==========================================================================
            13. UTILS E EXTRAS
            ==========================================================================
@@ -796,6 +822,8 @@
 <body>
     <div class="toast-container" id="toast-container"></div>
     
+    <div id="store-notifications"></div>
+
     <div id="pwa-banner" class="pwa-banner">
         <div style="display:flex; align-items:center; gap:12px;">
             <i class="ri-download-cloud-2-line" style="font-size:1.5rem"></i>
@@ -1203,16 +1231,16 @@
     <div id="chat-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Chat de Dúvidas</h3>
+                <h3>Chat</h3>
                 <button class="btn btn-secondary btn-sm" onclick="App.chat.close()">Fechar</button>
             </div>
             <div class="modal-body">
-                <p class="text-sm text-muted">Tire suas dúvidas sobre reservas e serviços diretamente com o estabelecimento.</p>
+                <p class="text-sm text-muted">Converse diretamente com o estabelecimento/cliente.</p>
                 <div id="chat-msgs" class="chat-messages">
                     <div style="text-align:center; padding:20px; color:#aaa;">Carregando mensagens...</div>
                 </div>
                 <div style="display:flex; gap:10px;">
-                    <input type="text" id="chat-input" class="input-field" placeholder="Digite sua dúvida...">
+                    <input type="text" id="chat-input" class="input-field" placeholder="Digite sua mensagem...">
                     <button class="btn btn-primary btn-sm" style="width:auto" onclick="App.chat.send()">Enviar</button>
                 </div>
             </div>
@@ -1285,6 +1313,7 @@
                 brickController: null, 
                 pixInterval: null, 
                 activeChatStore: null, 
+                activeChatClient: null,
                 chatSub: null,
                 currentBudgetTotal: 0 
             },
@@ -1525,6 +1554,23 @@
                     }).join('') || '<p class="text-sm">Nenhum pedido.</p>';
                     
                     App.store.loadMyProducts();
+                    // INICIA O LISTENER DE MENSAGENS PARA O LOJISTA
+                    App.store.listenMessages();
+                },
+                // NOVA FUNÇÃO: Escuta mensagens para o lojista
+                listenMessages: () => {
+                    const myStoreId = App.state.storeId;
+                    // Inscreve no canal para a tabela de mensagens filtrada pela loja atual
+                    _sb.channel('store-notifications')
+                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `store_id=eq.${myStoreId}` }, 
+                    async (payload) => {
+                        // Se quem mandou a mensagem NÃO sou eu (o lojista), então é um cliente
+                        if(payload.new.sender_id !== App.state.user.id) {
+                            const { data: sender } = await _sb.from('profiles').select('nome_completo').eq('id', payload.new.sender_id).single();
+                            App.utils.showChatNotification(sender.nome_completo, payload.new.content, payload.new.client_id);
+                        }
+                    })
+                    .subscribe();
                 },
                 calcMetrics: (orders) => {
                     const now = new Date();
@@ -1780,12 +1826,31 @@
                     document.getElementById('client-orders-list').innerHTML = orders?.map(o => `
                         <div class="card" style="margin-bottom:1rem"><div style="display:flex; justify-content:space-between; margin-bottom:0.5rem"><strong>${o.products?.nome}</strong><span class="badge status-${o.status}">${o.status}</span></div><p class="text-sm">${o.endereco_destino}</p>${['em_rota', 'aceito', 'concluido'].includes(o.status) ? `<button class="btn btn-success btn-sm btn-full" onclick="App.map.open('${o.id}', false)">Rastrear Entrega</button>` : ''}</div>`).join('') || '<p>Nenhum pedido.</p>';
                 },
-                confirmOrder: async (pid, sid, price) => {
+                confirmOrder: async (pid, sid, price, category) => { // CATEGORIA ADICIONADA AQUI
                     if(!App.state.user) { App.router.go('auth'); return; }
+                    
+                    let address = "";
+                    
+                    // LÓGICA DE ENDEREÇO VS RESERVA
+                    if (category === 'Hoteis/Pousadas') {
+                        // Busca dados do usuário para a reserva
+                        const { data: userProfile } = await _sb.from('profiles').select('*').eq('id', App.state.user.id).single();
+                        if(userProfile) {
+                            address = `RESERVA: ${userProfile.nome_completo} | CPF: ${userProfile.cpf || 'Não inf.'} | Email: ${userProfile.email}`;
+                            alert("Dados capturados para reserva. Prossiga para o pagamento.");
+                        } else {
+                            address = "Dados de reserva pendentes.";
+                        }
+                    } else {
+                        // Pede endereço normal
+                        address = prompt("Endereço de Entrega Completo:"); 
+                        if(!address) return;
+                    }
+
                     const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', sid).single();
                     const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
                     mpInstance = new MercadoPago(publicKeyToUse);
-                    const address = prompt("Endereço de Entrega Completo:"); if(!address) return;
+                    
                     App.payment.open(price * 1.15, { product_id: pid, store_id: sid, basePrice: price, address, requer_montagem: false, taxa: price*0.15 });
                 },
                 // --- LÓGICA DE ORÇAMENTO (GESSO) ---
@@ -1889,18 +1954,24 @@
             },
             
             chat: {
-                open: async (storeId) => {
+                // MODIFICADO: Função que abre o chat
+                // Se storeId for passado, abre modo cliente falando com loja
+                // Se clientId for passado, abre modo loja falando com cliente
+                open: async (storeId, clientId = null) => {
                     if(!App.state.user) return App.router.go('auth');
-                    App.state.chatStoreId = storeId;
+                    
+                    App.state.activeChatStore = storeId;
+                    App.state.activeChatClient = clientId || App.state.user.id; // Se não passar cliente, sou eu mesmo
+                    
                     document.getElementById('chat-modal').style.display = 'flex';
                     const msgs = document.getElementById('chat-msgs');
                     msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Carregando histórico...</div>';
                     
-                    // 1. Carregar histórico (Tabela messages criada no SQL)
+                    // Carrega mensagens onde store_id é X e client_id é Y
                     const { data } = await _sb.from('messages')
                         .select('*')
                         .eq('store_id', storeId)
-                        .eq('client_id', App.state.user.id)
+                        .eq('client_id', App.state.activeChatClient)
                         .order('created_at', { ascending: true });
                     
                     msgs.innerHTML = '';
@@ -1910,14 +1981,13 @@
                         msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Inicie a conversa...</div>';
                     }
 
-                    // 2. Realtime Subscription
+                    // Realtime Subscription
                     if(App.state.chatSub) _sb.removeChannel(App.state.chatSub);
                     App.state.chatSub = _sb.channel('public:messages')
                         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `store_id=eq.${storeId}` }, 
                         (payload) => {
-                            // Filtra para mostrar apenas mensagens deste chat específico
-                            if(payload.new.client_id === App.state.user.id) {
-                                // Limpa mensagem de "Inicie a conversa" se existir
+                            // Só mostra se for do cliente que estou conversando agora
+                            if(payload.new.client_id === App.state.activeChatClient) {
                                 if(msgs.innerText === "Inicie a conversa...") msgs.innerHTML = "";
                                 App.chat.renderMsg(payload.new);
                             }
@@ -1928,10 +1998,9 @@
                     const txt = document.getElementById('chat-input').value;
                     if(!txt) return;
                     
-                    // Salva no banco (o Realtime vai atualizar a tela automaticamente)
                     await _sb.from('messages').insert({
-                        store_id: App.state.chatStoreId,
-                        client_id: App.state.user.id,
+                        store_id: App.state.activeChatStore,
+                        client_id: App.state.activeChatClient,
                         sender_id: App.state.user.id,
                         content: txt
                     });
@@ -2002,7 +2071,8 @@
                 renderCard: (p) => {
                     let hotelBtn = '';
                     let dispInfo = '';
-                    let actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick="App.client.confirmOrder('${p.id}', '${p.store_id}', ${p.preco})">Contratar Serviço</button>`;
+                    // Passando categoria para a função de confirmação
+                    let actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick="App.client.confirmOrder('${p.id}', '${p.store_id}', ${p.preco}, '${p.categoria}')">Contratar Serviço</button>`;
 
                     // Lógica para Hotel
                     if(p.categoria === 'Hoteis/Pousadas') {
@@ -2037,6 +2107,24 @@
 
             utils: {
                 toast: (msg, type='success') => { const c = document.getElementById('toast-container'); const e = document.createElement('div'); e.className=`toast ${type}`; e.innerHTML=`<span>${msg}</span>`; c.appendChild(e); setTimeout(()=>e.remove(), 4000); },
+                
+                // NOTIFICAÇÃO DO LOJISTA
+                showChatNotification: (name, msg, clientId) => {
+                    const c = document.getElementById('store-notifications');
+                    const e = document.createElement('div');
+                    e.className = 'chat-alert-card';
+                    e.innerHTML = `
+                        <div>
+                            <div style="font-weight:bold; color:var(--primary)">Nova mensagem de ${name}</div>
+                            <div style="font-size:0.9rem; color:var(--text-muted); margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">"${msg}"</div>
+                        </div>
+                        <button class="btn btn-sm btn-info" onclick="App.chat.open('${App.state.storeId}', '${clientId}'); this.parentElement.remove()">Responder</button>
+                    `;
+                    c.appendChild(e);
+                    // Remove automaticamente após 10s se não clicar
+                    setTimeout(() => e.remove(), 10000);
+                },
+
                 setupPWA: () => { const manifest = { "name": "NexLog", "short_name": "NexLog", "start_url": window.location.href, "display": "standalone", "background_color": "#ffffff", "theme_color": "#2563eb", "icons": [{ "src": "https://placehold.co/192x192/2563eb/white?text=NX", "sizes": "192x192", "type": "image/png" }] }; const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'}); document.querySelector('#dynamic-manifest').setAttribute('href', URL.createObjectURL(blob)); window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); App.state.deferredPrompt = e; document.getElementById('pwa-banner').style.display = 'flex'; }); },
                 setupCategories: () => {
                     const catList = document.getElementById('category-list');
