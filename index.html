@@ -2017,8 +2017,17 @@
                         if (confirm("Você vai querer beber alguma coisa?")) {
                             // Se sim, cancela o fluxo atual e filtra por Bebidas na loja
                             App.utils.toast("Filtrando bebidas desta loja...", "info");
-                            // Aqui simplificamos: apenas avisa, mas num sistema real, recarregaria o catálogo filtrado
-                            return; 
+                            
+                            // FILTRO INTELIGENTE: Mostra apenas produtos dessa loja no catálogo
+                            let query = _sb.from('products').select('*, stores(nome_loja)').eq('store_id', sid);
+                            const { data } = await query;
+                            
+                            // Renderiza apenas os itens dessa loja (excluindo o que já ia comprar pra não duplicar visualmente ou pode manter tudo)
+                            let html = `<div style="grid-column:1/-1; margin-bottom:10px;"><h3 style="color:var(--success)">🥤 Bebidas e Extras da Loja</h3><button class="btn btn-sm btn-secondary" onclick="App.catalog.fetchPublic()">Voltar ao Catálogo Geral</button></div>`;
+                            html += data.map(p => App.catalog.renderCard(p)).join('');
+                            document.getElementById('public-catalog').innerHTML = html;
+                            
+                            return; // Interrompe o pagamento para o usuário escolher mais itens (Upsell simplificado)
                         }
                     }
 
@@ -2164,16 +2173,20 @@
             },
             
             chat: {
+                // MODIFICADO: Função que abre o chat
+                // Se storeId for passado, abre modo cliente falando com loja
+                // Se clientId for passado, abre modo loja falando com cliente
                 open: async (storeId, clientId = null) => {
                     if(!App.state.user) return App.router.go('auth');
                     
                     App.state.activeChatStore = storeId;
-                    App.state.activeChatClient = clientId || App.state.user.id; 
+                    App.state.activeChatClient = clientId || App.state.user.id; // Se não passar cliente, sou eu mesmo
                     
                     document.getElementById('chat-modal').style.display = 'flex';
                     const msgs = document.getElementById('chat-msgs');
                     msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Carregando histórico...</div>';
                     
+                    // Carrega mensagens onde store_id é X e client_id é Y
                     const { data } = await _sb.from('messages')
                         .select('*')
                         .eq('store_id', storeId)
@@ -2187,10 +2200,12 @@
                         msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Inicie a conversa...</div>';
                     }
 
+                    // Realtime Subscription
                     if(App.state.chatSub) _sb.removeChannel(App.state.chatSub);
                     App.state.chatSub = _sb.channel('public:messages')
                         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `store_id=eq.${storeId}` }, 
                         (payload) => {
+                            // Só mostra se for do cliente que estou conversando agora
                             if(payload.new.client_id === App.state.activeChatClient) {
                                 if(msgs.innerText === "Inicie a conversa...") msgs.innerHTML = "";
                                 App.chat.renderMsg(payload.new);
@@ -2243,7 +2258,6 @@
                     if(!txt && type === 'text') return;
                     
                     let finalContent = txt;
-                    // Se for áudio, txt seria a URL ou base64 do áudio
                     
                     await _sb.from('messages').insert({
                         store_id: App.state.activeChatStore,
@@ -2268,10 +2282,22 @@
                             const blob = new Blob(App.state.audioChunks, { type: 'audio/ogg; codecs=opus' });
                             App.state.audioChunks = [];
                             
-                            // Simulação de upload (O ideal é enviar para Supabase Storage)
-                            const audioUrl = URL.createObjectURL(blob);
+                            // UPLOAD REAL PARA SUPABASE
+                            const fileName = `audio_${Date.now()}.ogg`;
+                            const file = new File([blob], fileName, { type: 'audio/ogg' });
+                            
+                            const { data, error } = await _sb.storage.from('chat_uploads').upload(fileName, file);
+                            
+                            if(error) {
+                                alert("Erro ao enviar áudio: " + error.message);
+                                return;
+                            }
+                            
+                            const { data: urlData } = _sb.storage.from('chat_uploads').getPublicUrl(fileName);
+                            const audioUrl = urlData.publicUrl;
+                            
                             const audioTag = `<audio controls src="${audioUrl}"></audio>`;
-                            App.chat.send(audioTag, 'audio'); // Envia tag de audio como "texto" para renderizar
+                            App.chat.send(audioTag, 'audio'); 
                         };
                         
                         App.state.mediaRecorder.start();
@@ -2291,12 +2317,11 @@
                     const isMine = msg.sender_id === App.state.user.id;
                     div.className = `chat-bubble ${isMine ? 'mine' : 'theirs'}`;
                     
-                    // Renderiza conteúdo (texto ou HTML de audio)
                     div.innerHTML = msg.content;
                     
-                    // Status da mensagem
                     const status = document.createElement('div');
                     status.className = 'chat-status';
+                    // Simulação visual de status "Lido" (dois checks)
                     status.innerHTML = `<i class="ri-check-double-line" style="color:${isMine ? '#fff' : '#2563eb'}"></i>`;
                     div.appendChild(status);
 
@@ -2321,7 +2346,6 @@
                     }, 500);
                 },
                 watchOrder: (id) => { 
-                    // Cliente observando o motorista
                     _sb.channel(`track-${id}`).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, (payload) => { 
                         const { lat_atual, lng_atual, status } = payload.new; 
                         if(status==='em_rota') App.utils.toast('Saiu para entrega!', 'info'); 
@@ -2333,11 +2357,9 @@
                     document.getElementById('btn-start-gps').style.display='none'; document.getElementById('btn-end-gps').style.display='block'; 
                     _sb.from('orders').update({ status: 'em_rota' }).eq('id', App.state.activeOrder); 
                     
-                    // Rastreamento Realtime
                     App.state.watchId = navigator.geolocation.watchPosition(async (pos) => { 
                         const { latitude, longitude } = pos.coords; 
                         App.map.updatePin(latitude, longitude); 
-                        // Atualiza no banco para o cliente ver
                         await _sb.from('orders').update({ lat_atual: latitude, lng_atual: longitude }).eq('id', App.state.activeOrder); 
                     }, e=>console.log(e), {enableHighAccuracy:true, maximumAge:0, timeout:5000}); 
                 },
@@ -2376,15 +2398,12 @@
                 },
                 renderCard: (p) => {
                     let dispInfo = '';
-                    
-                    // Texto do botão de ação
                     let actionText = "Contratar Serviço";
                     if (p.categoria === 'Comidas e Bebidas') actionText = "Fazer Pedido";
                     if (p.categoria === 'Serviços de Gesso') actionText = "Orçamento";
                     
                     let actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick='App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${JSON.stringify(p.delivery_info || null)})'>${actionText}</button>`;
 
-                    // Lógica para Hotel
                     if(p.categoria === 'Hoteis/Pousadas') {
                          if(p.disponibilidade) {
                              const [start, end] = p.disponibilidade.split('|');
@@ -2393,13 +2412,11 @@
                          }
                     }
 
-                    // Lógica para Gesso (Orçamento)
                     if(p.categoria === 'Serviços de Gesso' && p.gesso_info) {
                         actionBtn = `<button class="btn btn-warning btn-full" style="margin-top:10px" onclick='App.client.openBudget(${JSON.stringify(p)})'>Fazer Orçamento</button>`;
                         dispInfo = `<div class="text-xs" style="color:#854d0e; margin-top:5px;">Orçamento por m²</div>`;
                     }
                     
-                    // CHAT UNIVERSAL (EM TODOS OS PRODUTOS)
                     let chatBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>`;
 
                     return `
@@ -2419,7 +2436,6 @@
             utils: {
                 toast: (msg, type='success') => { const c = document.getElementById('toast-container'); const e = document.createElement('div'); e.className=`toast ${type}`; e.innerHTML=`<span>${msg}</span>`; c.appendChild(e); setTimeout(()=>e.remove(), 4000); },
                 
-                // NOTIFICAÇÃO DO LOJISTA
                 showChatNotification: (name, msg, clientId) => {
                     const c = document.getElementById('store-notifications');
                     const e = document.createElement('div');
