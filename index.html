@@ -2262,7 +2262,9 @@
                                             
                                             // Se for minha mensagem, recoloca o botão de opções e o status
                                             if (msgDiv.classList.contains('mine')) {
-                                                 contentHtml += `<button class="chat-options-btn" onclick="App.chat.showOptions(${payload.new.id}, '${payload.new.content.replace(/'/g, "\\'")}', ${payload.new.is_edited})"><i class="ri-more-2-fill"></i></button>`;
+                                                 // USANDO ENCODEURICOMPONENT PARA EVITAR ERROS DE SINTAXE EM STRINGS COMPLEXAS (COMO HTML)
+                                                 const encodedContent = encodeURIComponent(payload.new.content);
+                                                 contentHtml += `<button class="chat-options-btn" onclick="App.chat.showOptions(${payload.new.id}, '${encodedContent}', ${payload.new.is_edited})"><i class="ri-more-2-fill"></i></button>`;
                                                  contentHtml += `<div class="chat-status"><i class="ri-check-double-line" style="color:#fff"></i></div>`;
                                             } else {
                                                  contentHtml += `<div class="chat-status"><i class="ri-check-double-line" style="color:#2563eb"></i></div>`;
@@ -2320,7 +2322,6 @@
                     if(!txt && type === 'text') return;
                     
                     let finalContent = txt;
-                    // Se for áudio, txt seria a URL ou base64 do áudio
                     
                     await _sb.from('messages').insert({
                         store_id: App.state.activeChatStore,
@@ -2376,7 +2377,10 @@
                     }
                 },
                 // --- NOVAS FUNÇÕES DE EDIÇÃO/EXCLUSÃO ---
-                showOptions: (msgId, currentContent, isEdited) => {
+                showOptions: (msgId, encodedContent, isEdited) => {
+                    // DECODIFICA O CONTEUDO PARA EXIBIR NO PROMPT
+                    const currentContent = decodeURIComponent(encodedContent);
+
                     // Evita editar se for áudio (verificação simples se tem tag HTML)
                     if (currentContent.includes('<audio')) {
                         if(confirm("Deseja apagar este áudio para todos?")) {
@@ -2420,9 +2424,9 @@
                         
                         // Adiciona botão de opções se for minha mensagem
                         if (isMine) {
-                             // Escape de aspas para o onclick
-                             const safeContent = msg.content.replace(/'/g, "\\'");
-                             contentHtml += `<button class="chat-options-btn" onclick="App.chat.showOptions(${msg.id}, '${safeContent}', ${msg.is_edited})"><i class="ri-more-2-fill"></i></button>`;
+                             // CORREÇÃO: USANDO ENCODEURICOMPONENT PARA PASSAR O CONTEÚDO SEGURO
+                             const encodedContent = encodeURIComponent(msg.content);
+                             contentHtml += `<button class="chat-options-btn" onclick="App.chat.showOptions(${msg.id}, '${encodedContent}', ${msg.is_edited})"><i class="ri-more-2-fill"></i></button>`;
                         }
                         
                         div.innerHTML = contentHtml;
@@ -2431,7 +2435,6 @@
                     // Status da mensagem
                     const status = document.createElement('div');
                     status.className = 'chat-status';
-                    // Simulação visual de status "Lido" (dois checks)
                     status.innerHTML = `<i class="ri-check-double-line" style="color:${isMine ? '#fff' : '#2563eb'}"></i>`;
                     div.appendChild(status);
 
@@ -2456,7 +2459,6 @@
                     }, 500);
                 },
                 watchOrder: (id) => { 
-                    // Cliente observando o motorista
                     _sb.channel(`track-${id}`).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, (payload) => { 
                         const { lat_atual, lng_atual, status } = payload.new; 
                         if(status==='em_rota') App.utils.toast('Saiu para entrega!', 'info'); 
@@ -2468,11 +2470,9 @@
                     document.getElementById('btn-start-gps').style.display='none'; document.getElementById('btn-end-gps').style.display='block'; 
                     _sb.from('orders').update({ status: 'em_rota' }).eq('id', App.state.activeOrder); 
                     
-                    // Rastreamento Realtime
                     App.state.watchId = navigator.geolocation.watchPosition(async (pos) => { 
                         const { latitude, longitude } = pos.coords; 
                         App.map.updatePin(latitude, longitude); 
-                        // Atualiza no banco para o cliente ver
                         await _sb.from('orders').update({ lat_atual: latitude, lng_atual: longitude }).eq('id', App.state.activeOrder); 
                     }, e=>console.log(e), {enableHighAccuracy:true, maximumAge:0, timeout:5000}); 
                 },
@@ -2511,15 +2511,12 @@
                 },
                 renderCard: (p) => {
                     let dispInfo = '';
-                    
-                    // Texto do botão de ação
                     let actionText = "Contratar Serviço";
                     if (p.categoria === 'Comidas' || p.categoria === 'Bebidas') actionText = "Fazer Pedido"; // MODIFICADO PARA INCLUIR BEBIDAS
                     if (p.categoria === 'Serviços de Gesso') actionText = "Orçamento";
                     
                     let actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick='App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${JSON.stringify(p.delivery_info || null)})'>${actionText}</button>`;
 
-                    // Lógica para Hotel
                     if(p.categoria === 'Hoteis/Pousadas') {
                          if(p.disponibilidade) {
                              const [start, end] = p.disponibilidade.split('|');
@@ -2528,13 +2525,11 @@
                          }
                     }
 
-                    // Lógica para Gesso (Orçamento)
                     if(p.categoria === 'Serviços de Gesso' && p.gesso_info) {
                         actionBtn = `<button class="btn btn-warning btn-full" style="margin-top:10px" onclick='App.client.openBudget(${JSON.stringify(p)})'>Fazer Orçamento</button>`;
                         dispInfo = `<div class="text-xs" style="color:#854d0e; margin-top:5px;">Orçamento por m²</div>`;
                     }
                     
-                    // CHAT UNIVERSAL (EM TODOS OS PRODUTOS)
                     let chatBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>`;
 
                     return `
