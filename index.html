@@ -2211,16 +2211,20 @@
             },
             
             chat: {
+                // MODIFICADO: Função que abre o chat
+                // Se storeId for passado, abre modo cliente falando com loja
+                // Se clientId for passado, abre modo loja falando com cliente
                 open: async (storeId, clientId = null) => {
                     if(!App.state.user) return App.router.go('auth');
                     
                     App.state.activeChatStore = storeId;
-                    App.state.activeChatClient = clientId || App.state.user.id; 
+                    App.state.activeChatClient = clientId || App.state.user.id; // Se não passar cliente, sou eu mesmo
                     
                     document.getElementById('chat-modal').style.display = 'flex';
                     const msgs = document.getElementById('chat-msgs');
                     msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Carregando histórico...</div>';
                     
+                    // Carrega mensagens onde store_id é X e client_id é Y
                     const { data } = await _sb.from('messages')
                         .select('*')
                         .eq('store_id', storeId)
@@ -2234,6 +2238,7 @@
                         msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Inicie a conversa...</div>';
                     }
 
+                    // Realtime Subscription
                     if(App.state.chatSub) _sb.removeChannel(App.state.chatSub);
                     App.state.chatSub = _sb.channel('public:messages')
                         // MUDANÇA AQUI: Ouvimos 'UPDATE' também para refletir edições e exclusões
@@ -2315,6 +2320,7 @@
                     if(!txt && type === 'text') return;
                     
                     let finalContent = txt;
+                    // Se for áudio, txt seria a URL ou base64 do áudio
                     
                     await _sb.from('messages').insert({
                         store_id: App.state.activeChatStore,
@@ -2425,6 +2431,7 @@
                     // Status da mensagem
                     const status = document.createElement('div');
                     status.className = 'chat-status';
+                    // Simulação visual de status "Lido" (dois checks)
                     status.innerHTML = `<i class="ri-check-double-line" style="color:${isMine ? '#fff' : '#2563eb'}"></i>`;
                     div.appendChild(status);
 
@@ -2449,6 +2456,7 @@
                     }, 500);
                 },
                 watchOrder: (id) => { 
+                    // Cliente observando o motorista
                     _sb.channel(`track-${id}`).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, (payload) => { 
                         const { lat_atual, lng_atual, status } = payload.new; 
                         if(status==='em_rota') App.utils.toast('Saiu para entrega!', 'info'); 
@@ -2460,9 +2468,11 @@
                     document.getElementById('btn-start-gps').style.display='none'; document.getElementById('btn-end-gps').style.display='block'; 
                     _sb.from('orders').update({ status: 'em_rota' }).eq('id', App.state.activeOrder); 
                     
+                    // Rastreamento Realtime
                     App.state.watchId = navigator.geolocation.watchPosition(async (pos) => { 
                         const { latitude, longitude } = pos.coords; 
                         App.map.updatePin(latitude, longitude); 
+                        // Atualiza no banco para o cliente ver
                         await _sb.from('orders').update({ lat_atual: latitude, lng_atual: longitude }).eq('id', App.state.activeOrder); 
                     }, e=>console.log(e), {enableHighAccuracy:true, maximumAge:0, timeout:5000}); 
                 },
@@ -2501,12 +2511,15 @@
                 },
                 renderCard: (p) => {
                     let dispInfo = '';
+                    
+                    // Texto do botão de ação
                     let actionText = "Contratar Serviço";
                     if (p.categoria === 'Comidas' || p.categoria === 'Bebidas') actionText = "Fazer Pedido"; // MODIFICADO PARA INCLUIR BEBIDAS
                     if (p.categoria === 'Serviços de Gesso') actionText = "Orçamento";
                     
                     let actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick='App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${JSON.stringify(p.delivery_info || null)})'>${actionText}</button>`;
 
+                    // Lógica para Hotel
                     if(p.categoria === 'Hoteis/Pousadas') {
                          if(p.disponibilidade) {
                              const [start, end] = p.disponibilidade.split('|');
@@ -2515,11 +2528,13 @@
                          }
                     }
 
+                    // Lógica para Gesso (Orçamento)
                     if(p.categoria === 'Serviços de Gesso' && p.gesso_info) {
                         actionBtn = `<button class="btn btn-warning btn-full" style="margin-top:10px" onclick='App.client.openBudget(${JSON.stringify(p)})'>Fazer Orçamento</button>`;
                         dispInfo = `<div class="text-xs" style="color:#854d0e; margin-top:5px;">Orçamento por m²</div>`;
                     }
                     
+                    // CHAT UNIVERSAL (EM TODOS OS PRODUTOS)
                     let chatBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>`;
 
                     return `
@@ -2539,6 +2554,7 @@
             utils: {
                 toast: (msg, type='success') => { const c = document.getElementById('toast-container'); const e = document.createElement('div'); e.className=`toast ${type}`; e.innerHTML=`<span>${msg}</span>`; c.appendChild(e); setTimeout(()=>e.remove(), 4000); },
                 
+                // NOTIFICAÇÃO DO LOJISTA
                 showChatNotification: (name, msg, clientId) => {
                     const c = document.getElementById('store-notifications');
                     const e = document.createElement('div');
