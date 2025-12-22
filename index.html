@@ -1362,10 +1362,11 @@
             
             // LISTA DE CATEGORIAS
             categories: [
-                'Comidas e Bebidas', // Categoria de delivery
-                'Roupas', // Nova categoria
-                'Serviços de Gesso', // Categoria com lógica especial de orçamento
-                'Hoteis/Pousadas', // Categoria com lógica especial de datas
+                'Comidas',  // Separado
+                'Bebidas',  // Separado
+                'Roupas', 
+                'Serviços de Gesso', 
+                'Hoteis/Pousadas', 
                 'Manutenção Eletrodomésticos', 
                 'Serviços de Manutenção', 
                 'Serviços de Pedreiros', 
@@ -1632,7 +1633,7 @@
                         
                         // Botão de Impressão para Comidas e Bebidas
                         let printBtn = '';
-                        if(o.products?.categoria === 'Comidas e Bebidas') {
+                        if(o.products?.categoria === 'Comidas' || o.products?.categoria === 'Bebidas') {
                             printBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:auto; float:right;" onclick='App.store.printOrder(${JSON.stringify(o)})'><i class="ri-printer-line"></i> Imprimir</button>`;
                         }
 
@@ -1772,7 +1773,7 @@
                         document.getElementById('hotel-dates-area').style.display = 'block';
                     } else if (cat === 'Serviços de Gesso') {
                         document.getElementById('gesso-options-area').style.display = 'block';
-                    } else if (cat === 'Comidas e Bebidas') {
+                    } else if (cat === 'Comidas' || cat === 'Bebidas') { // MODIFICADO AQUI
                         document.getElementById('delivery-options-area').style.display = 'block';
                     }
                 },
@@ -1808,7 +1809,7 @@
 
                     // Dados Delivery
                     let deliveryInfo = null;
-                    if(cat === 'Comidas e Bebidas') {
+                    if(cat === 'Comidas' || cat === 'Bebidas') { // MODIFICADO AQUI
                         deliveryInfo = JSON.stringify({
                             fee_val: document.getElementById('delivery-fee-val').value,
                             fee_type: document.getElementById('delivery-fee-type').value
@@ -2012,22 +2013,34 @@
                         if(!address) return;
                     }
                     
-                    // LÓGICA DE UPSELL (COMIDAS)
-                    if (category === 'Comidas e Bebidas') {
+                    // LÓGICA DE UPSELL (COMIDAS) - MODIFICADA PARA BUSCAR APENAS BEBIDAS
+                    if (category === 'Comidas') {
                         if (confirm("Você vai querer beber alguma coisa?")) {
                             // Se sim, cancela o fluxo atual e filtra por Bebidas na loja
                             App.utils.toast("Filtrando bebidas desta loja...", "info");
                             
-                            // FILTRO INTELIGENTE: Mostra apenas produtos dessa loja no catálogo
-                            let query = _sb.from('products').select('*, stores(nome_loja)').eq('store_id', sid);
+                            // FILTRO INTELIGENTE: Mostra apenas produtos da categoria "Bebidas" dessa loja
+                            let query = _sb.from('products').select('*, stores(nome_loja)').eq('store_id', sid).eq('categoria', 'Bebidas');
                             const { data } = await query;
                             
                             // Renderiza apenas os itens dessa loja (excluindo o que já ia comprar pra não duplicar visualmente ou pode manter tudo)
-                            let html = `<div style="grid-column:1/-1; margin-bottom:10px;"><h3 style="color:var(--success)">🥤 Bebidas e Extras da Loja</h3><button class="btn btn-sm btn-secondary" onclick="App.catalog.fetchPublic()">Voltar ao Catálogo Geral</button></div>`;
-                            html += data.map(p => App.catalog.renderCard(p)).join('');
+                            let html = `<div style="grid-column:1/-1; margin-bottom:10px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <h3 style="color:var(--success)">🥤 Bebidas da Loja</h3>
+                                    <button class="btn btn-sm btn-primary" style="width:auto;" onclick="App.client.finalizeCart('${pid}', '${sid}', ${price}, '${address}')">Voltar ao Carrinho/Pagar</button>
+                                </div>
+                                <p class="text-sm text-muted">Adicione uma bebida ou clique em Voltar para pagar.</p>
+                            </div>`;
+                            
+                            if (data && data.length > 0) {
+                                html += data.map(p => App.catalog.renderCard(p)).join('');
+                            } else {
+                                html += `<p style="grid-column:1/-1; text-align:center">Nenhuma bebida cadastrada nesta loja.</p>`;
+                            }
+                            
                             document.getElementById('public-catalog').innerHTML = html;
                             
-                            return; // Interrompe o pagamento para o usuário escolher mais itens (Upsell simplificado)
+                            return; // Interrompe o pagamento para o usuário escolher mais itens
                         }
                     }
 
@@ -2035,7 +2048,7 @@
                     let finalPrice = price;
                     let feeVal = 0;
                     
-                    // Verifica se o produto tem delivery info (Comidas)
+                    // Verifica se o produto tem delivery info (Comidas/Bebidas)
                     if (deliveryInfoRaw) {
                         try {
                             const d = JSON.parse(deliveryInfoRaw);
@@ -2069,6 +2082,16 @@
                     const commission = finalPrice * 0.15;
                     
                     App.payment.open(finalPrice, { product_id: pid, store_id: sid, basePrice: finalPrice, address, requer_montagem: false, taxa: commission });
+                },
+                // Nova função auxiliar para voltar do fluxo de bebidas para o pagamento original
+                finalizeCart: async (pid, sid, price, address) => {
+                     const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', sid).single();
+                     const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
+                     mpInstance = new MercadoPago(publicKeyToUse);
+                     
+                     // Recalcula taxas básicas (sem upsell adicional neste momento simples)
+                     const commission = price * 0.15;
+                     App.payment.open(price, { product_id: pid, store_id: sid, basePrice: price, address, requer_montagem: false, taxa: commission });
                 },
                 // --- LÓGICA DE ORÇAMENTO (GESSO) ---
                 openBudget: (p) => {
@@ -2173,20 +2196,16 @@
             },
             
             chat: {
-                // MODIFICADO: Função que abre o chat
-                // Se storeId for passado, abre modo cliente falando com loja
-                // Se clientId for passado, abre modo loja falando com cliente
                 open: async (storeId, clientId = null) => {
                     if(!App.state.user) return App.router.go('auth');
                     
                     App.state.activeChatStore = storeId;
-                    App.state.activeChatClient = clientId || App.state.user.id; // Se não passar cliente, sou eu mesmo
+                    App.state.activeChatClient = clientId || App.state.user.id; 
                     
                     document.getElementById('chat-modal').style.display = 'flex';
                     const msgs = document.getElementById('chat-msgs');
                     msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Carregando histórico...</div>';
                     
-                    // Carrega mensagens onde store_id é X e client_id é Y
                     const { data } = await _sb.from('messages')
                         .select('*')
                         .eq('store_id', storeId)
@@ -2200,12 +2219,10 @@
                         msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Inicie a conversa...</div>';
                     }
 
-                    // Realtime Subscription
                     if(App.state.chatSub) _sb.removeChannel(App.state.chatSub);
                     App.state.chatSub = _sb.channel('public:messages')
                         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `store_id=eq.${storeId}` }, 
                         (payload) => {
-                            // Só mostra se for do cliente que estou conversando agora
                             if(payload.new.client_id === App.state.activeChatClient) {
                                 if(msgs.innerText === "Inicie a conversa...") msgs.innerHTML = "";
                                 App.chat.renderMsg(payload.new);
@@ -2346,6 +2363,7 @@
                     }, 500);
                 },
                 watchOrder: (id) => { 
+                    // Cliente observando o motorista
                     _sb.channel(`track-${id}`).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, (payload) => { 
                         const { lat_atual, lng_atual, status } = payload.new; 
                         if(status==='em_rota') App.utils.toast('Saiu para entrega!', 'info'); 
@@ -2399,7 +2417,7 @@
                 renderCard: (p) => {
                     let dispInfo = '';
                     let actionText = "Contratar Serviço";
-                    if (p.categoria === 'Comidas e Bebidas') actionText = "Fazer Pedido";
+                    if (p.categoria === 'Comidas' || p.categoria === 'Bebidas') actionText = "Fazer Pedido"; // MODIFICADO PARA INCLUIR BEBIDAS
                     if (p.categoria === 'Serviços de Gesso') actionText = "Orçamento";
                     
                     let actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick='App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${JSON.stringify(p.delivery_info || null)})'>${actionText}</button>`;
