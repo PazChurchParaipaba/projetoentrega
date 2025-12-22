@@ -897,8 +897,8 @@
 
             <div class="container">
                 <div style="margin-bottom: 2rem; text-align: center;">
-                    <h1 style="font-size: 2rem;">Encontre o que você precisa na palma da sua mão</h1>
-                    <p>Plataforma Inteligente para que você encontre o que precisa</p>
+                    <h1 style="font-size: 2rem;">Encontre Profissionais e Serviços</h1>
+                    <p>Logística inteligente para o que você precisar.</p>
                 </div>
                 
                 <div id="public-catalog" class="grid grid-3">
@@ -2382,7 +2382,7 @@
                     if (p.categoria === 'Comidas e Bebidas') actionText = "Fazer Pedido";
                     if (p.categoria === 'Serviços de Gesso') actionText = "Orçamento";
                     
-                    let actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick="App.client.confirmOrder('${p.id}', '${p.store_id}', ${p.preco}, '${p.categoria}', ${JSON.stringify(p.delivery_info || null)})">${actionText}</button>`;
+                    let actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick='App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${JSON.stringify(p.delivery_info || null)})'>${actionText}</button>`;
 
                     // Lógica para Hotel
                     if(p.categoria === 'Hoteis/Pousadas') {
