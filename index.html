@@ -2011,6 +2011,16 @@
                         address = prompt("Endereço de Entrega Completo:"); 
                         if(!address) return;
                     }
+                    
+                    // LÓGICA DE UPSELL (COMIDAS)
+                    if (category === 'Comidas e Bebidas') {
+                        if (confirm("Você vai querer beber alguma coisa?")) {
+                            // Se sim, cancela o fluxo atual e filtra por Bebidas na loja
+                            App.utils.toast("Filtrando bebidas desta loja...", "info");
+                            // Aqui simplificamos: apenas avisa, mas num sistema real, recarregaria o catálogo filtrado
+                            return; 
+                        }
+                    }
 
                     // --- CÁLCULO DE TAXAS (Serviços e Delivery) ---
                     let finalPrice = price;
@@ -2365,14 +2375,17 @@
                     document.getElementById('public-catalog').innerHTML = html || '<p style="grid-column:1/-1; text-align:center">Nenhuma oferta nesta categoria.</p>';
                 },
                 renderCard: (p) => {
-                    let hotelBtn = '';
                     let dispInfo = '';
-                    // Passando categoria e delivery_info para a função de confirmação
-                    let actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick='App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${JSON.stringify(p.delivery_info || null)})'>Contratar Serviço</button>`;
+                    
+                    // Texto do botão de ação
+                    let actionText = "Contratar Serviço";
+                    if (p.categoria === 'Comidas e Bebidas') actionText = "Fazer Pedido";
+                    if (p.categoria === 'Serviços de Gesso') actionText = "Orçamento";
+                    
+                    let actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick="App.client.confirmOrder('${p.id}', '${p.store_id}', ${p.preco}, '${p.categoria}', ${JSON.stringify(p.delivery_info || null)})">${actionText}</button>`;
 
                     // Lógica para Hotel
                     if(p.categoria === 'Hoteis/Pousadas') {
-                         hotelBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>`;
                          if(p.disponibilidade) {
                              const [start, end] = p.disponibilidade.split('|');
                              const fmt = d => d.split('-').reverse().join('/');
@@ -2385,6 +2398,9 @@
                         actionBtn = `<button class="btn btn-warning btn-full" style="margin-top:10px" onclick='App.client.openBudget(${JSON.stringify(p)})'>Fazer Orçamento</button>`;
                         dispInfo = `<div class="text-xs" style="color:#854d0e; margin-top:5px;">Orçamento por m²</div>`;
                     }
+                    
+                    // CHAT UNIVERSAL (EM TODOS OS PRODUTOS)
+                    let chatBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>`;
 
                     return `
                         <div class="card">
@@ -2394,7 +2410,7 @@
                             <h4>${p.nome}</h4><h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
                             ${dispInfo}
                             ${actionBtn}
-                            ${hotelBtn}
+                            ${chatBtn}
                         </div>`;
                 },
                 fetchPublic: async () => { App.catalog.load(); }
