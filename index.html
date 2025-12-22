@@ -1991,7 +1991,7 @@
                     // CARREGA HISTORICO DE CONVERSAS (CLIENTE)
                     App.chat.loadHistory('client');
                 },
-                confirmOrder: async (pid, sid, price, category) => { 
+                confirmOrder: async (pid, sid, price, category, deliveryInfoRaw) => { 
                     if(!App.state.user) { App.router.go('auth'); return; }
                     
                     let address = "";
@@ -2012,11 +2012,44 @@
                         if(!address) return;
                     }
 
+                    // --- CÁLCULO DE TAXAS (Serviços e Delivery) ---
+                    let finalPrice = price;
+                    let feeVal = 0;
+                    
+                    // Verifica se o produto tem delivery info (Comidas)
+                    if (deliveryInfoRaw) {
+                        try {
+                            const d = JSON.parse(deliveryInfoRaw);
+                            const val = parseFloat(d.fee_val) || 0;
+                            if(d.fee_type === 'percent') {
+                                feeVal = price * (val / 100);
+                            } else {
+                                feeVal = val;
+                            }
+                            if(feeVal > 0) alert(`Será adicionada uma taxa de entrega de R$ ${feeVal.toFixed(2)}`);
+                        } catch(e) {}
+                    }
+                    
+                    // Verifica categorias de serviço (Frete, Montador, etc.)
+                    const serviceCats = ['Fretes e Mudanças', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Manutenção Eletrodomésticos', 'Jardinagem', 'Serviços de Manutenção', 'Outros'];
+                    if (serviceCats.includes(category)) {
+                        // Se não foi definido taxa específica pelo lojista (delivery_info nulo), cobra padrão 35
+                        if (feeVal === 0) {
+                            feeVal = 35.00;
+                            alert("Taxa de serviço padrão de R$ 35,00 aplicada.");
+                        }
+                    }
+
+                    finalPrice += feeVal;
+
                     const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', sid).single();
                     const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
                     mpInstance = new MercadoPago(publicKeyToUse);
                     
-                    App.payment.open(price * 1.15, { product_id: pid, store_id: sid, basePrice: price, address, requer_montagem: false, taxa: price*0.15 });
+                    // Taxa de serviço (comissão da plataforma) continua sendo calculada sobre o valor base ou total, aqui mantive a lógica original de 15% sobre o total final
+                    const commission = finalPrice * 0.15;
+                    
+                    App.payment.open(finalPrice, { product_id: pid, store_id: sid, basePrice: finalPrice, address, requer_montagem: false, taxa: commission });
                 },
                 // --- LÓGICA DE ORÇAMENTO (GESSO) ---
                 openBudget: (p) => {
@@ -2334,7 +2367,8 @@
                 renderCard: (p) => {
                     let hotelBtn = '';
                     let dispInfo = '';
-                    let actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick="App.client.confirmOrder('${p.id}', '${p.store_id}', ${p.preco}, '${p.categoria}')">Contratar Serviço</button>`;
+                    // Passando categoria e delivery_info para a função de confirmação
+                    let actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick='App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${JSON.stringify(p.delivery_info || null)})'>Contratar Serviço</button>`;
 
                     // Lógica para Hotel
                     if(p.categoria === 'Hoteis/Pousadas') {
@@ -2369,6 +2403,7 @@
             utils: {
                 toast: (msg, type='success') => { const c = document.getElementById('toast-container'); const e = document.createElement('div'); e.className=`toast ${type}`; e.innerHTML=`<span>${msg}</span>`; c.appendChild(e); setTimeout(()=>e.remove(), 4000); },
                 
+                // NOTIFICAÇÃO DO LOJISTA
                 showChatNotification: (name, msg, clientId) => {
                     const c = document.getElementById('store-notifications');
                     const e = document.createElement('div');
