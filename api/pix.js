@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
   // TOKEN DO ADMIN (Fallback)
-  const ADMIN_ACCESS_TOKEN = 'APP_USR-834374cc-7e6d-494f-9842-49a7e3e57357'; 
+  const ADMIN_ACCESS_TOKEN = 'APP_USR-3f60abc3-0a70-4b62-b180-653ebcae79ec'; 
 
   // Função para pegar o token da loja
   async function getTokenForStore(storeId) {
