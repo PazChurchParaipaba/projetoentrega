@@ -862,15 +862,36 @@
         
         #payment-brick_container { min-height: 300px; }
         
-        /* IMPRESSÃO DE PEDIDOS */
+    /* CORREÇÃO PARA A IMPRESSÃO SAIR CORRETA (NÃO EM BRANCO) */
         @media print {
-            body * { visibility: hidden; }
-            #printable-area, #printable-area * { visibility: visible; }
-            #printable-area { position: absolute; left: 0; top: 0; width: 100%; color: black; font-family: 'Courier New', Courier, monospace; }
+            /* Esconde tudo na página */
+            body * { 
+                visibility: hidden; 
+            }
+            
+            /* Mostra e força a exibição da área de impressão */
+            #printable-area, #printable-area * { 
+                visibility: visible; 
+                display: block !important; /* <--- ISSO É O QUE FAZ APARECER */
+            }
+            
+            /* Posiciona a nota fiscal no topo da folha */
+            #printable-area { 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 100%; 
+                background: white; 
+                color: black; 
+                font-family: 'Courier New', Courier, monospace; 
+                z-index: 9999;
+            }
+            
+            /* Garante que modais, botões flutuantes e menus não apareçam */
+            .modal-overlay, .cart-floater, #store-notifications, .pwa-banner, header, nav {
+                display: none !important;
+            }
         }
-    </style>
-</head>
-<body>
     <div class="toast-container" id="toast-container"></div>
     
     <div id="store-notifications"></div>
