@@ -2543,6 +2543,7 @@
                     let actionText = "Contratar Serviço";
                     if (p.categoria === 'Comidas' || p.categoria === 'Bebidas') actionText = "Fazer Pedido"; // MODIFICADO PARA INCLUIR BEBIDAS
                     if (p.categoria === 'Serviços de Gesso') actionText = "Orçamento";
+                    if (p.categoria === 'Roupas') actionText = "Realizar Pedido";
                     
                     let actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick='App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${JSON.stringify(p.delivery_info || null)})'>${actionText}</button>`;
 
