@@ -877,34 +877,30 @@
                 overflow: visible !important;
             }
 
-            /* 3. Força a exibição da área de impressão no topo */
-            #printable-area {
-                display: block !important;
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                margin: 0;
-                padding: 15px;
-                background-color: white;
-                color: black;
-                font-family: 'Courier New', Courier, monospace; /* Fonte tipo cupom fiscal */
-                font-size: 14px;
-                z-index: 9999;
-            }
-
-            /* 4. Garante que todo conteúdo dentro da área de impressão apareça */
-            #printable-area * {
+           /* IMPRESSÃO CORRIGIDA */
+        @media print {
+            body * { visibility: hidden; }
+            #printable-area, #printable-area * { 
                 visibility: visible !important;
                 display: block !important;
-                color: black !important; /* Força tinta preta */
             }
-            
-            /* 5. Ajuste para itens flex dentro da impressão */
-            #printable-area div {
-                display: flex !important; /* Mantém alinhamento se usar flex */
+            #printable-area { 
+                position: absolute; 
+                left: 0; 
+                top: 0; 
+                width: 100%; 
+                background: white; 
+                color: black !important; 
+                font-family: 'Courier New', Courier, monospace; 
+                z-index: 9999;
+            }
+            .modal-overlay, .cart-floater, #store-notifications, .pwa-banner, header, nav, .btn {
+                display: none !important;
             }
         }
+    </style>
+</head>
+<body>
     <div class="toast-container" id="toast-container"></div>
     
     <div id="store-notifications"></div>
