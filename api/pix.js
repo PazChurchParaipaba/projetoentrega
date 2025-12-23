@@ -59,7 +59,13 @@ export default async function handler(req, res) {
             const mpReq = https.request(options, (mpRes) => {
                 let data = '';
                 mpRes.on('data', (c) => data += c);
-                mpRes.on('end', () => resolve(JSON.parse(data)));
+                mpRes.on('end', () => {
+                    try {
+                        resolve(JSON.parse(data));
+                    } catch (e) {
+                        resolve({ status: 'error', detail: 'Invalid JSON from MP' });
+                    }
+                });
             });
             mpReq.on('error', (e) => reject(e));
             mpReq.end();
@@ -131,7 +137,15 @@ export default async function handler(req, res) {
             const mpReq = https.request(options, (mpRes) => {
                 let data = '';
                 mpRes.on('data', (c) => data += c);
-                mpRes.on('end', () => resolve({ status: mpRes.statusCode, body: JSON.parse(data) }));
+                mpRes.on('end', () => {
+                    try {
+                        const json = JSON.parse(data);
+                        resolve({ status: mpRes.statusCode, body: json });
+                    } catch (err) {
+                        // Se o MP retornar HTML de erro (503/504), captura aqui
+                        resolve({ status: 502, body: { error: "Bad Gateway / Invalid JSON from MP", raw: data } });
+                    }
+                });
             });
             mpReq.on('error', (e) => reject(e));
             mpReq.write(postData);
