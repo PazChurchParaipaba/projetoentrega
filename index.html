@@ -1945,7 +1945,6 @@
                     if (App.state.pixInterval) clearInterval(App.state.pixInterval); 
                 },
                 renderBrick: async (amount) => {
-                    if (amount < 5) amount = 5; 
                     const builder = mpInstance.bricks();
                     App.state.brickController = await builder.create("payment", "payment-brick_container", {
                         initialization: { amount: amount, payer: { email: App.state.profile.email || 'guest@nexlog.com' } },
