@@ -862,34 +862,47 @@
         
         #payment-brick_container { min-height: 300px; }
         
-    /* CORREÇÃO PARA A IMPRESSÃO SAIR CORRETA (NÃO EM BRANCO) */
+   /* CORREÇÃO DEFINITIVA DE IMPRESSÃO */
         @media print {
-            /* Esconde tudo na página */
-            body * { 
-                visibility: hidden; 
+            /* 1. Esconde interfaces do sistema (Menu, Botões, etc) */
+            header, main, nav, .cart-floater, .pwa-banner, .toast-container, #store-notifications, .btn, .modal-overlay {
+                display: none !important;
             }
-            
-            /* Mostra e força a exibição da área de impressão */
-            #printable-area, #printable-area * { 
-                visibility: visible; 
-                display: block !important; /* <--- ISSO É O QUE FAZ APARECER */
+
+            /* 2. Configura o corpo da página para impressão */
+            body {
+                background: white;
+                margin: 0;
+                padding: 0;
+                overflow: visible !important;
             }
-            
-            /* Posiciona a nota fiscal no topo da folha */
-            #printable-area { 
-                position: absolute; 
-                left: 0; 
-                top: 0; 
-                width: 100%; 
-                background: white; 
-                color: black; 
-                font-family: 'Courier New', Courier, monospace; 
+
+            /* 3. Força a exibição da área de impressão no topo */
+            #printable-area {
+                display: block !important;
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                margin: 0;
+                padding: 15px;
+                background-color: white;
+                color: black;
+                font-family: 'Courier New', Courier, monospace; /* Fonte tipo cupom fiscal */
+                font-size: 14px;
                 z-index: 9999;
             }
+
+            /* 4. Garante que todo conteúdo dentro da área de impressão apareça */
+            #printable-area * {
+                visibility: visible !important;
+                display: block !important;
+                color: black !important; /* Força tinta preta */
+            }
             
-            /* Garante que modais, botões flutuantes e menus não apareçam */
-            .modal-overlay, .cart-floater, #store-notifications, .pwa-banner, header, nav {
-                display: none !important;
+            /* 5. Ajuste para itens flex dentro da impressão */
+            #printable-area div {
+                display: flex !important; /* Mantém alinhamento se usar flex */
             }
         }
     <div class="toast-container" id="toast-container"></div>
