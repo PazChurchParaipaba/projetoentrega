@@ -210,6 +210,10 @@
         .chat-user-info div:first-child { font-weight: bold; color: var(--text-main); }
         .chat-user-info div:last-child { font-size: 0.8rem; color: var(--text-muted); }
 
+        /* ==========================================================================
+           13. UTILS E EXTRAS
+           ==========================================================================
+        */
         .toast-container { position: fixed; bottom: 90px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
         .toast { background: white; padding: 1rem 1.5rem; border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 12px; animation: slideInRight 0.3s forwards; pointer-events: auto; min-width: 300px; border-left: 5px solid var(--primary); font-weight: 500; }
         .toast.error { border-left-color: var(--danger); color: var(--danger-dark); }
@@ -223,6 +227,7 @@
         .secure-box { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 20px; border-radius: 8px; text-align: center; color: #166534; animation: fadeIn 0.5s; }
         #payment-brick_container { min-height: 300px; }
         
+        /* IMPRESSÃO DE PEDIDOS */
         @media print {
             body * { visibility: hidden; }
             #printable-area, #printable-area * { visibility: visible; }
@@ -232,7 +237,9 @@
 </head>
 <body>
     <div class="toast-container" id="toast-container"></div>
+    
     <div id="store-notifications"></div>
+    
     <div id="cart-floater" class="cart-floater" onclick="App.cart.open()">
         <i class="ri-shopping-cart-2-line"></i>
         <span id="cart-count">0 itens</span> | <span id="cart-total">R$ 0,00</span>
@@ -258,6 +265,7 @@
     </header>
 
     <main>
+        
         <section id="view-home" class="view-section active">
             <div style="background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 5px 0; position:sticky; top:70px; z-index:90; border-bottom:1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
                 <div class="container" style="padding-top: 10px; padding-bottom: 0;">
@@ -272,6 +280,7 @@
                     <h1 style="font-size: 2rem;">Encontre Profissionais e Serviços</h1>
                     <p>Logística inteligente para o que você precisar.</p>
                 </div>
+                
                 <div id="public-catalog" class="grid grid-3">
                     <div class="card" style="text-align:center; padding:4rem;">
                         <i class="ri-loader-4-line spin" style="font-size:2.5rem; color:var(--primary)"></i>
@@ -283,11 +292,13 @@
 
         <section id="view-auth" class="view-section container">
             <div class="card auth-card">
+                
                 <div id="auth-state-login">
                     <div style="margin-bottom: 2rem;">
                         <h2 style="color:var(--primary); margin-bottom:0.5rem;">Bem-vindo</h2>
                         <p>Entre para gerenciar seus pedidos e serviços</p>
                     </div>
+                    
                     <div class="input-wrapper">
                         <label>Endereço de Email</label>
                         <input type="email" id="login-email" class="input-field" placeholder="seu@email.com">
@@ -296,10 +307,13 @@
                         <label>Sua Senha</label>
                         <input type="password" id="login-pass" class="input-field" placeholder="••••••">
                     </div>
+                    
                     <button class="btn btn-primary btn-full" onclick="App.auth.login()">Entrar no Sistema</button>
+                    
                     <div style="margin-top:1rem;">
                         <button class="btn btn-sm btn-secondary" onclick="App.auth.switchView('recover')">Esqueci minha senha</button>
                     </div>
+
                     <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--border);">
                         <p class="text-xs">Não possui conta?</p>
                         <button class="btn btn-secondary btn-full" onclick="App.auth.switchView('roles')">Criar Nova Conta</button>
@@ -309,6 +323,7 @@
                 <div id="auth-state-recover" style="display:none;">
                     <h3>Recuperação de Senha</h3>
                     <p>Informe seus dados para validar sua identidade.</p>
+                    
                     <div class="input-wrapper">
                         <label>Email Cadastrado</label>
                         <input type="email" id="rec-email" class="input-field" placeholder="seu@email.com">
@@ -317,6 +332,7 @@
                         <label>CPF (Validação de Segurança)</label>
                         <input type="text" id="rec-cpf" class="input-field" placeholder="000.000.000-00">
                     </div>
+                    
                     <button class="btn btn-primary btn-full" onclick="App.auth.recoverPassword()">Enviar Email de Recuperação</button>
                     <button class="btn btn-secondary btn-full" style="margin-top:0.5rem" onclick="App.auth.switchView('login')">Voltar</button>
                 </div>
@@ -341,7 +357,7 @@
                             <i class="ri-tools-line"></i>
                             <span class="font-bold">Sou Prestador</span>
                         </div>
-                        <div class="role-card" onclick="App.auth.startReg('garcom')">
+                         <div class="role-card" onclick="App.auth.startReg('garcom')">
                             <i class="ri-restaurant-line"></i>
                             <span class="font-bold">Sou Garçom</span>
                         </div>
@@ -352,6 +368,7 @@
                 <div id="auth-state-register" style="display:none;">
                     <h3 id="reg-title">Cadastro</h3>
                     <p>Preencha seus dados para continuar</p>
+                    
                     <div class="input-wrapper">
                         <label>Nome Completo</label>
                         <input type="text" id="reg-name" class="input-field" placeholder="Seu nome">
@@ -364,7 +381,9 @@
                         <label>Senha</label>
                         <input type="password" id="reg-pass" class="input-field" placeholder="••••••">
                     </div>
+                    
                     <div id="reg-dynamic-fields"></div>
+                    
                     <button class="btn btn-primary btn-full" onclick="App.auth.register()" id="btn-final-reg" style="margin-top:1rem;">Finalizar Cadastro</button>
                     <button class="btn btn-secondary btn-full" style="margin-top:0.5rem" onclick="App.auth.switchView('roles')">Voltar</button>
                 </div>
@@ -811,6 +830,7 @@
                         <input type="text" id="waiter-prod-search" class="input-field" placeholder="Busque o produto...">
                         <button class="btn btn-primary btn-sm" style="width:auto;" onclick="App.waiter.addItem()">Add</button>
                     </div>
+                    <div id="waiter-search-results" style="border:1px solid #eee; max-height:150px; overflow-y:auto; display:none;"></div>
                 </div>
 
                 <h5>Itens do Pedido</h5>
@@ -1510,6 +1530,7 @@
                             </div>
                             <hr style="border-top: 1px dashed black;">
                             <h3>TOTAL: R$ ${(order.taxa_servico/0.15).toFixed(2)}</h3>
+                            <p style="font-size: 0.8rem;">Obrigado pela preferência!</p>
                         </div>
                     `;
                     const area = document.getElementById('printable-area');
@@ -1850,216 +1871,7 @@
                 }
             },
             
-            client: {
-                init: async () => {
-                    const { data: orders } = await _sb.from('orders').select('*, products(nome)').eq('cliente_id', App.state.user.id).order('created_at', {ascending:false});
-                    document.getElementById('client-orders-list').innerHTML = orders?.map(o => `
-                        <div class="card" style="margin-bottom:1rem"><div style="display:flex; justify-content:space-between; margin-bottom:0.5rem"><strong>${o.products?.nome}</strong><span class="badge status-${o.status}">${o.status}</span></div><p class="text-sm">${o.endereco_destino}</p>${['em_rota', 'aceito', 'concluido'].includes(o.status) ? `<button class="btn btn-success btn-sm btn-full" onclick="App.map.open('${o.id}', false)">Rastrear Entrega</button>` : ''}</div>`).join('') || '<p>Nenhum pedido.</p>';
-                    
-                    // CARREGA HISTORICO DE CONVERSAS (CLIENTE)
-                    App.chat.loadHistory('client');
-                },
-                checkTableBill: async () => {
-                     const num = document.getElementById('client-table-check').value;
-                     if(!num) return;
-                     // Busca a comanda aberta com esse numero na loja atual (precisaria saber a loja, aqui assumimos a primeira loja ou contexto)
-                     // Para simplificar: cliente logado já sabe a loja se tiver feito pedido antes. Se for novo, teria que escanear QR.
-                     // Vamos simular busca global por numero (arriscado, mas serve pro exemplo)
-                     const { data } = await _sb.from('comandas').select('*, stores(mp_public_key)').eq('numero', num).eq('status', 'aberta').single();
-                     
-                     if(data && data.items) {
-                         const total = data.items.reduce((acc, i) => acc + (i.price * i.qtd), 0);
-                         if(confirm(`Mesa ${num}: Total R$ ${total.toFixed(2)}. Pagar agora online?`)) {
-                              // Abre Mercado Pago
-                              // Pega chave da loja
-                              const pk = data.stores?.mp_public_key || CONFIG.adminPublicKey;
-                              mpInstance = new MercadoPago(pk);
-                              
-                              App.payment.open(total, {
-                                  store_id: data.store_id,
-                                  basePrice: total,
-                                  address: `MESA ${num} (Pagto Online)`,
-                                  requer_montagem: false,
-                                  taxa: 0 // Sem taxa extra pra mesa
-                              });
-                         }
-                     } else {
-                         alert("Mesa não encontrada ou fechada.");
-                     }
-                },
-                confirmOrder: async (pid, sid, price, category, deliveryInfoRaw) => { 
-                    if(!App.state.user) { App.router.go('auth'); return; }
-                    
-                    let address = "";
-                    
-                    // LÓGICA DE ENDEREÇO VS RESERVA
-                    if (category === 'Hoteis/Pousadas') {
-                        // Busca dados do usuário para a reserva
-                        const { data: userProfile } = await _sb.from('profiles').select('*').eq('id', App.state.user.id).single();
-                        if(userProfile) {
-                            address = `RESERVA: ${userProfile.nome_completo} | CPF: ${userProfile.cpf || 'Não inf.'} | Email: ${userProfile.email}`;
-                            alert("Dados capturados para reserva. Prossiga para o pagamento.");
-                        } else {
-                            address = "Dados de reserva pendentes.";
-                        }
-                    } else {
-                        // Pede endereço normal
-                        address = prompt("Endereço de Entrega Completo:"); 
-                        if(!address) return;
-                    }
-                    
-                    // LÓGICA DE UPSELL (COMIDAS) - MODIFICADA PARA BUSCAR APENAS BEBIDAS
-                    if (category === 'Comidas') {
-                        if (confirm("Você vai querer beber alguma coisa?")) {
-                            // Se sim, cancela o fluxo atual e filtra por Bebidas na loja
-                            App.utils.toast("Filtrando bebidas desta loja...", "info");
-                            
-                            // FILTRO INTELIGENTE: Mostra apenas produtos da categoria "Bebidas" dessa loja
-                            let query = _sb.from('products').select('*, stores(nome_loja)').eq('store_id', sid).eq('categoria', 'Bebidas');
-                            const { data } = await query;
-                            
-                            // Renderiza apenas os itens dessa loja (excluindo o que já ia comprar pra não duplicar visualmente ou pode manter tudo)
-                            let html = `<div style="grid-column:1/-1; margin-bottom:10px;">
-                                <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <h3 style="color:var(--success)">🥤 Bebidas da Loja</h3>
-                                    <button class="btn btn-sm btn-primary" style="width:auto;" onclick="App.client.finalizeCart('${pid}', '${sid}', ${price}, '${address}')">Voltar ao Carrinho/Pagar</button>
-                                </div>
-                                <p class="text-sm text-muted">Adicione uma bebida ou clique em Voltar para pagar.</p>
-                            </div>`;
-                            
-                            if (data && data.length > 0) {
-                                html += data.map(p => App.catalog.renderCard(p)).join('');
-                            } else {
-                                html += `<p style="grid-column:1/-1; text-align:center">Nenhuma bebida cadastrada nesta loja.</p>`;
-                            }
-                            
-                            document.getElementById('public-catalog').innerHTML = html;
-                            
-                            return; // Interrompe o pagamento para o usuário escolher mais itens
-                        }
-                    }
-
-                    // --- CÁLCULO DE TAXAS (Serviços e Delivery) ---
-                    let finalPrice = price;
-                    let feeVal = 0;
-                    
-                    // Verifica se o produto tem delivery info (Comidas/Bebidas)
-                    if (deliveryInfoRaw) {
-                        try {
-                            const d = JSON.parse(deliveryInfoRaw);
-                            const val = parseFloat(d.fee_val) || 0;
-                            if(d.fee_type === 'percent') {
-                                feeVal = price * (val / 100);
-                            } else {
-                                feeVal = val;
-                            }
-                            if(feeVal > 0) alert(`Será adicionada uma taxa de entrega de R$ ${feeVal.toFixed(2)}`);
-                        } catch(e) {}
-                    }
-                    
-                    // Verifica categorias de serviço (Frete, Montador, etc.)
-                    const serviceCats = ['Fretes e Mudanças', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Manutenção Eletrodomésticos', 'Jardinagem', 'Serviços de Manutenção', 'Outros'];
-                    if (serviceCats.includes(category)) {
-                        // Se não foi definido taxa específica pelo lojista (delivery_info nulo), cobra padrão 35
-                        if (feeVal === 0) {
-                            feeVal = 35.00;
-                            alert("Taxa de serviço padrão de R$ 35,00 aplicada.");
-                        }
-                    }
-
-                    finalPrice += feeVal;
-
-                    const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', sid).single();
-                    const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
-                    mpInstance = new MercadoPago(publicKeyToUse);
-                    
-                    // Taxa de serviço (comissão da plataforma) continua sendo calculada sobre o valor base ou total, aqui mantive a lógica original de 15% sobre o total final
-                    const commission = finalPrice * 0.15;
-                    
-                    App.payment.open(finalPrice, { product_id: pid, store_id: sid, basePrice: finalPrice, address, requer_montagem: false, taxa: commission });
-                },
-                // Nova função auxiliar para voltar do fluxo de bebidas para o pagamento original
-                finalizeCart: async (pid, sid, price, address) => {
-                     const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', sid).single();
-                     const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
-                     mpInstance = new MercadoPago(publicKeyToUse);
-                     
-                     // Recalcula taxas básicas (sem upsell adicional neste momento simples)
-                     const commission = price * 0.15;
-                     App.payment.open(price, { product_id: pid, store_id: sid, basePrice: price, address, requer_montagem: false, taxa: commission });
-                },
-                // --- LÓGICA DE ORÇAMENTO (GESSO) ---
-                openBudget: (p) => {
-                    if(!App.state.user) { App.router.go('auth'); return; }
-                    
-                    const g = typeof p.gesso_info === 'string' ? JSON.parse(p.gesso_info) : p.gesso_info;
-                    
-                    // Salva dados no hidden para cálculo
-                    document.getElementById('budget-prod-id').value = p.id;
-                    document.getElementById('budget-store-id').value = p.store_id;
-                    document.getElementById('budget-base-price').value = g.price_m2;
-                    document.getElementById('budget-labor-val').value = g.labor_val;
-                    document.getElementById('budget-labor-type').value = g.labor_type;
-                    
-                    document.getElementById('budget-area').value = "";
-                    document.getElementById('display-material').innerText = "R$ 0,00";
-                    document.getElementById('display-labor').innerText = "R$ 0,00";
-                    document.getElementById('display-total').innerText = "R$ 0,00";
-                    
-                    document.getElementById('budget-modal').style.display = 'flex';
-                },
-                calculateBudget: () => {
-                    const area = parseFloat(document.getElementById('budget-area').value) || 0;
-                    const priceM2 = parseFloat(document.getElementById('budget-base-price').value) || 0;
-                    const laborVal = parseFloat(document.getElementById('budget-labor-val').value) || 0;
-                    const laborType = document.getElementById('budget-labor-type').value;
-                    
-                    // Cálculo Material
-                    const materialCost = area * priceM2;
-                    
-                    // Cálculo Mão de Obra
-                    let laborCost = 0;
-                    if(laborType === 'fixed') {
-                        // Valor fixo por m2
-                        laborCost = area * laborVal;
-                    } else {
-                        // Porcentagem sobre o material
-                        laborCost = materialCost * (laborVal / 100);
-                    }
-                    
-                    const total = materialCost + laborCost;
-                    App.state.currentBudgetTotal = total;
-                    
-                    document.getElementById('display-material').innerText = `R$ ${materialCost.toFixed(2)}`;
-                    document.getElementById('display-labor').innerText = `R$ ${laborCost.toFixed(2)}`;
-                    document.getElementById('display-total').innerText = `R$ ${total.toFixed(2)}`;
-                },
-                finishBudgetOrder: async () => {
-                    const total = App.state.currentBudgetTotal;
-                    if(total <= 0) return alert("Por favor, calcule a área primeiro.");
-                    
-                    const pid = document.getElementById('budget-prod-id').value;
-                    const sid = document.getElementById('budget-store-id').value;
-                    
-                    document.getElementById('budget-modal').style.display = 'none';
-                    
-                    // 50% de entrada para Gesso
-                    const downPayment = total * 0.5;
-                    
-                    const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', sid).single();
-                    const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
-                    mpInstance = new MercadoPago(publicKeyToUse);
-                    
-                    const address = prompt("Endereço de Entrega/Serviço:"); 
-                    if(!address) return;
-                    
-                    // Abre pagamento com 50%
-                    App.payment.open(downPayment, { product_id: pid, store_id: sid, basePrice: total, address, requer_montagem: false, taxa: 0 });
-                    alert(`O valor total é R$ ${total.toFixed(2)}. Você pagará 50% (R$ ${downPayment.toFixed(2)}) agora.`);
-                }
-            },
-            
-      // --- MÓDULO DE CHAT (COMPLETO) ---
+            // --- MÓDULO DE CHAT (COMPLETO) ---
             chat: {
                 open: async (storeId, clientId = null) => {
                     if(!App.state.user) return App.router.go('auth');
@@ -2283,40 +2095,6 @@
                 }
             },
 
-            // --- MÓDULO MAPA (COMPLETO) ---
-            map: {
-                open: (id, isDriver, addr='') => {
-                    App.state.activeOrder = id; document.getElementById('map-modal').style.display='flex';
-                    const dest = document.getElementById('map-dest-address'); if(isDriver) { dest.innerHTML=`<strong>Destino:</strong> ${addr}`; dest.style.display='block'; } else dest.style.display='none';
-                    document.getElementById('btn-start-gps').style.display = isDriver ? 'block' : 'none'; document.getElementById('btn-end-gps').style.display = 'none';
-                    setTimeout(() => {
-                        if(!App.state.mapInstance) { App.state.mapInstance = L.map('map').setView([-23.5505, -46.6333], 13); let tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'; if (CONFIG.mapboxToken.includes('pk.')) tileUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${CONFIG.mapboxToken}`; L.tileLayer(tileUrl, { attribution: 'Mapbox / OpenStreetMap' }).addTo(App.state.mapInstance); }
-                        App.state.mapInstance.invalidateSize(); if(!isDriver) App.map.watchOrder(id);
-                    }, 500);
-                },
-                watchOrder: (id) => { 
-                    _sb.channel(`track-${id}`).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, (payload) => { 
-                        const { lat_atual, lng_atual, status } = payload.new; 
-                        if(status==='em_rota') App.utils.toast('Saiu para entrega!', 'info'); 
-                        if(status==='concluido') { App.utils.toast('Entrega Finalizada!', 'success'); document.getElementById('map-status-badge').innerText="Concluído"; } 
-                        if(lat_atual && lng_atual) App.map.updatePin(lat_atual, lng_atual); 
-                    }).subscribe(); 
-                },
-                startGPS: () => { 
-                    document.getElementById('btn-start-gps').style.display='none'; document.getElementById('btn-end-gps').style.display='block'; 
-                    _sb.from('orders').update({ status: 'em_rota' }).eq('id', App.state.activeOrder); 
-                    
-                    App.state.watchId = navigator.geolocation.watchPosition(async (pos) => { 
-                        const { latitude, longitude } = pos.coords; 
-                        App.map.updatePin(latitude, longitude); 
-                        await _sb.from('orders').update({ lat_atual: latitude, lng_atual: longitude }).eq('id', App.state.activeOrder); 
-                    }, e=>console.log(e), {enableHighAccuracy:true, maximumAge:0, timeout:5000}); 
-                },
-                finishDelivery: async () => { if(confirm("Confirmar entrega?")) { navigator.geolocation.clearWatch(App.state.watchId); await _sb.from('orders').update({ status: 'concluido' }).eq('id', App.state.activeOrder); App.utils.toast("Finalizado!", "success"); App.map.close(); App.provider.init(); } },
-                updatePin: (lat, lng) => { if(App.state.marker) App.state.marker.setLatLng([lat,lng]); else App.state.marker=L.marker([lat,lng]).addTo(App.state.mapInstance); App.state.mapInstance.setView([lat,lng], 16); },
-                close: () => { document.getElementById('map-modal').style.display='none'; if(App.state.watchId) navigator.geolocation.clearWatch(App.state.watchId); _sb.removeAllChannels(); }
-            },
-
             // --- MÓDULO CATÁLOGO (COMPLETO COM LÓGICA DE CARRINHO/UPSELL) ---
             catalog: {
                 currentCat: 'Todos',
@@ -2345,28 +2123,24 @@
                     let dispInfo = '';
                     let actionBtn = '';
                     
+                    // Se for Comida ou Bebida -> Botão Adicionar ao Carrinho
                     if (p.categoria === 'Comidas' || p.categoria === 'Bebidas') {
                         // Passamos o objeto do produto com tratamento de aspas
                         const prodStr = JSON.stringify(p).replace(/"/g, '&quot;');
                         actionBtn = `<button class="btn btn-success btn-full" style="margin-top:10px" onclick='App.cart.add(${prodStr}, "${p.store_id}")'>Adicionar ao Carrinho</button>`;
+                    } else if (p.categoria === 'Hoteis/Pousadas') {
+                         if(p.disponibilidade) {
+                             const [start, end] = p.disponibilidade.split('|');
+                             const fmt = d => d.split('-').reverse().join('/');
+                             dispInfo = `<div class="text-xs" style="background:#f0f9ff; padding:5px; border-radius:4px; margin-top:5px; color:#0369a1;">📅 Disp: ${fmt(start)} até ${fmt(end)}</div>`;
+                         }
+                         actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick="App.client.confirmOrder('${p.id}', '${p.store_id}', ${p.preco}, '${p.categoria}', null)">Contratar Serviço</button>`;
+                    } else if (p.categoria === 'Serviços de Gesso' && p.gesso_info) {
+                        actionBtn = `<button class="btn btn-warning btn-full" style="margin-top:10px" onclick='App.client.openBudget(${JSON.stringify(p)})'>Fazer Orçamento</button>`;
+                        dispInfo = `<div class="text-xs" style="color:#854d0e; margin-top:5px;">Orçamento por m²</div>`;
                     } else {
-                        // Lógica padrão para serviços
-                        let actionText = "Contratar Serviço";
-                        if (p.categoria === 'Serviços de Gesso') actionText = "Orçamento";
-                        let onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${JSON.stringify(p.delivery_info || null)})`;
-                        
-                        if(p.categoria === 'Hoteis/Pousadas') {
-                             if(p.disponibilidade) {
-                                 const [start, end] = p.disponibilidade.split('|');
-                                 const fmt = d => d.split('-').reverse().join('/');
-                                 dispInfo = `<div class="text-xs" style="background:#f0f9ff; padding:5px; border-radius:4px; margin-top:5px; color:#0369a1;">📅 Disp: ${fmt(start)} até ${fmt(end)}</div>`;
-                             }
-                        } else if (p.categoria === 'Serviços de Gesso' && p.gesso_info) {
-                            onclick = `App.client.openBudget(${JSON.stringify(p).replace(/"/g, '&quot;')})`;
-                            dispInfo = `<div class="text-xs" style="color:#854d0e; margin-top:5px;">Orçamento por m²</div>`;
-                        }
-                        
-                        actionBtn = `<button class="btn ${p.categoria==='Serviços de Gesso'?'btn-warning':'btn-secondary'} btn-full" style="margin-top:10px" onclick='${onclick}'>${actionText}</button>`;
+                        // Outros serviços
+                        actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick="App.client.confirmOrder('${p.id}', '${p.store_id}', ${p.preco}, '${p.categoria}', null)">Contratar Serviço</button>`;
                     }
                     
                     let chatBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>`;
