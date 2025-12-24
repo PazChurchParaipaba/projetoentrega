@@ -1968,20 +1968,13 @@
                     if (!App.state.user) return;
                     let { data: store } = await _sb.from('stores').select('*').eq('admin_id', App.state.user.id).maybeSingle();
                     
-                    // CORREÇÃO: Não cria loja padrão "Minha Loja" se ela não existir. 
-                    // Assume-se que o cadastro criou corretamente. Se falhou, avisa.
                     if (!store) {
-                        // Tenta criar apenas se realmente não existir, mas usa um nome genérico provisório
-                        // Idealmente isso não deve acontecer se o cadastro funcionou.
-                        console.warn("Loja não encontrada para este usuário. Verifique o cadastro.");
-                        // Opcional: Criar fallback ou pedir para completar cadastro
                         const { data: newStore } = await _sb.from('stores').insert({ admin_id: App.state.user.id, nome_loja: 'Loja (Complete o Cadastro)' }).select().single();
                         store = newStore;
                     }
                     
                     App.state.storeId = store.id;
 
-                    // Logica de Chaves e Parceiro
                     if(store.mp_access_token) {
                         document.getElementById('store-keys-area').style.display = 'none';
                         document.getElementById('store-keys-locked').style.display = 'block';
@@ -1995,36 +1988,32 @@
                         if(p) document.getElementById('active-partner-display').innerText = `Parceiro Vinculado: ${p.nome_completo} (${p.email})`;
                     }
 
-                    // Carrega Comandas da Loja
                     App.store.loadComandas();
 
-                    // Carrega Pedidos e Métricas
                     const { data: orders } = await _sb.from('orders').select('*, products(nome, categoria, delivery_info), profiles!orders_cliente_id_fkey(nome_completo, email, cpf), prestador:profiles!orders_prestador_id_fkey(nome_completo, chave_pix)').eq('store_id', store.id).order('created_at', { ascending: false });
                     App.store.calcMetrics(orders || []);
-                    
                     App.store.renderOrders(orders);
                     
                     App.store.loadMyProducts();
-                    // INICIA O LISTENER DE MENSAGENS PARA O LOJISTA
                     App.store.listenMessages();
-                    
-                    // CARREGA HISTORICO DE CONVERSAS (LOJA)
                     App.chat.loadHistory('loja');
                 },
                 loadComandas: async () => {
                     const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', {ascending: true});
                     const container = document.getElementById('admin-comanda-grid');
                     if (data) {
-                        container.innerHTML = data.map(c => `
-                            <div class="comanda-card bg-${c.status}" onclick="App.payment.openSplitModal(${c.id}, ${JSON.stringify(c.items || []).replace(/"/g, '&quot;')})">
+                        container.innerHTML = data.map(c => {
+                            // CORREÇÃO: Tratamento seguro para o JSON no onclick
+                            const itemsSafe = JSON.stringify(c.items || []).replace(/"/g, '&quot;');
+                            return `
+                            <div class="comanda-card bg-${c.status}" onclick="App.payment.openSplitModal('${c.id}', ${itemsSafe}, ${c.numero})">
                                 <div class="comanda-corner"></div>
                                 <div class="comanda-dot"></div>
                                 <div style="font-size:1.5rem;">${c.numero}</div>
                                 <div class="text-xs" style="text-transform:uppercase;">${c.status}</div>
                             </div>
-                        `).join('');
+                        `}).join('');
                         
-                        // Atualiza tbm para o Garçom se estiver na view dele
                         if(document.getElementById('comanda-list-container')) {
                             document.getElementById('comanda-list-container').innerHTML = container.innerHTML;
                         }
@@ -2034,19 +2023,13 @@
                      document.getElementById('store-orders-list').innerHTML = orders?.map(o => {
                         let providerHtml = '';
                         if(o.prestador) {
-                            providerHtml = `
-                                <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:8px; margin-top:10px; font-size:0.85rem;">
-                                    <strong>Prestador:</strong> ${o.prestador.nome_completo}<br>
-                                    <strong>Chave Pix:</strong> <span style="font-family:monospace; background:#fff; padding:2px 5px; border-radius:4px;">${o.prestador.chave_pix || 'Não inf.'}</span><br>
-                                    <span style="color:var(--success-dark); font-weight:bold;">Pagar Comissão</span>
-                                </div>
-                            `;
+                            providerHtml = `<div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:8px; margin-top:10px; font-size:0.85rem;"><strong>Prestador:</strong> ${o.prestador.nome_completo}<br><strong>Chave Pix:</strong> ${o.prestador.chave_pix || 'Não inf.'}</div>`;
                         }
                         
-                        // Botão de Impressão para Comidas e Bebidas
                         let printBtn = '';
                         if(o.products?.categoria === 'Comidas' || o.products?.categoria === 'Bebidas') {
-                            printBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:auto; float:right;" onclick='App.store.printOrder(${JSON.stringify(o)})'><i class="ri-printer-line"></i> Imprimir</button>`;
+                            const orderSafe = JSON.stringify(o).replace(/"/g, '&quot;');
+                            printBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:auto; float:right;" onclick="App.store.printOrder(${orderSafe})"><i class="ri-printer-line"></i> Imprimir</button>`;
                         }
 
                         return `
@@ -2060,14 +2043,11 @@
                         </div>`;
                     }).join('') || '<p class="text-sm">Nenhum pedido.</p>';
                 },
-                // NOVA FUNÇÃO: Escuta mensagens para o lojista
                 listenMessages: () => {
                     const myStoreId = App.state.storeId;
-                    // Inscreve no canal para a tabela de mensagens filtrada pela loja atual
                     _sb.channel('store-notifications')
                     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `store_id=eq.${myStoreId}` }, 
                     async (payload) => {
-                        // Se quem mandou a mensagem NÃO sou eu (o lojista), então é um cliente
                         if(payload.new.sender_id !== App.state.user.id) {
                             const { data: sender } = await _sb.from('profiles').select('nome_completo').eq('id', payload.new.sender_id).single();
                             App.utils.showChatNotification(sender.nome_completo, payload.new.content, payload.new.client_id);
@@ -2078,12 +2058,10 @@
                 calcMetrics: (orders) => {
                     const now = new Date();
                     let dayTotal = 0, weekTotal = 0, monthTotal = 0;
-                    
                     orders.forEach(o => {
                         if(['aceito', 'concluido', 'em_rota', 'aguardando_prestador'].includes(o.status)) {
                             const orderDate = new Date(o.created_at);
                             const val = o.taxa_servico / 0.15; 
-                            
                             if(orderDate.toDateString() === now.toDateString()) dayTotal += val;
                             if(orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear()) monthTotal += val;
                             const diffTime = Math.abs(now - orderDate);
@@ -2091,25 +2069,27 @@
                             if(diffDays <= 7) weekTotal += val;
                         }
                     });
-                    
                     document.getElementById('metric-day').innerText = `R$ ${dayTotal.toFixed(2)}`;
                     document.getElementById('metric-week').innerText = `R$ ${weekTotal.toFixed(2)}`;
                     document.getElementById('metric-month').innerText = `R$ ${monthTotal.toFixed(2)}`;
                 },
                 loadMyProducts: async () => {
                     const { data } = await _sb.from('products').select('*').eq('store_id', App.state.storeId);
-                    document.getElementById('store-products-list').innerHTML = data?.map(p => `
+                    document.getElementById('store-products-list').innerHTML = data?.map(p => {
+                        // CORREÇÃO GALERIA LOJISTA
+                        const pSafe = JSON.stringify(p).replace(/"/g, '&quot;');
+                        return `
                         <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
                             <div>
                                 <div style="font-weight:bold">${p.nome} ${p.promocao ? '<span style="color:red; font-size:0.7rem">(Promo)</span>' : ''}</div>
                                 <div class="text-xs text-muted">R$ ${p.preco.toFixed(2)}</div>
                             </div>
                             <div style="display:flex; gap:5px;">
-                                <button class="btn btn-sm btn-secondary" style="width:auto" onclick='App.store.openEditProduct(${JSON.stringify(p)})'>Editar</button>
-                                <button class="btn btn-sm btn-danger" style="width:auto; padding:5px 8px;" onclick='App.store.deleteProduct("${p.id}")'><i class="ri-delete-bin-line"></i></button>
+                                <button class="btn btn-sm btn-secondary" style="width:auto" onclick="App.store.openEditProduct(${pSafe})">Editar</button>
+                                <button class="btn btn-sm btn-danger" style="width:auto; padding:5px 8px;" onclick="App.store.deleteProduct('${p.id}')"><i class="ri-delete-bin-line"></i></button>
                             </div>
-                        </div>
-                    `).join('');
+                        </div>`;
+                    }).join('');
                 },
                 deleteProduct: async (id) => {
                     if(confirm("Deseja realmente excluir este produto?")) {
@@ -2126,11 +2106,10 @@
                     document.getElementById('new-prod-name').value = "";
                     document.getElementById('new-prod-price').value = "";
                     document.getElementById('new-prod-promo').checked = false;
-                    
-                    // Reset campos Gesso e Entrega
                     document.getElementById('gesso-price-m2').value = "";
                     document.getElementById('gesso-labor-val').value = "";
                     document.getElementById('delivery-fee-val').value = "";
+                    document.getElementById('new-prod-file').value = ""; // Limpa fotos
                     
                     document.getElementById('new-prod-cat').value = CONFIG.categories[0];
                     App.store.checkCategory(CONFIG.categories[0]);
@@ -2145,17 +2124,15 @@
                     document.getElementById('new-prod-price').value = p.preco;
                     document.getElementById('new-prod-promo').checked = p.promocao;
                     
-                    // Popula dados de Gesso
                     if(p.gesso_info) {
                         try {
                             const g = typeof p.gesso_info === 'string' ? JSON.parse(p.gesso_info) : p.gesso_info;
                             document.getElementById('gesso-price-m2').value = g.price_m2 || "";
                             document.getElementById('gesso-labor-val').value = g.labor_val || "";
                             document.getElementById('gesso-labor-type').value = g.labor_type || "fixed";
-                        } catch(e) { console.error("Erro ao parsear gesso_info", e); }
+                        } catch(e) {}
                     }
 
-                    // Popula dados de Entrega (Comida)
                     if(p.delivery_info) {
                         try {
                             const d = typeof p.delivery_info === 'string' ? JSON.parse(p.delivery_info) : p.delivery_info;
@@ -2169,25 +2146,16 @@
                 },
                 closeProductModal: () => document.getElementById('product-modal').style.display = 'none',
                 checkCategory: (cat) => {
-                    // Esconde todas as áreas especiais primeiro
                     document.getElementById('hotel-dates-area').style.display = 'none';
                     document.getElementById('gesso-options-area').style.display = 'none';
                     document.getElementById('delivery-options-area').style.display = 'none';
                     
-                    if(cat === 'Hoteis/Pousadas') {
-                        document.getElementById('hotel-dates-area').style.display = 'block';
-                    } else if (cat === 'Serviços de Gesso') {
-                        document.getElementById('gesso-options-area').style.display = 'block';
-                    } else if (cat === 'Comidas' || cat === 'Bebidas') { // MODIFICADO AQUI
-                        document.getElementById('delivery-options-area').style.display = 'block';
-                    }
+                    if(cat === 'Hoteis/Pousadas') document.getElementById('hotel-dates-area').style.display = 'block';
+                    else if (cat === 'Serviços de Gesso') document.getElementById('gesso-options-area').style.display = 'block';
+                    else if (cat === 'Comidas' || cat === 'Bebidas') document.getElementById('delivery-options-area').style.display = 'block';
                 },
                 submitProduct: async () => {
-                    // VERIFICAÇÃO CRÍTICA DO STORE_ID
-                    if(!App.state.storeId) {
-                        alert("Erro crítico: ID da Loja não encontrado. Tente sair e entrar novamente.");
-                        return;
-                    }
+                    if(!App.state.storeId) { alert("Erro crítico: ID da Loja não encontrado."); return; }
 
                     const id = document.getElementById('edit-prod-id').value;
                     const nome = document.getElementById('new-prod-name').value;
@@ -2200,7 +2168,7 @@
                     const files = fileInput.files;
 
                     if (!nome || !preco) return App.utils.toast("Preencha nome e preço", "error");
-                    
+
                     // LÓGICA DE UPLOAD MÚLTIPLO
                     let galeriaUrls = [];
                     
@@ -2219,62 +2187,44 @@
                         }
                     }
 
-                    // Prepara os JSONs
-                    const dateStart = document.getElementById('hotel-start-date').value;
-                    const dateEnd = document.getElementById('hotel-end-date').value;
-                    let disp = null;
-                    if(cat === 'Hoteis/Pousadas' && dateStart && dateEnd) disp = `${dateStart}|${dateEnd}`;
-
-                    // Dados Gesso
-                    let gessoInfo = null;
-                    if(cat === 'Serviços de Gesso') {
-                        gessoInfo = JSON.stringify({
-                            price_m2: document.getElementById('gesso-price-m2').value,
-                            labor_val: document.getElementById('gesso-labor-val').value,
-                            labor_type: document.getElementById('gesso-labor-type').value
-                        });
-                    }
-
-                    // Dados Delivery
-                    let deliveryInfo = null;
-                    if(cat === 'Comidas' || cat === 'Bebidas') { // MODIFICADO AQUI
-                        deliveryInfo = JSON.stringify({
-                            fee_val: document.getElementById('delivery-fee-val').value,
-                            fee_type: document.getElementById('delivery-fee-type').value
-                        });
-                    }
-                    
                     const payload = { 
                         store_id: App.state.storeId, 
                         nome, 
                         preco: parseFloat(preco), 
                         categoria: cat, 
-                        promocao: promo, 
-                        disponibilidade: disp,
-                        gesso_info: gessoInfo,
-                        delivery_info: deliveryInfo
+                        promocao: promo,
+                        gesso_info: (cat === 'Serviços de Gesso') ? JSON.stringify({
+                            price_m2: document.getElementById('gesso-price-m2').value,
+                            labor_val: document.getElementById('gesso-labor-val').value,
+                            labor_type: document.getElementById('gesso-labor-type').value
+                        }) : null,
+                        delivery_info: (cat === 'Comidas' || cat === 'Bebidas') ? JSON.stringify({
+                            fee_val: document.getElementById('delivery-fee-val').value,
+                            fee_type: document.getElementById('delivery-fee-type').value
+                        }) : null
                     };
 
-                    // Se houve upload de novas fotos, atualiza a galeria e a imagem principal
                     if (galeriaUrls.length > 0) {
-                        payload.imagem_url = galeriaUrls[0]; // A primeira foto vira a capa
-                        payload.galeria = galeriaUrls;       // Salva o array completo no campo JSON 'galeria'
+                        payload.imagem_url = galeriaUrls[0]; 
+                        payload.galeria = galeriaUrls;       
                     }
 
                     let res;
                     if(id) {
                         res = await _sb.from('products').update(payload).eq('id', id);
                     } else {
-                        // Se não tiver imagem, usa placeholder
-                        if(galeriaUrls.length === 0 && !id) payload.imagem_url = 'https://placehold.co/400x300?text=NexLog';
+                        if(galeriaUrls.length === 0) {
+                            payload.imagem_url = 'https://placehold.co/400x300?text=NexLog';
+                            payload.galeria = [];
+                        }
                         res = await _sb.from('products').insert(payload);
                     }
 
                     if(res.error) { 
                         console.error("Erro Supabase:", res.error); 
-                        alert("Erro ao salvar produto no banco de dados: " + res.error.message + "\nDetalhes: " + res.error.details); 
+                        alert("Erro ao salvar: " + res.error.message); 
                     } else {
-                        alert("Produto salvo com sucesso!");
+                        alert("Produto salvo!");
                         App.store.closeProductModal(); 
                         App.catalog.fetchPublic(); 
                         App.store.init();
@@ -2285,33 +2235,51 @@
                     const pub = document.getElementById('store-public-key').value.trim();
                     if(!acc || !pub) return App.utils.toast("Preencha ambas as chaves!", "error");
                     await _sb.from('stores').update({ mp_access_token: acc, mp_public_key: pub }).eq('id', App.state.storeId);
-                    App.utils.toast("Chaves salvas e protegidas!", "success");
+                    App.utils.toast("Chaves salvas!", "success");
                     App.store.init();
                 },
                 resetKeys: async () => {
-                    if(confirm("Isso pausará seus recebimentos. Continuar?")) {
+                    if(confirm("Continuar?")) {
                         await _sb.from('stores').update({ mp_access_token: null, mp_public_key: null }).eq('id', App.state.storeId);
                         App.store.init();
                     }
                 },
                 linkPartner: async () => {
                     const email = document.getElementById('partner-email-input').value.trim();
-                    if(!email) return App.utils.toast("Digite o email do motorista", "error");
+                    if(!email) return App.utils.toast("Digite o email", "error");
                     const { data: user } = await _sb.from('profiles').select('id').eq('email', email).single();
-                    if(!user) return App.utils.toast("Motorista não encontrado no sistema.", "error");
+                    if(!user) return App.utils.toast("Não encontrado.", "error");
                     await _sb.from('stores').update({ parceiro_exclusivo_id: user.id }).eq('id', App.state.storeId);
-                    App.utils.toast("Parceiro vinculado com sucesso!", "success");
+                    App.utils.toast("Vinculado!", "success");
                     App.store.init();
                 },
                 dispatch: async (id) => {
                     await _sb.from('orders').update({ status: 'aguardando_prestador', data_agendada: new Date().toISOString() }).eq('id', id);
                     App.utils.toast('Despachado!', 'success'); App.store.init();
                 },
-                setupPrinter: () => {
-                    // Navegadores web não acessam impressoras USB diretamente sem driver/app auxiliar.
-                    // A melhor abordagem "fácil" é abrir a janela de impressão nativa do SO.
+                setupPrinter: () => { window.print(); },
+                printOrder: (order) => {
+                    const content = `
+                        <div style="font-family: monospace; width: 300px; padding: 10px; text-align: center;">
+                            <h3>NEXLOG PEDIDOS</h3>
+                            <p>${new Date().toLocaleString()}</p>
+                            <hr style="border-top: 1px dashed black;">
+                            <p><strong>Pedido #${order.id}</strong></p>
+                            <p>Cliente: ${order.profiles?.nome_completo}</p>
+                            <hr style="border-top: 1px dashed black;">
+                            <div style="text-align: left;">
+                                <p><strong>Item:</strong> ${order.products?.nome}</p>
+                                <p><strong>Valor:</strong> R$ ${(order.taxa_servico/0.15).toFixed(2)}</p>
+                            </div>
+                            <hr style="border-top: 1px dashed black;">
+                            <h3>TOTAL: R$ ${(order.taxa_servico/0.15).toFixed(2)}</h3>
+                        </div>
+                    `;
+                    const area = document.getElementById('printable-area');
+                    area.innerHTML = content;
                     window.print();
-                },
+                }
+            },
                 printOrder: (order) => {
                     // Cria o layout do cupom térmico (58mm/80mm)
                     const content = `
@@ -2344,12 +2312,11 @@
                      App.cart.render();
                 },
                 add: (product, storeId) => {
-                     // Verifica se o produto é de uma loja diferente da atual no carrinho
+                     // Verifica se já tem itens de outra loja
                      if (App.state.cart.length > 0 && App.state.cart[0].storeId !== storeId) {
-                         if(!confirm("Você tem itens de outra loja no carrinho. Deseja limpar o carrinho e iniciar um novo pedido?")) return;
+                         if(!confirm("Você tem itens de outra loja. Limpar carrinho e adicionar este?")) return;
                          App.state.cart = [];
                      }
-                     
                      App.state.cart.push({ ...product, storeId });
                      App.utils.toast("Adicionado ao carrinho!", "success");
                      App.cart.updateFloater();
@@ -2405,10 +2372,16 @@
                      const address = prompt("Endereço de Entrega (ou Mesa):");
                      if(!address) return;
 
-                     // Usamos o sistema de pagamento existente, mas passando um 'produto virtual' que representa o carrinho todo
-                     // Para simplificar, passamos o primeiro produto ID apenas como referência, mas o valor é o total
+                     // CORREÇÃO: Inicializa o Mercado Pago ANTES de abrir o modal
+                     App.utils.toast("Iniciando pagamento...", "info");
+                     const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', storeId).single();
+                     const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
+                     
+                     // Inicializa a instância global
+                     mpInstance = new MercadoPago(publicKeyToUse);
+
                      App.payment.open(total, { 
-                         product_id: App.state.cart[0].id, // Referência
+                         product_id: App.state.cart[0].id, 
                          store_id: storeId, 
                          basePrice: total, 
                          address: address + " (Itens: " + itemsDesc + ")", 
@@ -2416,12 +2389,10 @@
                          taxa: total * 0.15 
                      });
                      
-                     // Limpa carrinho após iniciar pagamento (ou poderia ser após sucesso)
                      App.state.cart = [];
                      App.cart.updateFloater();
                 }
             },
-
             // --- CÓDIGO DO GARÇOM (MESA / COMANDA) ---
             waiter: {
                 init: async () => {
@@ -2520,12 +2491,12 @@
             
             // --- PAGAMENTO: CAIXA / SPLIT ---
             payment: {
-                // Abre modal para finalizar comanda (Caixa)
-                openSplitModal: (comandaId, items) => {
+                openSplitModal: (comandaId, items, numeroMesa) => {
                     App.state.currentComanda = comandaId;
                     App.state.paymentSplits = [];
+                    App.state.currentComandaItems = items; // Salva para impressão
+                    App.state.currentMesaNum = numeroMesa;
                     
-                    // Calcula total
                     let total = 0;
                     if(items && Array.isArray(items)) {
                         total = items.reduce((acc, item) => acc + (item.price * item.qtd), 0);
@@ -2534,10 +2505,56 @@
                     
                     document.getElementById('split-total-due').innerText = `R$ ${total.toFixed(2)}`;
                     document.getElementById('split-remaining').innerText = `R$ ${total.toFixed(2)}`;
-                    document.getElementById('split-amount').value = total.toFixed(2); // Sugere total
+                    document.getElementById('split-amount').value = total.toFixed(2);
                     document.getElementById('split-history').innerHTML = '';
                     
+                    // ADICIONADO: Botão de imprimir no modal
+                    const modalBody = document.querySelector('#split-pay-modal .modal-body');
+                    // Remove botão antigo se houver para não duplicar
+                    const oldBtn = document.getElementById('btn-print-split-detail');
+                    if(oldBtn) oldBtn.remove();
+                    
+                    const printBtn = document.createElement('button');
+                    printBtn.id = 'btn-print-split-detail';
+                    printBtn.className = 'btn btn-info btn-sm btn-full';
+                    printBtn.style.marginBottom = '10px';
+                    printBtn.innerHTML = '<i class="ri-printer-line"></i> Imprimir Conferência';
+                    printBtn.onclick = () => App.payment.printCheck();
+                    
+                    // Insere antes do histórico
+                    const historyTitle = modalBody.querySelector('h5');
+                    modalBody.insertBefore(printBtn, historyTitle);
+
                     document.getElementById('split-pay-modal').style.display = 'flex';
+                },
+                printCheck: () => {
+                    const items = App.state.currentComandaItems || [];
+                    const num = App.state.currentMesaNum || '?';
+                    const total = App.state.comandaTotal || 0;
+                    
+                    let itemsHtml = items.map(i => `
+                        <div style="display:flex; justify-content:space-between;">
+                            <span>${i.qtd}x ${i.nome}</span>
+                            <span>R$ ${(i.price * i.qtd).toFixed(2)}</span>
+                        </div>
+                    `).join('');
+
+                    const content = `
+                        <div style="font-family: monospace; width: 300px; padding: 10px;">
+                            <h3 style="text-align:center;">CONFERÊNCIA DE MESA</h3>
+                            <p style="text-align:center; font-size:1.2rem;">MESA ${num}</p>
+                            <p>${new Date().toLocaleString()}</p>
+                            <hr style="border-top: 1px dashed black;">
+                            ${itemsHtml}
+                            <hr style="border-top: 1px dashed black;">
+                            <h3 style="text-align:right;">TOTAL: R$ ${total.toFixed(2)}</h3>
+                            <br>
+                            <p style="text-align:center; font-size:0.8rem;">* Não é documento fiscal *</p>
+                        </div>
+                    `;
+                    const area = document.getElementById('printable-area');
+                    area.innerHTML = content;
+                    window.print();
                 },
                 toggleCardFields: () => {
                     const method = document.getElementById('split-method').value;
@@ -2547,25 +2564,22 @@
                     const amount = parseFloat(document.getElementById('split-amount').value);
                     const method = document.getElementById('split-method').value;
                     const nsu = document.getElementById('card-nsu').value;
-                    const aut = document.getElementById('card-aut').value;
                     
                     if(!amount || amount <= 0) return alert("Valor inválido");
                     
-                    App.state.paymentSplits.push({ amount, method, nsu, aut });
+                    App.state.paymentSplits.push({ amount, method, nsu });
                     
-                    // Renderiza histórico
                     const hist = document.getElementById('split-history');
                     hist.innerHTML = App.state.paymentSplits.map(s => 
-                        `<div>- R$ ${s.amount.toFixed(2)} (${s.method.toUpperCase()}) ${s.method === 'cartao' ? `[NSU:${s.nsu}]` : ''}</div>`
+                        `<div>- R$ ${s.amount.toFixed(2)} (${s.method.toUpperCase()})</div>`
                     ).join('');
                     
-                    // Calcula restante
                     const paid = App.state.paymentSplits.reduce((acc, s) => acc + s.amount, 0);
                     const remain = App.state.comandaTotal - paid;
                     
                     document.getElementById('split-remaining').innerText = `R$ ${remain > 0 ? remain.toFixed(2) : '0.00'}`;
                     
-                    if(remain <= 0) {
+                    if(remain <= 0.01) { // Margem de erro float
                         document.getElementById('btn-finish-split').disabled = false;
                         document.getElementById('split-amount').value = 0;
                     } else {
@@ -2573,29 +2587,27 @@
                     }
                 },
                 finalizeSplit: async () => {
-                    // Salva pagamentos no banco e fecha comanda
                     await _sb.from('comandas').update({ 
                         status: 'fechada', 
                         payments_info: App.state.paymentSplits,
                         total_pago: App.state.comandaTotal
                     }).eq('id', App.state.currentComanda);
                     
-                    App.utils.toast("Conta Fechada com Sucesso!", "success");
+                    App.utils.toast("Conta Fechada!", "success");
                     document.getElementById('split-pay-modal').style.display = 'none';
                     App.store.loadComandas();
                 },
-                // Métodos originais de Checkout Online (Mercado Pago)
                 open: async (total, orderPayload) => {
                     App.state.pendingPayment = { total, orderPayload };
                     document.getElementById('pay-total-display').innerText = `R$ ${total.toFixed(2)}`;
                     document.getElementById('payment-modal').style.display = 'flex';
                     document.getElementById('payment-brick_container').innerHTML = '';
                     const oldPix = document.getElementById('pix-display-area'); if(oldPix) oldPix.remove();
+                    
                     document.getElementById('payment-brick_container').style.display = 'block';
                     
-                    // Se o total for zero ou menor, não abre brick
                     if(total <= 0) {
-                         alert("Valor total é zero. Pedido será processado sem pagamento.");
+                         alert("Valor total é zero. Pedido processado.");
                          App.payment.finalizeSuccess();
                          return;
                     }
@@ -2608,7 +2620,7 @@
                     if (App.state.pixInterval) clearInterval(App.state.pixInterval); 
                 },
                 renderBrick: async (amount) => {
-                    const builder = mpInstance.bricks();
+                    const builder = mpInstance.bricks(); // mpInstance já deve estar iniciado
                     App.state.brickController = await builder.create("payment", "payment-brick_container", {
                         initialization: { amount: amount, payer: { email: App.state.profile.email || 'guest@nexlog.com' } },
                         customization: { paymentMethods: { ticket: "all", bankTransfer: "all", creditCard: "all", debitCard: "all", maxInstallments: 3 }, visual: { style: { theme: 'default' } } },
@@ -2616,7 +2628,7 @@
                             onReady: () => console.log("Brick Ready"),
                             onError: (e) => console.error(e),
                             onSubmit: async ({ formData }) => {
-                                formData.store_id = App.state.pendingPayment.orderPayload.store_id; // SPLIT
+                                formData.store_id = App.state.pendingPayment.orderPayload.store_id;
                                 return new Promise((resolve, reject) => {
                                     fetch("/api/pix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData) })
                                     .then(async r => {
@@ -2655,12 +2667,10 @@
                     await _sb.from('orders').insert({ cliente_id: App.state.user.id, product_id: orderPayload.product_id, store_id: orderPayload.store_id, endereco_destino: orderPayload.address, requer_montagem: orderPayload.requer_montagem, taxa_servico: orderPayload.taxa, status: 'pendente' });
                     App.utils.toast('Pedido realizado!', 'success'); App.router.go('cliente'); App.client.init();
                     
-                    // IMPRESSÃO AUTOMÁTICA COZINHA (SE FOR CARRINHO)
-                    // Verifica se o payload tem múltiplos itens (indica carrinho)
                     if (orderPayload.address.includes("(Itens:")) {
                         const content = `
                             <div style="font-family: monospace; width: 300px; padding: 10px;">
-                                <h3 style="text-align:center;">PEDIDO COZINHA (Delivery)</h3>
+                                <h3 style="text-align:center;">PEDIDO COZINHA</h3>
                                 <p>Cliente: ${App.state.profile.nome_completo}</p>
                                 <p>Endereço: ${orderPayload.address.split('(Itens:')[0]}</p>
                                 <hr style="border-top: 1px dashed black;">
