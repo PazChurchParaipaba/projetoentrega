@@ -2137,7 +2137,7 @@
                 }
             },
 
-            client: {
+         client: {
                 init: async () => {
                     const { data: orders } = await _sb.from('orders').select('*, products(nome)').eq('cliente_id', App.state.user.id).order('created_at', {ascending:false});
                     document.getElementById('client-orders-list').innerHTML = orders?.map(o => `
@@ -2146,6 +2146,29 @@
                     // CARREGA HISTORICO DE CONVERSAS (CLIENTE)
                     App.chat.loadHistory('client');
                 },
+                checkTableBill: async () => {
+                     const num = document.getElementById('client-table-check').value;
+                     if(!num) return;
+                     const { data } = await _sb.from('comandas').select('*, stores(mp_public_key)').eq('numero', num).eq('status', 'aberta').single();
+                     
+                     if(data && data.items) {
+                         const total = data.items.reduce((acc, i) => acc + (i.price * i.qtd), 0);
+                         if(confirm(`Mesa ${num}: Total R$ ${total.toFixed(2)}. Pagar agora online?`)) {
+                              const pk = data.stores?.mp_public_key || CONFIG.adminPublicKey;
+                              mpInstance = new MercadoPago(pk);
+                              
+                              App.payment.open(total, {
+                                  store_id: data.store_id,
+                                  basePrice: total,
+                                  address: `MESA ${num} (Pagto Online)`,
+                                  requer_montagem: false,
+                                  taxa: 0 // Sem taxa extra pra mesa
+                              });
+                         }
+                     } else {
+                         alert("Mesa não encontrada ou fechada.");
+                     }
+                },
                 confirmOrder: async (pid, sid, price, category, deliveryInfoRaw) => { 
                     if(!App.state.user) { App.router.go('auth'); return; }
                     
@@ -2153,7 +2176,6 @@
                     
                     // LÓGICA DE ENDEREÇO VS RESERVA
                     if (category === 'Hoteis/Pousadas') {
-                        // Busca dados do usuário para a reserva
                         const { data: userProfile } = await _sb.from('profiles').select('*').eq('id', App.state.user.id).single();
                         if(userProfile) {
                             address = `RESERVA: ${userProfile.nome_completo} | CPF: ${userProfile.cpf || 'Não inf.'} | Email: ${userProfile.email}`;
@@ -2162,22 +2184,17 @@
                             address = "Dados de reserva pendentes.";
                         }
                     } else {
-                        // Pede endereço normal
                         address = prompt("Endereço de Entrega Completo:"); 
                         if(!address) return;
                     }
                     
-                    // LÓGICA DE UPSELL (COMIDAS) - MODIFICADA PARA BUSCAR APENAS BEBIDAS
+                    // LÓGICA DE UPSELL (COMIDAS)
                     if (category === 'Comidas') {
                         if (confirm("Você vai querer beber alguma coisa?")) {
-                            // Se sim, cancela o fluxo atual e filtra por Bebidas na loja
                             App.utils.toast("Filtrando bebidas desta loja...", "info");
-                            
-                            // FILTRO INTELIGENTE: Mostra apenas produtos da categoria "Bebidas" dessa loja
                             let query = _sb.from('products').select('*, stores(nome_loja)').eq('store_id', sid).eq('categoria', 'Bebidas');
                             const { data } = await query;
                             
-                            // Renderiza apenas os itens dessa loja (excluindo o que já ia comprar pra não duplicar visualmente ou pode manter tudo)
                             let html = `<div style="grid-column:1/-1; margin-bottom:10px;">
                                 <div style="display:flex; justify-content:space-between; align-items:center;">
                                     <h3 style="color:var(--success)">🥤 Bebidas da Loja</h3>
@@ -2193,16 +2210,14 @@
                             }
                             
                             document.getElementById('public-catalog').innerHTML = html;
-                            
-                            return; // Interrompe o pagamento para o usuário escolher mais itens
+                            return; 
                         }
                     }
 
-                    // --- CÁLCULO DE TAXAS (Serviços e Delivery) ---
+                    // --- CÁLCULO DE TAXAS ---
                     let finalPrice = price;
                     let feeVal = 0;
                     
-                    // Verifica se o produto tem delivery info (Comidas/Bebidas)
                     if (deliveryInfoRaw) {
                         try {
                             const d = JSON.parse(deliveryInfoRaw);
@@ -2216,13 +2231,11 @@
                         } catch(e) {}
                     }
                     
-                    // Verifica categorias de serviço (Frete, Montador, etc.)
                     const serviceCats = ['Fretes e Mudanças', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Manutenção Eletrodomésticos', 'Jardinagem', 'Serviços de Manutenção', 'Outros'];
                     if (serviceCats.includes(category)) {
-                        // Se não foi definido taxa específica pelo lojista (delivery_info nulo), cobra padrão 35
                         if (feeVal === 0) {
-                            feeVal = 0.01;
-                            alert("Não cobramos Taxa de entrega");
+                            feeVal = 35.00;
+                            alert("Taxa de serviço padrão de R$ 35,00 aplicada.");
                         }
                     }
 
@@ -2232,28 +2245,23 @@
                     const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
                     mpInstance = new MercadoPago(publicKeyToUse);
                     
-                    // Taxa de serviço (comissão da plataforma) continua sendo calculada sobre o valor base ou total, aqui mantive a lógica original de 15% sobre o total final
                     const commission = finalPrice * 0.15;
                     
                     App.payment.open(finalPrice, { product_id: pid, store_id: sid, basePrice: finalPrice, address, requer_montagem: false, taxa: commission });
                 },
-                // Nova função auxiliar para voltar do fluxo de bebidas para o pagamento original
                 finalizeCart: async (pid, sid, price, address) => {
                      const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', sid).single();
                      const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
                      mpInstance = new MercadoPago(publicKeyToUse);
                      
-                     // Recalcula taxas básicas (sem upsell adicional neste momento simples)
                      const commission = price * 0.15;
                      App.payment.open(price, { product_id: pid, store_id: sid, basePrice: price, address, requer_montagem: false, taxa: commission });
                 },
-                // --- LÓGICA DE ORÇAMENTO (GESSO) ---
                 openBudget: (p) => {
                     if(!App.state.user) { App.router.go('auth'); return; }
                     
                     const g = typeof p.gesso_info === 'string' ? JSON.parse(p.gesso_info) : p.gesso_info;
                     
-                    // Salva dados no hidden para cálculo
                     document.getElementById('budget-prod-id').value = p.id;
                     document.getElementById('budget-store-id').value = p.store_id;
                     document.getElementById('budget-base-price').value = g.price_m2;
@@ -2273,16 +2281,11 @@
                     const laborVal = parseFloat(document.getElementById('budget-labor-val').value) || 0;
                     const laborType = document.getElementById('budget-labor-type').value;
                     
-                    // Cálculo Material
                     const materialCost = area * priceM2;
-                    
-                    // Cálculo Mão de Obra
                     let laborCost = 0;
                     if(laborType === 'fixed') {
-                        // Valor fixo por m2
                         laborCost = area * laborVal;
                     } else {
-                        // Porcentagem sobre o material
                         laborCost = materialCost * (laborVal / 100);
                     }
                     
@@ -2302,7 +2305,6 @@
                     
                     document.getElementById('budget-modal').style.display = 'none';
                     
-                    // 50% de entrada para Gesso
                     const downPayment = total * 0.5;
                     
                     const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', sid).single();
@@ -2312,7 +2314,6 @@
                     const address = prompt("Endereço de Entrega/Serviço:"); 
                     if(!address) return;
                     
-                    // Abre pagamento com 50%
                     App.payment.open(downPayment, { product_id: pid, store_id: sid, basePrice: total, address, requer_montagem: false, taxa: 0 });
                     alert(`O valor total é R$ ${total.toFixed(2)}. Você pagará 50% (R$ ${downPayment.toFixed(2)}) agora.`);
                 }
