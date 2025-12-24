@@ -894,6 +894,50 @@
                 font-family: 'Courier New', Courier, monospace; 
                 z-index: 9999;
             }
+            /* ESTILO PARA GALERIA DE PRODUTOS */
+.product-gallery-wrapper {
+    position: relative;
+    width: 100%;
+    height: 250px; /* Altura da foto no card */
+    background: #f1f5f9;
+    margin: -1.5rem -1.5rem 1rem -1.5rem;
+    overflow: hidden;
+}
+
+.product-gallery {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    height: 100%;
+    width: 100%;
+    scrollbar-width: none; /* Firefox */
+}
+
+.product-gallery::-webkit-scrollbar { 
+    display: none; /* Chrome/Safari */
+}
+
+.gallery-img {
+    flex: 0 0 100%;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ajusta a imagem sem esticar */
+    object-position: top center; /* Foca no topo (bom para roupas) */
+    scroll-snap-align: start;
+}
+
+/* Indicador de que tem mais fotos */
+.gallery-badge {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    pointer-events: none;
+}
             .modal-overlay, .cart-floater, #store-notifications, .pwa-banner, header, nav, .btn {
                 display: none !important;
             }
@@ -1339,7 +1383,7 @@
 
                 <div class="input-wrapper">
                     <label>Foto do Item</label>
-                    <input type="file" id="new-prod-file" class="input-field" accept="image/jpeg, image/png">
+                    <input type="file" id="new-prod-file" class="input-field" accept="image/*" multiple>
                     <p class="text-xs text-muted" style="margin-top:5px">Formatos: JPG ou PNG</p>
                 </div>
             </div>
@@ -1823,35 +1867,101 @@
                     }
                 },
                 submitProduct: async () => {
-                    // VERIFICAÇÃO CRÍTICA DO STORE_ID
-                    if(!App.state.storeId) {
-                        alert("Erro crítico: ID da Loja não encontrado. Tente sair e entrar novamente.");
-                        return;
-                    }
+    if(!App.state.storeId) {
+        alert("Erro crítico: ID da Loja não encontrado.");
+        return;
+    }
 
-                    const id = document.getElementById('edit-prod-id').value;
-                    const nome = document.getElementById('new-prod-name').value;
-                    const preco = document.getElementById('new-prod-price').value;
-                    const cat = document.getElementById('new-prod-cat').value;
-                    const promo = document.getElementById('new-prod-promo').checked;
-                    const file = document.getElementById('new-prod-file').files[0];
-                    
-                    // Dados Hotel
-                    const dateStart = document.getElementById('hotel-start-date').value;
-                    const dateEnd = document.getElementById('hotel-end-date').value;
-                    let disp = null;
-                    if(cat === 'Hoteis/Pousadas' && dateStart && dateEnd) disp = `${dateStart}|${dateEnd}`;
+    const id = document.getElementById('edit-prod-id').value;
+    const nome = document.getElementById('new-prod-name').value;
+    const preco = document.getElementById('new-prod-price').value;
+    const cat = document.getElementById('new-prod-cat').value;
+    const promo = document.getElementById('new-prod-promo').checked;
+    
+    // PEGA MÚLTIPLOS ARQUIVOS
+    const fileInput = document.getElementById('new-prod-file');
+    const files = fileInput.files;
 
-                    // Dados Gesso
-                    let gessoInfo = null;
-                    if(cat === 'Serviços de Gesso') {
-                        gessoInfo = JSON.stringify({
-                            price_m2: document.getElementById('gesso-price-m2').value,
-                            labor_val: document.getElementById('gesso-labor-val').value,
-                            labor_type: document.getElementById('gesso-labor-type').value
-                        });
-                    }
+    if (!nome || !preco) return App.utils.toast("Preencha nome e preço", "error");
 
+    // LÓGICA DE UPLOAD MÚLTIPLO
+    let galeriaUrls = [];
+    
+    // Se estiver editando, tentamos manter a galeria antiga se não enviou novas
+    // (Isso requereria carregar a galeria antiga no modal, mas para simplificar, 
+    // se enviar novas fotos, substitui as antigas).
+    
+    if (files.length > 0) {
+        App.utils.toast(`Enviando ${files.length} fotos... aguarde.`, "info");
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const fileName = `${Date.now()}_${i}_${file.name.replace(/\s/g, '_')}`;
+            const { error: upErr } = await _sb.storage.from('produtos').upload(fileName, file);
+            
+            if (!upErr) {
+                const { data } = _sb.storage.from('produtos').getPublicUrl(fileName);
+                galeriaUrls.push(data.publicUrl);
+            }
+        }
+    }
+
+    // Prepara os JSONs
+    const dateStart = document.getElementById('hotel-start-date').value;
+    const dateEnd = document.getElementById('hotel-end-date').value;
+    let disp = (cat === 'Hoteis/Pousadas' && dateStart && dateEnd) ? `${dateStart}|${dateEnd}` : null;
+
+    let gessoInfo = (cat === 'Serviços de Gesso') ? JSON.stringify({
+        price_m2: document.getElementById('gesso-price-m2').value,
+        labor_val: document.getElementById('gesso-labor-val').value,
+        labor_type: document.getElementById('gesso-labor-type').value
+    }) : null;
+
+    let deliveryInfo = (cat === 'Comidas' || cat === 'Bebidas') ? JSON.stringify({
+        fee_val: document.getElementById('delivery-fee-val').value,
+        fee_type: document.getElementById('delivery-fee-type').value
+    }) : null;
+
+    // MONTA O PAYLOAD
+    const payload = { 
+        store_id: App.state.storeId, 
+        nome, 
+        preco: parseFloat(preco), 
+        categoria: cat, 
+        promocao: promo, 
+        disponibilidade: disp,
+        gesso_info: gessoInfo,
+        delivery_info: deliveryInfo
+    };
+
+    // Se houve upload de novas fotos, atualiza a galeria e a imagem principal
+    if (galeriaUrls.length > 0) {
+        payload.imagem_url = galeriaUrls[0]; // A primeira foto vira a capa
+        payload.galeria = galeriaUrls;       // Salva o array completo no campo JSON 'galeria'
+    }
+
+    let res;
+    if(id) {
+        // Se for update e não mandou fotos novas, não sobrescreve a galeria existente (o supabase faz merge se não enviar o campo)
+        res = await _sb.from('products').update(payload).eq('id', id);
+    } else {
+        if(galeriaUrls.length === 0) {
+            payload.imagem_url = 'https://placehold.co/400x300?text=Sem+Foto';
+            payload.galeria = [];
+        }
+        res = await _sb.from('products').insert(payload);
+    }
+
+    if(res.error) { 
+        console.error("Erro Supabase:", res.error); 
+        alert("Erro ao salvar: " + res.error.message); 
+    } else {
+        alert("Produto salvo com sucesso!");
+        App.store.closeProductModal(); 
+        App.catalog.fetchPublic(); 
+        App.store.init();
+    }
+}
                     // Dados Delivery
                     let deliveryInfo = null;
                     if(cat === 'Comidas' || cat === 'Bebidas') { // MODIFICADO AQUI
@@ -2538,41 +2648,73 @@
 
                     document.getElementById('public-catalog').innerHTML = html || '<p style="grid-column:1/-1; text-align:center">Nenhuma oferta nesta categoria.</p>';
                 },
-                renderCard: (p) => {
-                    let dispInfo = '';
-                    let actionText = "Contratar Serviço";
-                    if (p.categoria === 'Comidas' || p.categoria === 'Bebidas') actionText = "Fazer Pedido"; // MODIFICADO PARA INCLUIR BEBIDAS
-                    if (p.categoria === 'Serviços de Gesso') actionText = "Orçamento";
-                    if (p.categoria === 'Roupas') actionText = "Realizar Pedido";
-                    
-                    let actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick='App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${JSON.stringify(p.delivery_info || null)})'>${actionText}</button>`;
+renderCard: (p) => {
+    let dispInfo = '';
+    let actionText = "Contratar Serviço";
+    
+    // Definição do texto do botão
+    if (p.categoria === 'Comidas' || p.categoria === 'Bebidas') actionText = "Fazer Pedido";
+    if (p.categoria === 'Serviços de Gesso') actionText = "Orçamento";
+    if (p.categoria === 'Roupas') actionText = "Comprar"; // Roupas
 
-                    if(p.categoria === 'Hoteis/Pousadas') {
-                         if(p.disponibilidade) {
-                             const [start, end] = p.disponibilidade.split('|');
-                             const fmt = d => d.split('-').reverse().join('/');
-                             dispInfo = `<div class="text-xs" style="background:#f0f9ff; padding:5px; border-radius:4px; margin-top:5px; color:#0369a1;">📅 Disp: ${fmt(start)} até ${fmt(end)}</div>`;
-                         }
-                    }
+    // Lógica do Botão Principal
+    let actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick='App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${JSON.stringify(p.delivery_info || null)})'>${actionText}</button>`;
 
-                    if(p.categoria === 'Serviços de Gesso' && p.gesso_info) {
-                        actionBtn = `<button class="btn btn-warning btn-full" style="margin-top:10px" onclick='App.client.openBudget(${JSON.stringify(p)})'>Fazer Orçamento</button>`;
-                        dispInfo = `<div class="text-xs" style="color:#854d0e; margin-top:5px;">Orçamento por m²</div>`;
-                    }
-                    
-                    let chatBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>`;
+    // Casos Especiais (Hotel/Gesso/Comida)
+    if(p.categoria === 'Hoteis/Pousadas' && p.disponibilidade) {
+         const [start, end] = p.disponibilidade.split('|');
+         const fmt = d => d.split('-').reverse().join('/');
+         dispInfo = `<div class="text-xs" style="background:#f0f9ff; padding:5px; border-radius:4px; margin-top:5px; color:#0369a1;">📅 Disp: ${fmt(start)} até ${fmt(end)}</div>`;
+         actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick="App.client.confirmOrder('${p.id}', '${p.store_id}', ${p.preco}, '${p.categoria}', null)">Contratar Serviço</button>`;
+    }
+    if(p.categoria === 'Serviços de Gesso' && p.gesso_info) {
+        actionBtn = `<button class="btn btn-warning btn-full" style="margin-top:10px" onclick='App.client.openBudget(${JSON.stringify(p)})'>Fazer Orçamento</button>`;
+        dispInfo = `<div class="text-xs" style="color:#854d0e; margin-top:5px;">Orçamento por m²</div>`;
+    }
+    if (p.categoria === 'Comidas' || p.categoria === 'Bebidas') {
+        const prodStr = JSON.stringify(p).replace(/"/g, '&quot;');
+        actionBtn = `<button class="btn btn-success btn-full" style="margin-top:10px" onclick='App.cart.add(${prodStr}, "${p.store_id}")'>Adicionar ao Carrinho</button>`;
+    }
+    
+    let chatBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>`;
 
-                    return `
-                        <div class="card">
-                            ${p.promocao ? '<div class="badge badge-promo">PROMOÇÃO</div>' : ''}
-                            <div style="height:180px; background:#f1f5f9; margin:-1.5rem -1.5rem 1rem -1.5rem; display:flex; align-items:center; justify-content:center; overflow:hidden;"><img src="${p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto'}" style="width:100%; height:100%; object-fit:cover;"></div>
-                            <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div>
-                            <h4>${p.nome}</h4><h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
-                            ${dispInfo}
-                            ${actionBtn}
-                            ${chatBtn}
-                        </div>`;
-                },
+    // --- LÓGICA DA GALERIA DE FOTOS ---
+    let imagesHtml = '';
+    // Verifica se tem galeria e se é um array com itens
+    if (p.galeria && Array.isArray(p.galeria) && p.galeria.length > 0) {
+        // Cria todas as imagens lado a lado
+        const imgs = p.galeria.map(url => `<img src="${url}" class="gallery-img" loading="lazy">`).join('');
+        imagesHtml = `
+            <div class="product-gallery-wrapper">
+                <div class="product-gallery">${imgs}</div>
+                ${p.galeria.length > 1 ? '<div class="gallery-badge"><i class="ri-image-line"></i> ' + p.galeria.length + ' fotos</div>' : ''}
+            </div>
+        `;
+    } else {
+        // Fallback para imagem única antiga
+        imagesHtml = `
+            <div class="product-gallery-wrapper">
+                <div class="product-gallery">
+                    <img src="${p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto'}" class="gallery-img">
+                </div>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="card">
+            ${p.promocao ? '<div class="badge badge-promo">PROMOÇÃO</div>' : ''}
+            
+            ${imagesHtml}
+            
+            <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div>
+            <h4>${p.nome}</h4>
+            <h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
+            ${dispInfo}
+            ${actionBtn}
+            ${chatBtn}
+        </div>`;
+},
                 fetchPublic: async () => { App.catalog.load(); }
             },
 
