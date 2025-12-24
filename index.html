@@ -28,917 +28,258 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        /* ==========================================================================
-           1. VARIÁVEIS DE TEMA (ROOT)
-           ==========================================================================
-        */
+        /* CORREÇÃO GLOBAL PARA SVG */
+        svg {
+            max-width: 100%;
+            height: auto;
+            min-width: 1em;
+            min-height: 1em;
+        }
+
         :root {
-            /* Palette de Cores Primárias */
             --primary: #2563eb;
             --primary-dark: #1e40af;
             --primary-light: #eff6ff;
             --primary-fade: rgba(37, 99, 235, 0.1);
-
-            /* Cores de Interface */
             --surface: #ffffff;
             --background: #f8fafc;
             --border: #e2e8f0;
             --divider: #cbd5e1;
-            
-            /* Tipografia */
             --text-main: #0f172a;
             --text-muted: #64748b;
             --text-light: #94a3b8;
-
-            /* Cores Semânticas (Estados) */
             --success: #10b981;
             --success-bg: #dcfce7;
             --success-dark: #047857;
-            
             --warning: #f59e0b;
             --warning-bg: #fef3c7;
             --warning-dark: #b45309;
-            
             --danger: #ef4444;
             --danger-bg: #fee2e2;
             --danger-dark: #b91c1c;
-            
             --info: #0ea5e9;
             --info-bg: #e0f2fe;
             --info-dark: #0369a1;
-
-            /* Medidas e Layout */
+            --comanda-livre: #22c55e;
+            --comanda-aberta: #ef4444;
+            --comanda-bloqueada: #6b7280;
+            --comanda-em-uso: #3b82f6; 
+            --comanda-avulso: #f97316;
+            --comanda-fechada: #a855f7;
             --radius-sm: 8px;
             --radius-md: 12px;
             --radius-lg: 16px;
             --radius-full: 9999px;
-            
-            /* Sombras (Depth) */
             --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
             --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
             --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
             --shadow-float: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-            
-            /* Animações e Transições */
             --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            
-            /* Dimensões Fixas */
             --nav-height: 70px;
             --mobile-nav-height: 65px;
         }
 
-        /* ==========================================================================
-           2. RESET E BASE
-           ==========================================================================
-        */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        html { scroll-behavior: smooth; font-size: 16px; }
+        body { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif; background-color: var(--background); color: var(--text-main); min-height: 100vh; padding-bottom: calc(var(--mobile-nav-height) + 20px); overflow-x: hidden; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+
+        h1, h2, h3, h4, h5, h6 { font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; margin-bottom: 0.75rem; color: var(--text-main); }
+        h1 { font-size: 2.25rem; } h2 { font-size: 1.875rem; } h3 { font-size: 1.5rem; } h4 { font-size: 1.25rem; } h5 { font-size: 1rem; }
+        p { color: var(--text-muted); line-height: 1.6; margin-bottom: 1rem; font-size: 1rem; }
+        .text-sm { font-size: 0.875rem; } .text-xs { font-size: 0.75rem; } .text-center { text-align: center; } .font-bold { font-weight: 700; } .text-primary { color: var(--primary); } .text-white { color: white; }
+
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem; padding: 0.875rem 1.5rem; border-radius: var(--radius-sm); font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: var(--transition); border: 1px solid transparent; outline: none; position: relative; overflow: hidden; text-decoration: none; user-select: none; width: 100%; }
+        .btn:active { transform: scale(0.98); }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; pointer-events: none; filter: grayscale(1); }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+        .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        .btn-secondary { background: white; border-color: var(--border); color: var(--text-main); }
+        .btn-secondary:hover { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger:hover { background: var(--danger-dark); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-success:hover { background: var(--success-dark); }
+        .btn-info { background: var(--info); color: white; }
+        .btn-warning { background: var(--warning); color: #78350f; }
+        .btn-sm { padding: 0.5rem 1rem; font-size: 0.85rem; width: auto; }
+
+        .input-wrapper { margin-bottom: 1.25rem; text-align: left; position: relative; }
+        .input-wrapper label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; font-weight: 600; color: var(--text-main); }
+        .input-field { width: 100%; padding: 0.875rem 1rem; border: 2px solid var(--border); border-radius: var(--radius-sm); background: white; font-size: 1rem; transition: var(--transition); font-family: inherit; color: var(--text-main); appearance: none; }
+        .input-field::placeholder { color: #cbd5e1; }
+        .input-field:focus { border-color: var(--primary); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); outline: none; }
+        select.input-field { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1rem center; background-size: 1em; }
+        .checkbox-wrapper { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; background: #fff8f8; padding: 10px; border-radius: var(--radius-sm); border: 1px dashed var(--danger); }
+        .checkbox-wrapper input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--danger); }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+        .card { background: var(--surface); border-radius: var(--radius-md); padding: 1.5rem; border: 1px solid var(--border); box-shadow: var(--shadow-sm); transition: var(--transition); position: relative; overflow: hidden; display: flex; flex-direction: column; }
+        .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: #cbd5e1; }
+        .grid { display: grid; gap: 1.5rem; }
+        .grid-2 { grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); }
+        .grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
         
-        html {
-            scroll-behavior: smooth;
-            font-size: 16px;
-        }
+        .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.5rem; }
+        @media (max-width: 600px) { .metrics-grid { grid-template-columns: 1fr; } }
+        .metric-card { background: linear-gradient(135deg, var(--surface), var(--primary-light)); padding: 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border); text-align: center; }
+        .metric-card h5 { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; margin-bottom: 5px; }
+        .metric-card .value { color: var(--primary-dark); font-size: 1.5rem; font-weight: 800; }
 
-        body {
-            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-            background-color: var(--background);
-            color: var(--text-main);
-            min-height: 100vh;
-            padding-bottom: calc(var(--mobile-nav-height) + 20px);
-            overflow-x: hidden;
-            line-height: 1.5;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* ==========================================================================
-           3. TIPOGRAFIA 
-           ==========================================================================
-        */
-        h1, h2, h3, h4, h5, h6 {
-            font-weight: 800;
-            letter-spacing: -0.03em;
-            line-height: 1.2;
-            margin-bottom: 0.75rem;
-            color: var(--text-main);
-        }
-
-        h1 { font-size: 2.25rem; }
-        h2 { font-size: 1.875rem; }
-        h3 { font-size: 1.5rem; }
-        h4 { font-size: 1.25rem; }
-        h5 { font-size: 1rem; }
-
-        p {
-            color: var(--text-muted);
-            line-height: 1.6;
-            margin-bottom: 1rem;
-            font-size: 1rem;
-        }
-
-        .text-sm { font-size: 0.875rem; }
-        .text-xs { font-size: 0.75rem; }
-        .text-center { text-align: center; }
-        .font-bold { font-weight: 700; }
-        .text-primary { color: var(--primary); }
-        .text-white { color: white; }
-
-        /* ==========================================================================
-           4. COMPONENTES: BOTÕES 
-           ==========================================================================
-        */
-        .btn {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.6rem;
-            padding: 0.875rem 1.5rem;
-            border-radius: var(--radius-sm);
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: var(--transition);
-            border: 1px solid transparent;
-            outline: none;
-            position: relative;
-            overflow: hidden;
-            text-decoration: none;
-            user-select: none;
-            width: 100%;
-        }
-
-        .btn:active {
-            transform: scale(0.98);
-        }
-
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            pointer-events: none;
-            filter: grayscale(1);
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-            background: white;
-            border-color: var(--border);
-            color: var(--text-main);
-        }
-
-        .btn-secondary:hover {
-            border-color: var(--primary);
-            color: var(--primary);
-            background: var(--primary-light);
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-        
-        .btn-danger:hover {
-            background: var(--danger-dark);
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-        
-        .btn-success:hover {
-            background: var(--success-dark);
-        }
-        
-        .btn-info {
-            background: var(--info);
-            color: white;
-        }
-
-        .btn-warning {
-            background: var(--warning);
-            color: #78350f;
-        }
-
-        .btn-sm {
-            padding: 0.5rem 1rem;
-            font-size: 0.85rem;
-            width: auto;
-        }
-
-        /* ==========================================================================
-           5. COMPONENTES: FORMULÁRIOS 
-           ==========================================================================
-        */
-        .input-wrapper {
-            margin-bottom: 1.25rem;
-            text-align: left;
-            position: relative;
-        }
-
-        .input-wrapper label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text-main);
-        }
-
-        .input-field {
-            width: 100%;
-            padding: 0.875rem 1rem;
-            border: 2px solid var(--border);
-            border-radius: var(--radius-sm);
-            background: white;
-            font-size: 1rem;
-            transition: var(--transition);
-            font-family: inherit;
-            color: var(--text-main);
-            appearance: none;
-        }
-
-        .input-field::placeholder {
-            color: #cbd5e1;
-        }
-
-        .input-field:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
-            outline: none;
-        }
-        
-        select.input-field {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 1rem center;
-            background-size: 1em;
-        }
-        
-        .checkbox-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 1rem;
-            background: #fff8f8;
-            padding: 10px;
-            border-radius: var(--radius-sm);
-            border: 1px dashed var(--danger);
-        }
-        
-        .checkbox-wrapper input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            accent-color: var(--danger);
-        }
-
-        /* ==========================================================================
-           6. COMPONENTES: CARDS E LAYOUT 
-           ==========================================================================
-        */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem 1.5rem;
-        }
-
-        .card {
-            background: var(--surface);
-            border-radius: var(--radius-md);
-            padding: 1.5rem;
-            border: 1px solid var(--border);
-            box-shadow: var(--shadow-sm);
-            transition: var(--transition);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .card:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-md);
-            border-color: #cbd5e1;
-        }
-
-        .grid {
-            display: grid;
-            gap: 1.5rem;
-        }
-
-        .grid-2 {
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-        }
-
-        .grid-3 {
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        }
-        
-        /* Métricas */
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-bottom: 1.5rem;
-        }
-        
-        @media (max-width: 600px) {
-            .metrics-grid { grid-template-columns: 1fr; }
-        }
-
-        .metric-card {
-            background: linear-gradient(135deg, var(--surface), var(--primary-light));
-            padding: 1.25rem;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border);
-            text-align: center;
-        }
-        
-        .metric-card h5 { 
-            color: var(--text-muted); 
-            font-size: 0.85rem; 
-            text-transform: uppercase; 
-            margin-bottom: 5px; 
-        }
-        
-        .metric-card .value { 
-            color: var(--primary-dark); 
-            font-size: 1.5rem; 
-            font-weight: 800; 
-        }
-
-        /* ==========================================================================
-           7. BADGES 
-           ==========================================================================
-        */
-        .badge {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.35rem 0.85rem;
-            border-radius: 99px;
-            font-size: 0.75rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
+        .badge { display: inline-flex; align-items: center; padding: 0.35rem 0.85rem; border-radius: 99px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
         .status-pendente { background: var(--warning-bg); color: var(--warning-dark); }
         .status-aceito { background: var(--info-bg); color: var(--info-dark); }
         .status-em_rota { background: #dbeafe; color: #1e40af; animation: pulse 2s infinite; }
         .status-concluido { background: var(--success-bg); color: var(--success-dark); }
-        
-        .badge-promo { 
-            background: var(--danger); 
-            color: white; 
-            position: absolute; 
-            top: 10px; 
-            left: 10px; 
-            z-index: 10; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2); 
-        }
+        .badge-promo { background: var(--danger); color: white; position: absolute; top: 10px; left: 10px; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); } 70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); } }
 
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
-        }
+        header { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); padding: 0 5%; height: var(--nav-height); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow-sm); }
+        .brand { display: flex; align-items: center; gap: 1rem; }
+        .logo-img { height: 60px; width: auto; object-fit: contain; }
+        .brand-text { font-size: 1.5rem; font-weight: 800; color: var(--primary); letter-spacing: -0.05em; }
+        .bottom-nav { display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: white; border-top: 1px solid var(--border); padding: 0.5rem 0; z-index: 90; justify-content: space-around; align-items: center; height: var(--mobile-nav-height); box-shadow: 0 -4px 10px rgba(0,0,0,0.05); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 0.7rem; color: var(--text-muted); padding: 0.5rem; cursor: pointer; transition: var(--transition); background: none; border: none; }
+        .nav-item.active { color: var(--primary); font-weight: 700; transform: translateY(-2px); }
+        @media (max-width: 768px) { .bottom-nav { display: flex; } .desktop-only { display: none !important; } }
 
-        /* ==========================================================================
-           8. HEADER 
-           ==========================================================================
-        */
-        header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-            padding: 0 5%;
-            height: var(--nav-height);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: var(--shadow-sm);
-        }
+        .view-section { display: none; animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .view-section.active { display: block; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .logo-img {
-            height: 60px; /* Aumentado conforme solicitado */
-            width: auto;
-            object-fit: contain;
-        }
-
-        .brand-text {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--primary);
-            letter-spacing: -0.05em;
-        }
-
-        .bottom-nav {
-            display: none;
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: white;
-            border-top: 1px solid var(--border);
-            padding: 0.5rem 0;
-            z-index: 90;
-            justify-content: space-around;
-            align-items: center;
-            height: var(--mobile-nav-height);
-            box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 2px;
-            font-size: 0.7rem;
-            color: var(--text-muted);
-            padding: 0.5rem;
-            cursor: pointer;
-            transition: var(--transition);
-            background: none;
-            border: none;
-        }
-
-        .nav-item.active {
-            color: var(--primary);
-            font-weight: 700;
-            transform: translateY(-2px);
-        }
-
-        @media (max-width: 768px) {
-            .bottom-nav { display: flex; }
-            .desktop-only { display: none !important; }
-        }
-
-        /* ==========================================================================
-           9. VIEWS
-           ==========================================================================
-        */
-        .view-section {
-            display: none;
-            animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .view-section.active {
-            display: block;
-        }
-
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* ==========================================================================
-           10. CATEGORIAS 
-           ==========================================================================
-        */
-        .category-scroll {
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            padding: 10px 0;
-            scrollbar-width: none;
-            -ms-overflow-style: none;
-            white-space: nowrap;
-        }
+        .category-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 10px 0; scrollbar-width: none; -ms-overflow-style: none; white-space: nowrap; }
         .category-scroll::-webkit-scrollbar { display: none; }
+        .cat-pill { padding: 8px 16px; background: white; border: 1px solid var(--border); border-radius: 99px; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.2s; box-shadow: var(--shadow-sm); }
+        .cat-pill:hover, .cat-pill.active { background: var(--primary); color: white; border-color: var(--primary); transform: translateY(-1px); box-shadow: var(--shadow-md); }
 
-        .cat-pill {
-            padding: 8px 16px;
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 99px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            cursor: pointer;
-            transition: all 0.2s;
-            box-shadow: var(--shadow-sm);
-        }
+        .auth-card { max-width: 420px; margin: 3rem auto; text-align: center; padding: 2.5rem; }
+        .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem; }
+        .role-card { border: 2px solid var(--border); border-radius: var(--radius-md); padding: 1.5rem; cursor: pointer; transition: var(--transition); display: flex; flex-direction: column; align-items: center; gap: 0.5rem; background-color: white; }
+        .role-card:hover { border-color: var(--primary); background: var(--primary-light); }
+        .role-card.selected { border-color: var(--primary); background: #dbeafe; box-shadow: 0 0 0 2px var(--primary); }
+        .role-card i { font-size: 2.5rem; color: var(--primary); margin-bottom: 0.5rem; }
+        .camera-container { background: #000; border-radius: var(--radius-md); overflow: hidden; position: relative; aspect-ratio: 4/3; margin-bottom: 1rem; display: none; border: 2px solid var(--border); }
+        .camera-container video { width: 100%; height: 100%; object-fit: cover; }
+        .camera-overlay { position: absolute; bottom: 0; left: 0; width: 100%; padding: 1rem; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); color: white; text-align: center; font-weight: 600; }
 
-        .cat-pill:hover, .cat-pill.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-md);
-        }
-
-        /* ==========================================================================
-           11. AUTH E CADASTRO
-           ==========================================================================
-        */
-        .auth-card {
-            max-width: 420px;
-            margin: 3rem auto;
-            text-align: center;
-            padding: 2.5rem;
-        }
-
-        .role-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-top: 2rem;
-        }
-
-        .role-card {
-            border: 2px solid var(--border);
-            border-radius: var(--radius-md);
-            padding: 1.5rem;
-            cursor: pointer;
-            transition: var(--transition);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-            background-color: white;
-        }
-
-        .role-card:hover {
-            border-color: var(--primary);
-            background: var(--primary-light);
-        }
-
-        .role-card.selected {
-            border-color: var(--primary);
-            background: #dbeafe;
-            box-shadow: 0 0 0 2px var(--primary);
-        }
-
-        .role-card i {
-            font-size: 2.5rem;
-            color: var(--primary);
-            margin-bottom: 0.5rem;
-        }
-
-        .camera-container {
-            background: #000;
-            border-radius: var(--radius-md);
-            overflow: hidden;
-            position: relative;
-            aspect-ratio: 4/3;
-            margin-bottom: 1rem;
-            display: none;
-            border: 2px solid var(--border);
-        }
-
-        .camera-container video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .camera-overlay {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            padding: 1rem;
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-            color: white;
-            text-align: center;
-            font-weight: 600;
-        }
-
-        /* ==========================================================================
-           12. MODAIS E CHAT
-           ==========================================================================
-        */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(4px);
-            z-index: 2000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            animation: fadeIn 0.2s ease-out;
-        }
-
-        .modal-content {
-            background: white;
-            width: 90%;
-            max-width: 500px;
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            max-height: 90vh;
-            box-shadow: var(--shadow-float);
-            animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); z-index: 2000; display: none; align-items: center; justify-content: center; animation: fadeIn 0.2s ease-out; }
+        .modal-content { background: white; width: 90%; max-width: 500px; border-radius: var(--radius-lg); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; box-shadow: var(--shadow-float); animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-        .modal-header {
-            padding: 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 1px solid var(--border);
-            background-color: #fcfcfc;
-        }
-
-        .modal-body {
-            padding: 1.5rem;
-            overflow-y: auto;
-        }
-
-        .modal-footer {
-            padding: 1.5rem;
-            border-top: 1px solid var(--border);
-            background: white;
-        }
-
+        .modal-header { padding: 1.5rem; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); background-color: #fcfcfc; }
+        .modal-body { padding: 1.5rem; overflow-y: auto; }
+        .modal-footer { padding: 1.5rem; border-top: 1px solid var(--border); background: white; }
         #map-modal .modal-content { height: 90%; }
         #map { flex: 1; width: 100%; background: #e2e8f0; min-height: 300px; z-index: 1; }
 
-        /* Estilos do Chat */
-        .chat-messages {
-            height: 300px;
-            overflow-y: auto;
-            border: 1px solid var(--border);
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: var(--radius-sm);
-            margin-bottom: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .chat-bubble {
-            padding: 10px 14px;
-            border-radius: 12px;
-            max-width: 80%;
-            font-size: 0.9rem;
-            word-wrap: break-word;
-            position: relative;
-        }
-        
-        .chat-bubble.mine {
-            align-self: flex-end;
-            background: var(--primary);
-            color: white;
-            border-bottom-right-radius: 2px;
-        }
-        
-        .chat-bubble.theirs {
-            align-self: flex-start;
-            background: white;
-            border: 1px solid #e2e8f0;
-            color: var(--text-main);
-            border-bottom-left-radius: 2px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-        
-        .chat-status {
-            font-size: 0.7rem;
-            text-align: right;
-            margin-top: 5px;
-            opacity: 0.7;
-            display: flex;
-            justify-content: flex-end;
-            gap: 3px;
-        }
-        
-        /* Novas Classes para Edição/Exclusão do Chat */
+        .chat-messages { height: 300px; overflow-y: auto; border: 1px solid var(--border); background: #f9f9f9; padding: 15px; border-radius: var(--radius-sm); margin-bottom: 10px; display: flex; flex-direction: column; gap: 10px; }
+        .chat-bubble { padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 0.9rem; word-wrap: break-word; position: relative; }
+        .chat-bubble.mine { align-self: flex-end; background: var(--primary); color: white; border-bottom-right-radius: 2px; }
+        .chat-bubble.theirs { align-self: flex-start; background: white; border: 1px solid #e2e8f0; color: var(--text-main); border-bottom-left-radius: 2px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .chat-status { font-size: 0.7rem; text-align: right; margin-top: 5px; opacity: 0.7; display: flex; justify-content: flex-end; gap: 3px; }
         .chat-deleted { font-style: italic; color: #cbd5e1; font-size: 0.85rem; }
         .chat-edited-label { font-size: 0.7rem; margin-left: 5px; opacity: 0.6; }
-        
-        .chat-options-btn { 
-            background: transparent; border: none; color: inherit; 
-            cursor: pointer; opacity: 0.6; margin-left: 5px; 
-        }
+        .chat-options-btn { background: transparent; border: none; color: inherit; cursor: pointer; opacity: 0.6; margin-left: 5px; }
         .chat-options-btn:hover { opacity: 1; }
 
-        /* Notificações do Lojista (Chat Dock) */
-        #store-notifications {
-            position: fixed;
-            bottom: 80px; /* Acima do menu mobile se houver */
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 1999;
-            pointer-events: none; /* Deixa clicar atrás se não tiver msg */
-        }
-
-        .chat-alert-card {
-            background: white;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
-            border-left: 5px solid var(--primary);
-            width: 300px;
-            pointer-events: auto;
-            animation: slideInRight 0.3s forwards;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+        .comanda-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+        .comanda-card { border-radius: 12px; aspect-ratio: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; font-weight: bold; position: relative; cursor: pointer; transition: transform 0.2s; box-shadow: var(--shadow-sm); }
+        .comanda-card:active { transform: scale(0.95); }
+        .comanda-dot { width: 8px; height: 8px; background: white; border-radius: 50%; position: absolute; top: 8px; left: 8px; }
+        .comanda-corner { width: 0; height: 0; border-style: solid; border-width: 25px 25px 0 0; border-color: rgba(255,255,255,0.3) transparent transparent transparent; position: absolute; top: 0; left: 0; border-top-left-radius: 12px; }
         
-        /* ITEM DE HISTÓRICO DE CHAT */
-        .chat-history-item {
-            background: white;
-            padding: 12px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        .chat-history-item:hover {
-            background: var(--background);
-        }
-        .chat-user-info div:first-child {
-            font-weight: bold;
-            color: var(--text-main);
-        }
-        .chat-user-info div:last-child {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-        }
+        .bg-livre { background-color: var(--comanda-livre); }
+        .bg-aberta { background-color: var(--comanda-aberta); }
+        .bg-bloqueada { background-color: var(--comanda-bloqueada); }
+        .bg-comanda_aberta { background-color: var(--comanda-em-uso); }
+        .bg-avulso { background-color: var(--comanda-avulso); }
+        .bg-fechada { background-color: var(--comanda-fechada); }
 
-        /* ==========================================================================
-           13. UTILS E EXTRAS
-           ==========================================================================
-        */
-        .toast-container {
-            position: fixed;
-            bottom: 90px;
-            right: 20px;
-            z-index: 9999;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            pointer-events: none;
-        }
+        .cart-floater { position: fixed; bottom: 80px; left: 20px; background: var(--primary); color: white; padding: 12px 20px; border-radius: 50px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 990; display: none; align-items: center; gap: 10px; cursor: pointer; animation: slideInUp 0.3s; }
+        @keyframes slideInUp { from { transform: translateY(100px); } to { transform: translateY(0); } }
 
-        .toast {
-            background: white;
-            padding: 1rem 1.5rem;
-            border-radius: var(--radius-sm);
-            box-shadow: var(--shadow-lg);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            animation: slideInRight 0.3s forwards;
-            pointer-events: auto;
-            min-width: 300px;
-            border-left: 5px solid var(--primary);
-            font-weight: 500;
-        }
+        #store-notifications { position: fixed; bottom: 80px; right: 20px; display: flex; flex-direction: column; gap: 10px; z-index: 1999; pointer-events: none; }
+        .chat-alert-card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15); border-left: 5px solid var(--primary); width: 300px; pointer-events: auto; animation: slideInRight 0.3s forwards; display: flex; flex-direction: column; gap: 10px; }
+        
+        .chat-history-item { background: white; padding: 12px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: var(--transition); }
+        .chat-history-item:hover { background: var(--background); }
+        .chat-user-info div:first-child { font-weight: bold; color: var(--text-main); }
+        .chat-user-info div:last-child { font-size: 0.8rem; color: var(--text-muted); }
 
+        .toast-container { position: fixed; bottom: 90px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { background: white; padding: 1rem 1.5rem; border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 12px; animation: slideInRight 0.3s forwards; pointer-events: auto; min-width: 300px; border-left: 5px solid var(--primary); font-weight: 500; }
         .toast.error { border-left-color: var(--danger); color: var(--danger-dark); }
         .toast.success { border-left-color: var(--success); color: var(--success-dark); }
         .toast.info { border-left-color: var(--info); color: var(--info-dark); }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        .pwa-banner {
-            position: fixed;
-            top: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            max-width: 400px;
-            background: var(--text-main);
-            color: white;
-            padding: 1rem;
-            border-radius: var(--radius-md);
-            z-index: 999;
-            display: none;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: var(--shadow-lg);
-        }
-        
+        .pwa-banner { position: fixed; top: 80px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: var(--text-main); color: white; padding: 1rem; border-radius: var(--radius-md); z-index: 999; display: none; align-items: center; justify-content: space-between; box-shadow: var(--shadow-lg); }
         .spin { animation: spin 1s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        
-        .secure-box {
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            padding: 20px;
-            border-radius: 8px;
-            text-align: center;
-            color: #166534;
-            animation: fadeIn 0.5s;
-        }
-        
+        .secure-box { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 20px; border-radius: 8px; text-align: center; color: #166534; animation: fadeIn 0.5s; }
         #payment-brick_container { min-height: 300px; }
         
-   /* CORREÇÃO DEFINITIVA DE IMPRESSÃO */
-        @media print {
-            /* 1. Esconde interfaces do sistema (Menu, Botões, etc) */
-            header, main, nav, .cart-floater, .pwa-banner, .toast-container, #store-notifications, .btn, .modal-overlay {
-                display: none !important;
-            }
+        /* ESTILO PARA GALERIA DE PRODUTOS */
+        .product-gallery-wrapper {
+            position: relative;
+            width: 100%;
+            height: 250px;
+            background: #f1f5f9;
+            margin: -1.5rem -1.5rem 1rem -1.5rem;
+            overflow: hidden;
+        }
 
-            /* 2. Configura o corpo da página para impressão */
-            body {
-                background: white;
-                margin: 0;
-                padding: 0;
-                overflow: visible !important;
-            }
+        .product-gallery {
+            display: flex;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            height: 100%;
+            width: 100%;
+            scrollbar-width: none;
+        }
 
-           /* IMPRESSÃO CORRIGIDA */
+        .product-gallery::-webkit-scrollbar { display: none; }
+
+        .gallery-img {
+            flex: 0 0 100%;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top center;
+            scroll-snap-align: start;
+        }
+
+        .gallery-badge {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            pointer-events: none;
+        }
+        
+        /* CORREÇÃO DE IMPRESSÃO */
         @media print {
-            body * { visibility: hidden; }
-            #printable-area, #printable-area * { 
+            body * {
+                visibility: hidden;
+            }
+            #printable-area, #printable-area * {
                 visibility: visible !important;
                 display: block !important;
             }
-            #printable-area { 
-                position: absolute; 
-                left: 0; 
-                top: 0; 
-                width: 100%; 
-                background: white; 
-                color: black !important; 
-                font-family: 'Courier New', Courier, monospace; 
-                z-index: 9999;
+            #printable-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white;
+                color: black !important;
+                z-index: 99999;
             }
-            /* ESTILO PARA GALERIA DE PRODUTOS */
-.product-gallery-wrapper {
-    position: relative;
-    width: 100%;
-    height: 250px; /* Altura da foto no card */
-    background: #f1f5f9;
-    margin: -1.5rem -1.5rem 1rem -1.5rem;
-    overflow: hidden;
-}
-
-.product-gallery {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    height: 100%;
-    width: 100%;
-    scrollbar-width: none; /* Firefox */
-}
-
-.product-gallery::-webkit-scrollbar { 
-    display: none; /* Chrome/Safari */
-}
-
-.gallery-img {
-    flex: 0 0 100%;
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* Ajusta a imagem sem esticar */
-    object-position: top center; /* Foca no topo (bom para roupas) */
-    scroll-snap-align: start;
-}
-
-/* Indicador de que tem mais fotos */
-.gallery-badge {
-    position: absolute;
-    bottom: 10px;
-    right: 10px;
-    background: rgba(0,0,0,0.6);
-    color: white;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.7rem;
-    pointer-events: none;
-}
-            .modal-overlay, .cart-floater, #store-notifications, .pwa-banner, header, nav, .btn {
+            /* Esconde todo o resto */
+            .modal-overlay, .cart-floater, #store-notifications, .pwa-banner, header, nav, .btn, .toast-container {
                 display: none !important;
             }
         }
@@ -946,8 +287,11 @@
 </head>
 <body>
     <div class="toast-container" id="toast-container"></div>
-    
     <div id="store-notifications"></div>
+    <div id="cart-floater" class="cart-floater" onclick="App.cart.open()">
+        <i class="ri-shopping-cart-2-line"></i>
+        <span id="cart-count">0 itens</span> | <span id="cart-total">R$ 0,00</span>
+    </div>
 
     <div id="pwa-banner" class="pwa-banner">
         <div style="display:flex; align-items:center; gap:12px;">
@@ -969,7 +313,6 @@
     </header>
 
     <main>
-        
         <section id="view-home" class="view-section active">
             <div style="background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 5px 0; position:sticky; top:70px; z-index:90; border-bottom:1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
                 <div class="container" style="padding-top: 10px; padding-bottom: 0;">
@@ -984,7 +327,6 @@
                     <h1 style="font-size: 2rem;">Encontre o que você precisa na palma da sua mão</h1>
                     <p>Programado para o que você precisar.</p>
                 </div>
-                
                 <div id="public-catalog" class="grid grid-3">
                     <div class="card" style="text-align:center; padding:4rem;">
                         <i class="ri-loader-4-line spin" style="font-size:2.5rem; color:var(--primary)"></i>
@@ -996,47 +338,23 @@
 
         <section id="view-auth" class="view-section container">
             <div class="card auth-card">
-                
                 <div id="auth-state-login">
                     <div style="margin-bottom: 2rem;">
                         <h2 style="color:var(--primary); margin-bottom:0.5rem;">Bem-vindo</h2>
                         <p>Entre para gerenciar seus pedidos e serviços</p>
                     </div>
-                    
-                    <div class="input-wrapper">
-                        <label>Endereço de Email</label>
-                        <input type="email" id="login-email" class="input-field" placeholder="seu@email.com">
-                    </div>
-                    <div class="input-wrapper">
-                        <label>Sua Senha</label>
-                        <input type="password" id="login-pass" class="input-field" placeholder="••••••">
-                    </div>
-                    
+                    <div class="input-wrapper"><label>Endereço de Email</label><input type="email" id="login-email" class="input-field" placeholder="seu@email.com"></div>
+                    <div class="input-wrapper"><label>Sua Senha</label><input type="password" id="login-pass" class="input-field" placeholder="••••••"></div>
                     <button class="btn btn-primary btn-full" onclick="App.auth.login()">Entrar no Sistema</button>
-                    
-                    <div style="margin-top:1rem;">
-                        <button class="btn btn-sm btn-secondary" onclick="App.auth.switchView('recover')">Esqueci minha senha</button>
-                    </div>
-
-                    <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--border);">
-                        <p class="text-xs">Não possui conta?</p>
-                        <button class="btn btn-secondary btn-full" onclick="App.auth.switchView('roles')">Criar Nova Conta</button>
-                    </div>
+                    <div style="margin-top:1rem;"><button class="btn btn-sm btn-secondary" onclick="App.auth.switchView('recover')">Esqueci minha senha</button></div>
+                    <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--border);"><p class="text-xs">Não possui conta?</p><button class="btn btn-secondary btn-full" onclick="App.auth.switchView('roles')">Criar Nova Conta</button></div>
                 </div>
 
                 <div id="auth-state-recover" style="display:none;">
                     <h3>Recuperação de Senha</h3>
                     <p>Informe seus dados para validar sua identidade.</p>
-                    
-                    <div class="input-wrapper">
-                        <label>Email Cadastrado</label>
-                        <input type="email" id="rec-email" class="input-field" placeholder="seu@email.com">
-                    </div>
-                    <div class="input-wrapper">
-                        <label>CPF (Validação de Segurança)</label>
-                        <input type="text" id="rec-cpf" class="input-field" placeholder="000.000.000-00">
-                    </div>
-                    
+                    <div class="input-wrapper"><label>Email Cadastrado</label><input type="email" id="rec-email" class="input-field" placeholder="seu@email.com"></div>
+                    <div class="input-wrapper"><label>CPF (Validação de Segurança)</label><input type="text" id="rec-cpf" class="input-field" placeholder="000.000.000-00"></div>
                     <button class="btn btn-primary btn-full" onclick="App.auth.recoverPassword()">Enviar Email de Recuperação</button>
                     <button class="btn btn-secondary btn-full" style="margin-top:0.5rem" onclick="App.auth.switchView('login')">Voltar</button>
                 </div>
@@ -1045,22 +363,11 @@
                     <h3>Qual o seu perfil?</h3>
                     <p>Selecione como deseja usar a plataforma NexLog</p>
                     <div class="role-grid">
-                        <div class="role-card" onclick="App.auth.startReg('cliente')">
-                            <i class="ri-user-smile-line"></i>
-                            <span class="font-bold">Sou Cliente</span>
-                        </div>
-                        <div class="role-card" onclick="App.auth.startReg('loja_admin')">
-                            <i class="ri-store-2-line"></i>
-                            <span class="font-bold">Sou Lojista</span>
-                        </div>
-                        <div class="role-card" onclick="App.auth.startReg('motorista')">
-                            <i class="ri-truck-line"></i>
-                            <span class="font-bold">Sou Motorista</span>
-                        </div>
-                        <div class="role-card" onclick="App.auth.startReg('montador')">
-                            <i class="ri-tools-line"></i>
-                            <span class="font-bold">Sou Prestador</span>
-                        </div>
+                        <div class="role-card" onclick="App.auth.startReg('cliente')"><i class="ri-user-smile-line"></i><span class="font-bold">Sou Cliente</span></div>
+                        <div class="role-card" onclick="App.auth.startReg('loja_admin')"><i class="ri-store-2-line"></i><span class="font-bold">Sou Lojista</span></div>
+                        <div class="role-card" onclick="App.auth.startReg('motorista')"><i class="ri-truck-line"></i><span class="font-bold">Sou Motorista</span></div>
+                        <div class="role-card" onclick="App.auth.startReg('montador')"><i class="ri-tools-line"></i><span class="font-bold">Sou Prestador</span></div>
+                        <div class="role-card" onclick="App.auth.startReg('garcom')"><i class="ri-restaurant-line"></i><span class="font-bold">Sou Garçom</span></div>
                     </div>
                     <button class="btn btn-secondary btn-full" style="margin-top:2rem" onclick="App.auth.switchView('login')">Voltar ao Login</button>
                 </div>
@@ -1068,22 +375,10 @@
                 <div id="auth-state-register" style="display:none;">
                     <h3 id="reg-title">Cadastro</h3>
                     <p>Preencha seus dados para continuar</p>
-                    
-                    <div class="input-wrapper">
-                        <label>Nome Completo</label>
-                        <input type="text" id="reg-name" class="input-field" placeholder="Seu nome">
-                    </div>
-                    <div class="input-wrapper">
-                        <label>Email</label>
-                        <input type="email" id="reg-email" class="input-field" placeholder="seu@email.com">
-                    </div>
-                    <div class="input-wrapper">
-                        <label>Senha</label>
-                        <input type="password" id="reg-pass" class="input-field" placeholder="••••••">
-                    </div>
-                    
+                    <div class="input-wrapper"><label>Nome Completo</label><input type="text" id="reg-name" class="input-field" placeholder="Seu nome"></div>
+                    <div class="input-wrapper"><label>Email</label><input type="email" id="reg-email" class="input-field" placeholder="seu@email.com"></div>
+                    <div class="input-wrapper"><label>Senha</label><input type="password" id="reg-pass" class="input-field" placeholder="••••••"></div>
                     <div id="reg-dynamic-fields"></div>
-                    
                     <button class="btn btn-primary btn-full" onclick="App.auth.register()" id="btn-final-reg" style="margin-top:1rem;">Finalizar Cadastro</button>
                     <button class="btn btn-secondary btn-full" style="margin-top:0.5rem" onclick="App.auth.switchView('roles')">Voltar</button>
                 </div>
@@ -1092,93 +387,77 @@
 
         <section id="view-loja" class="view-section container">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
-                <div>
-                    <h2>Painel da Loja</h2>
-                    <p>Gestão completa do seu negócio</p>
-                </div>
+                <div><h2>Painel da Loja</h2><p>Gestão completa do seu negócio</p></div>
                 <div style="display:flex; gap:10px;">
-                    <button class="btn btn-secondary btn-sm" onclick="App.store.setupPrinter()">
-                        <i class="ri-printer-line"></i> Impressora
-                    </button>
-                    <button class="btn btn-primary" onclick="App.store.openProductModal()">
-                        <i class="ri-add-line"></i> Novo Serviço
-                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="App.store.setupPrinter()"><i class="ri-printer-line"></i> Impressora</button>
+                    <button class="btn btn-primary" onclick="App.store.openProductModal()"><i class="ri-add-line"></i> Novo Serviço</button>
                 </div>
             </div>
 
+            <div style="margin-bottom: 2rem; background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <h4>Gestão de Salão (Restaurante)</h4>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <div class="input-wrapper" style="margin-bottom:0; flex:1;"><input type="number" id="comanda-start" class="input-field" placeholder="Início"></div>
+                    <div class="input-wrapper" style="margin-bottom:0; flex:1;"><input type="number" id="comanda-end" class="input-field" placeholder="Fim"></div>
+                    <button class="btn btn-primary btn-sm" style="width: auto;" onclick="App.admin.createComandas()">Gerar Comandas</button>
+                </div>
+                <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
+                    <h5>Cadastrar Equipe</h5>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end;">
+                        <div class="input-wrapper" style="margin-bottom:0; flex:1; min-width: 200px;"><label class="text-xs">Nome</label><input id="staff-name" class="input-field"></div>
+                        <div class="input-wrapper" style="margin-bottom:0; flex:1; min-width: 200px;"><label class="text-xs">Email Login</label><input id="staff-email" type="email" class="input-field"></div>
+                        <div class="input-wrapper" style="margin-bottom:0; flex:1; min-width: 150px;"><label class="text-xs">Senha</label><input id="staff-pass" type="password" class="input-field"></div>
+                        <div class="input-wrapper" style="margin-bottom:0; flex:1; min-width: 120px;"><label class="text-xs">Cargo</label><select id="staff-role" class="input-field"><option value="garcom">Garçom</option><option value="cumim">Cumim</option></select></div>
+                        <div class="input-wrapper" style="margin-bottom:0; flex:1; min-width: 100px;"><label class="text-xs">Taxa %</label><input id="staff-rate" type="number" class="input-field" value="10"></div>
+                        <button class="btn btn-success btn-sm" style="width: auto; height: 46px;" onclick="App.admin.registerStaff()">Cadastrar</button>
+                    </div>
+                </div>
+            </div>
+
+            <h4>Visão Geral do Salão</h4>
+            <div id="admin-comanda-grid" class="comanda-grid" style="margin-bottom: 2rem;"></div>
+
             <div class="metrics-grid">
-                <div class="metric-card">
-                    <h5>Vendas Hoje</h5>
-                    <div id="metric-day" class="value">R$ 0,00</div>
-                </div>
-                <div class="metric-card">
-                    <h5>Vendas na Semana</h5>
-                    <div id="metric-week" class="value">R$ 0,00</div>
-                </div>
-                <div class="metric-card">
-                    <h5>Vendas no Mês</h5>
-                    <div id="metric-month" class="value">R$ 0,00</div>
-                </div>
+                <div class="metric-card"><h5>Vendas Hoje</h5><div id="metric-day" class="value">R$ 0,00</div></div>
+                <div class="metric-card"><h5>Vendas na Semana</h5><div id="metric-week" class="value">R$ 0,00</div></div>
+                <div class="metric-card"><h5>Vendas no Mês</h5><div id="metric-month" class="value">R$ 0,00</div></div>
             </div>
 
             <div class="grid grid-2">
                 <div>
                     <div class="card" style="border-left: 5px solid var(--success);">
                         <h4><i class="ri-bank-card-line"></i> Recebimento Automático</h4>
-                        
                         <div id="store-keys-area">
-                            <p class="text-sm">
-                                Para o dinheiro cair direto na sua conta, cole suas chaves de <strong>Produção</strong> do Mercado Pago.
-                                <a href="https://www.mercadopago.com.br/developers/panel" target="_blank" style="color:var(--primary)">Pegar minhas chaves</a>.
-                            </p>
-                            <div class="input-wrapper">
-                                <label>Public Key</label>
-                                <input type="text" id="store-public-key" class="input-field" placeholder="APP_USR-...">
-                            </div>
-                            <div class="input-wrapper">
-                                <label>Access Token</label>
-                                <input type="password" id="store-access-token" class="input-field" placeholder="APP_USR-...">
-                            </div>
+                            <p class="text-sm">Para o dinheiro cair direto na sua conta, cole suas chaves de <strong>Produção</strong> do Mercado Pago.</p>
+                            <div class="input-wrapper"><label>Public Key</label><input type="text" id="store-public-key" class="input-field" placeholder="APP_USR-..."></div>
+                            <div class="input-wrapper"><label>Access Token</label><input type="password" id="store-access-token" class="input-field" placeholder="APP_USR-..."></div>
                             <button class="btn btn-success btn-sm" onclick="App.store.saveCredentials()">Salvar e Ativar</button>
                         </div>
-                        
                         <div id="store-keys-locked" style="display:none;" class="secure-box">
-                            <i class="ri-shield-check-line" style="font-size:2.5rem; margin-bottom:10px;"></i><br>
-                            <strong>Pagamentos Ativos</strong><br>
-                            <span class="text-sm">Suas chaves estão configuradas e ocultas por segurança. O split de pagamento está funcionando.</span><br>
+                            <i class="ri-shield-check-line" style="font-size:2.5rem; margin-bottom:10px;"></i><br><strong>Pagamentos Ativos</strong><br>
+                            <span class="text-sm">Suas chaves estão configuradas.</span><br>
                             <button class="btn btn-secondary btn-sm" style="margin-top:15px; width:auto;" onclick="App.store.resetKeys()">Redefinir Chaves</button>
                         </div>
                     </div>
-
                     <div class="card" style="border-left: 5px solid var(--info); margin-top: 1.5rem;">
                         <h4><i class="ri-team-line"></i> Parceiro Exclusivo</h4>
-                        <p class="text-sm">Vincule um motorista ou montador pelo email. Seus serviços aparecerão <strong>apenas</strong> para ele.</p>
-                        <div style="display:flex; gap:10px; margin-bottom:10px;">
-                            <input id="partner-email-input" class="input-field" placeholder="Email do parceiro cadastrado">
-                            <button class="btn btn-info btn-sm" style="width:auto;" onclick="App.store.linkPartner()">Vincular</button>
-                        </div>
+                        <p class="text-sm">Vincule um motorista ou montador pelo email.</p>
+                        <div style="display:flex; gap:10px; margin-bottom:10px;"><input id="partner-email-input" class="input-field" placeholder="Email"><button class="btn btn-info btn-sm" style="width:auto;" onclick="App.store.linkPartner()">Vincular</button></div>
                         <div id="active-partner-display" style="font-weight:bold; color:var(--info-dark); font-size:0.9rem; margin-top:5px;"></div>
                     </div>
                 </div>
-
                 <div>
                     <div class="card" style="margin-bottom:1.5rem; border-color:var(--info);">
                         <h4 style="color:var(--info-dark)"><i class="ri-chat-history-line"></i> Minhas Conversas</h4>
-                        <div id="store-chat-list" style="max-height: 250px; overflow-y: auto;">
-                            <p class="text-sm text-muted">Carregando conversas...</p>
-                        </div>
+                        <div id="store-chat-list" style="max-height: 250px; overflow-y: auto;"><p class="text-sm text-muted">Carregando...</p></div>
                     </div>
-
                     <div class="card">
                         <h4 style="margin-bottom:1rem; color:var(--primary)">Pedidos em Aberto</h4>
-                        <div id="store-orders-list">
-                            <p class="text-sm">Carregando...</p>
-                        </div>
+                        <div id="store-orders-list"><p class="text-sm">Carregando...</p></div>
                     </div>
                     <div class="card" style="margin-top:1.5rem;">
                         <h4 style="color:var(--text-muted)">Meus Produtos / Serviços</h4>
-                        <div id="store-products-list" style="max-height: 300px; overflow-y: auto;">
-                            </div>
+                        <div id="store-products-list" style="max-height: 300px; overflow-y: auto;"></div>
                     </div>
                 </div>
             </div>
@@ -1188,61 +467,56 @@
             <div style="margin-bottom:2rem;">
                 <h2>Meus Pedidos</h2>
                 <p>Acompanhe suas compras e serviços contratados</p>
-            </div>
-            
-            <div class="card" style="margin-bottom:2rem; border-color:var(--info);">
-                <h4 style="color:var(--info-dark)"><i class="ri-chat-history-line"></i> Minhas Conversas</h4>
-                <div id="client-chat-list" class="grid grid-2">
-                    <p class="text-sm text-muted">Carregando conversas...</p>
+                <div style="background: #e0f2fe; padding: 15px; border-radius: 8px; margin-top: 10px;">
+                    <strong>Estou na Mesa?</strong>
+                    <div style="display:flex; gap:10px; margin-top:5px;">
+                        <input type="number" id="client-table-check" class="input-field" placeholder="Nº da Mesa">
+                        <button class="btn btn-primary btn-sm" style="width:auto;" onclick="App.client.checkTableBill()">Ver Conta</button>
+                    </div>
                 </div>
             </div>
-
+            <div class="card" style="margin-bottom:2rem; border-color:var(--info);">
+                <h4 style="color:var(--info-dark)"><i class="ri-chat-history-line"></i> Minhas Conversas</h4>
+                <div id="client-chat-list" class="grid grid-2"><p class="text-sm text-muted">Carregando...</p></div>
+            </div>
             <div id="client-orders-list" class="grid grid-2"></div>
             <div style="margin-top:3rem; text-align:center;">
-                <button class="btn btn-secondary" onclick="App.router.go('home')">
-                    <i class="ri-search-line"></i> Voltar ao Catálogo
-                </button>
+                <button class="btn btn-secondary" onclick="App.router.go('home')"><i class="ri-search-line"></i> Voltar ao Catálogo</button>
             </div>
         </section>
 
         <section id="view-provider" class="view-section container">
             <div class="card" style="background:var(--text-main); color:white; margin-bottom:2rem; border:none;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <h3 style="color:white; margin-bottom:0.2rem;">Painel de Serviços</h3>
-                        <p style="color:rgba(255,255,255,0.7); margin:0;" id="provider-role-label">Parceiro</p>
-                    </div>
+                    <div><h3 style="color:white; margin-bottom:0.2rem;">Painel de Serviços</h3><p style="color:rgba(255,255,255,0.7); margin:0;" id="provider-role-label">Parceiro</p></div>
                     <div class="badge status-aceito"><i class="ri-wifi-line"></i> Online</div>
                 </div>
-                
                 <hr style="border-color:rgba(255,255,255,0.1); margin:15px 0;">
-                
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <span class="text-xs" style="opacity:0.7">Sua Chave Pix (Para Receber Comissão):</span><br>
-                        <strong id="provider-pix-display" style="font-family:monospace; font-size:1.1rem;">Não cadastrada</strong>
-                    </div>
+                    <div><span class="text-xs" style="opacity:0.7">Sua Chave Pix:</span><br><strong id="provider-pix-display" style="font-family:monospace; font-size:1.1rem;">Não cadastrada</strong></div>
                     <button class="btn btn-sm btn-secondary" style="width:auto; padding:5px 10px;" onclick="App.provider.updatePix()">Alterar</button>
                 </div>
             </div>
-
             <h3>Oportunidades Disponíveis</h3>
-            <p class="text-sm text-muted">Serviços próximos ou exclusivos para você.</p>
             <div id="provider-jobs-list" class="grid grid-2"></div>
+        </section>
+
+        <section id="view-waiter" class="view-section container">
+             <div style="margin-bottom:2rem; display:flex; justify-content:space-between; align-items:center;">
+                <div><h2>Painel do Garçom</h2><p>Gerencie pedidos e comandas</p></div>
+                 <button class="btn btn-danger btn-sm" style="width:auto;" onclick="App.auth.logout()">Sair</button>
+            </div>
+            <div id="comanda-list-container" class="comanda-grid"></div>
         </section>
     </main>
     
     <div id="printable-area" style="display:none;"></div>
-
     <nav class="bottom-nav" id="mobile-nav"></nav>
 
     <div id="map-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <div>
-                    <h3>Navegação GPS</h3>
-                    <p id="map-dest-address" class="text-xs text-muted" style="margin:0;"></p>
-                </div>
+                <div><h3>Navegação GPS</h3><p id="map-dest-address" class="text-xs text-muted" style="margin:0;"></p></div>
                 <button class="btn btn-secondary btn-sm" onclick="App.map.close()">Fechar</button>
             </div>
             <div id="map"></div>
@@ -1251,12 +525,8 @@
                     <div class="badge status-aceito" id="map-status-badge">Conectado</div>
                     <p style="margin:0; font-size:0.9rem;" id="map-status-text">Aguardando dados...</p>
                 </div>
-                <button id="btn-start-gps" class="btn btn-success btn-full" style="margin-top:1rem; display:none;" onclick="App.map.startGPS()">
-                    <i class="ri-navigation-line"></i> Iniciar Rota
-                </button>
-                 <button id="btn-end-gps" class="btn btn-danger btn-full" style="margin-top:1rem; display:none;" onclick="App.map.finishDelivery()">
-                    <i class="ri-flag-line"></i> Finalizar Entrega
-                </button>
+                <button id="btn-start-gps" class="btn btn-success btn-full" style="margin-top:1rem; display:none;" onclick="App.map.startGPS()"><i class="ri-navigation-line"></i> Iniciar Rota</button>
+                 <button id="btn-end-gps" class="btn btn-danger btn-full" style="margin-top:1rem; display:none;" onclick="App.map.finishDelivery()"><i class="ri-flag-line"></i> Finalizar Entrega</button>
             </div>
         </div>
     </div>
@@ -1268,35 +538,17 @@
                 <button class="btn btn-secondary btn-sm" onclick="document.getElementById('budget-modal').style.display='none'">Fechar</button>
             </div>
             <div class="modal-body">
-                <input type="hidden" id="budget-prod-id">
-                <input type="hidden" id="budget-store-id">
-                <input type="hidden" id="budget-base-price"> <input type="hidden" id="budget-labor-val"> <input type="hidden" id="budget-labor-type"> <div class="input-wrapper">
-                    <label>Metragem da Área (m²)</label>
-                    <input type="number" id="budget-area" class="input-field" placeholder="Ex: 25" oninput="App.client.calculateBudget()">
-                </div>
-                
+                <input type="hidden" id="budget-prod-id"><input type="hidden" id="budget-store-id"><input type="hidden" id="budget-base-price"><input type="hidden" id="budget-labor-val"><input type="hidden" id="budget-labor-type"> 
+                <div class="input-wrapper"><label>Metragem da Área (m²)</label><input type="number" id="budget-area" class="input-field" placeholder="Ex: 25" oninput="App.client.calculateBudget()"></div>
                 <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; margin-top:10px;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                        <span>Custo Material:</span>
-                        <span id="display-material">R$ 0,00</span>
-                    </div>
-                    <div style="display:flex; justify-content:space-between; margin-bottom:5px; color:var(--info-dark);">
-                        <span>Custo Mão de Obra:</span>
-                        <span id="display-labor">R$ 0,00</span>
-                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Custo Material:</span><span id="display-material">R$ 0,00</span></div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px; color:var(--info-dark);"><span>Custo Mão de Obra:</span><span id="display-labor">R$ 0,00</span></div>
                     <hr style="margin:10px 0; border-color:#e2e8f0;">
-                    <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.2rem; color:var(--primary);">
-                        <span>Total Orçado:</span>
-                        <span id="display-total">R$ 0,00</span>
-                    </div>
-                    <p class="text-xs text-muted" style="margin-top:10px; text-align:center;">
-                        *Pagamento: 50% de entrada e 50% na finalização.
-                    </p>
+                    <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.2rem; color:var(--primary);"><span>Total Orçado:</span><span id="display-total">R$ 0,00</span></div>
+                    <p class="text-xs text-muted" style="margin-top:10px; text-align:center;">*Pagamento: 50% de entrada e 50% na finalização.</p>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-success btn-full" onclick="App.client.finishBudgetOrder()">Pagar Sinal (50%)</button>
-            </div>
+            <div class="modal-footer"><button class="btn btn-success btn-full" onclick="App.client.finishBudgetOrder()">Pagar Sinal (50%)</button></div>
         </div>
     </div>
 
@@ -1308,191 +560,116 @@
             </div>
             <div class="modal-body">
                 <input type="hidden" id="edit-prod-id">
-                <div class="input-wrapper">
-                    <label>Categoria/Setor</label>
-                    <select id="new-prod-cat" class="input-field" onchange="App.store.checkCategory(this.value)">
-                        </select>
-                </div>
-                
+                <div class="input-wrapper"><label>Categoria/Setor</label><select id="new-prod-cat" class="input-field" onchange="App.store.checkCategory(this.value)"></select></div>
                 <div id="hotel-dates-area" style="display:none; background:#f0f9ff; padding:15px; border-radius:8px; border:1px solid #bae6fd; margin-bottom:1rem;">
                     <h5 style="color:var(--info-dark)">Disponibilidade de Reserva</h5>
-                    <p class="text-xs text-muted">Selecione o intervalo de datas disponíveis para locação.</p>
-                    <div style="display:flex; gap:10px;">
-                        <div style="flex:1">
-                            <label class="text-xs">Início</label>
-                            <input type="date" id="hotel-start-date" class="input-field">
-                        </div>
-                        <div style="flex:1">
-                            <label class="text-xs">Fim</label>
-                            <input type="date" id="hotel-end-date" class="input-field">
-                        </div>
-                    </div>
+                    <div style="display:flex; gap:10px;"><div style="flex:1"><label class="text-xs">Início</label><input type="date" id="hotel-start-date" class="input-field"></div><div style="flex:1"><label class="text-xs">Fim</label><input type="date" id="hotel-end-date" class="input-field"></div></div>
                 </div>
-
                 <div id="gesso-options-area" style="display:none; background:#fefce8; padding:15px; border-radius:8px; border:1px solid #fde047; margin-bottom:1rem;">
                     <h5 style="color:var(--warning-dark)">Configuração de Orçamento (Gesso)</h5>
-                    <p class="text-xs text-muted">Defina os custos para o cálculo automático do cliente.</p>
-                    
-                    <div class="input-wrapper">
-                        <label>Preço do Metro Quadrado (Material)</label>
-                        <input type="number" id="gesso-price-m2" class="input-field" placeholder="0.00">
-                    </div>
-                    
-                    <div class="input-wrapper">
-                        <label>Valor da Mão de Obra</label>
-                        <input type="number" id="gesso-labor-val" class="input-field" placeholder="0.00">
-                    </div>
-                    
-                    <div class="input-wrapper">
-                        <label>Tipo de Cobrança da Mão de Obra</label>
-                        <select id="gesso-labor-type" class="input-field">
-                            <option value="fixed">Valor Fixo (R$ por m²)</option>
-                            <option value="percent">Porcentagem (%) sobre o Material</option>
-                        </select>
-                    </div>
+                    <div class="input-wrapper"><label>Preço m² (Material)</label><input type="number" id="gesso-price-m2" class="input-field" placeholder="0.00"></div>
+                    <div class="input-wrapper"><label>Valor Mão de Obra</label><input type="number" id="gesso-labor-val" class="input-field" placeholder="0.00"></div>
+                    <div class="input-wrapper"><label>Tipo de Cobrança</label><select id="gesso-labor-type" class="input-field"><option value="fixed">Valor Fixo</option><option value="percent">Porcentagem</option></select></div>
                 </div>
-
                 <div id="delivery-options-area" style="display:none; background:#f0fdf4; padding:15px; border-radius:8px; border:1px solid #bbf7d0; margin-bottom:1rem;">
                     <h5 style="color:var(--success-dark)">Configuração de Entrega</h5>
-                    <div class="input-wrapper">
-                        <label>Taxa de Entrega (Opcional)</label>
-                        <input type="number" id="delivery-fee-val" class="input-field" placeholder="0.00">
-                    </div>
-                    <div class="input-wrapper">
-                        <label>Tipo da Taxa</label>
-                        <select id="delivery-fee-type" class="input-field">
-                            <option value="fixed">Valor Fixo (R$)</option>
-                            <option value="percent">Porcentagem (%)</option>
-                        </select>
-                    </div>
+                    <div class="input-wrapper"><label>Taxa de Entrega</label><input type="number" id="delivery-fee-val" class="input-field" placeholder="0.00"></div>
+                    <div class="input-wrapper"><label>Tipo da Taxa</label><select id="delivery-fee-type" class="input-field"><option value="fixed">Valor Fixo</option><option value="percent">Porcentagem</option></select></div>
                 </div>
-
-                <div class="input-wrapper">
-                    <label>Nome do Item</label>
-                    <input type="text" id="new-prod-name" class="input-field" placeholder="Ex: Camiseta ou Hambúrguer">
-                </div>
-                <div class="input-wrapper">
-                    <label>Preço Base (ou de Exibição)</label>
-                    <input type="number" id="new-prod-price" class="input-field" placeholder="0.00">
-                </div>
-                
-                <div class="checkbox-wrapper">
-                    <input type="checkbox" id="new-prod-promo">
-                    <label for="new-prod-promo" style="margin:0; cursor:pointer; color:var(--danger-dark); font-weight:bold;">Colocar em Promoção?</label>
-                </div>
-
-                <div class="input-wrapper">
-                    <label>Foto do Item</label>
-                    <input type="file" id="new-prod-file" class="input-field" accept="image/*" multiple>
-                    <p class="text-xs text-muted" style="margin-top:5px">Formatos: JPG ou PNG</p>
-                </div>
+                <div class="input-wrapper"><label>Nome do Item</label><input type="text" id="new-prod-name" class="input-field" placeholder="Ex: Camiseta"></div>
+                <div class="input-wrapper"><label>Preço Base</label><input type="number" id="new-prod-price" class="input-field" placeholder="0.00"></div>
+                <div class="checkbox-wrapper"><input type="checkbox" id="new-prod-promo"><label for="new-prod-promo">Promoção?</label></div>
+                <div class="input-wrapper"><label>Foto (Pode selecionar várias)</label><input type="file" id="new-prod-file" class="input-field" accept="image/*" multiple></div>
             </div>
-            <div class="modal-footer">
-                <button class="btn btn-primary btn-full" onclick="App.store.submitProduct()" id="btn-save-prod">Publicar Serviço</button>
-            </div>
+            <div class="modal-footer"><button class="btn btn-primary btn-full" onclick="App.store.submitProduct()" id="btn-save-prod">Publicar</button></div>
         </div>
     </div>
     
     <div id="chat-modal" class="modal-overlay">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3>Chat</h3>
-                <button class="btn btn-secondary btn-sm" onclick="App.chat.close()">Fechar</button>
-            </div>
+            <div class="modal-header"><h3>Chat</h3><button class="btn btn-secondary btn-sm" onclick="App.chat.close()">Fechar</button></div>
             <div class="modal-body">
-                <p class="text-sm text-muted">Converse diretamente com o estabelecimento/cliente.</p>
-                <div id="chat-msgs" class="chat-messages">
-                    <div style="text-align:center; padding:20px; color:#aaa;">Carregando mensagens...</div>
-                </div>
+                <div id="chat-msgs" class="chat-messages"><div style="text-align:center; padding:20px; color:#aaa;">Carregando...</div></div>
                 <div style="display:flex; gap:10px; align-items:center;">
-                    <input type="text" id="chat-input" class="input-field" placeholder="Digite sua mensagem..." autocomplete="off">
-                    <button class="btn btn-secondary btn-sm" style="width:auto" onclick="App.chat.recordAudio()" title="Gravar Áudio"><i class="ri-mic-line"></i></button>
+                    <input type="text" id="chat-input" class="input-field" placeholder="Digite..." autocomplete="off">
+                    <button class="btn btn-secondary btn-sm" style="width:auto" onclick="App.chat.recordAudio()" title="Gravar"><i class="ri-mic-line"></i></button>
                     <button class="btn btn-primary btn-sm" style="width:auto" onclick="App.chat.send()">Enviar</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <div id="split-pay-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Fechamento de Conta</h3><button class="btn btn-secondary btn-sm" onclick="document.getElementById('split-pay-modal').style.display='none'">Fechar</button></div>
+            <div class="modal-body">
+                <h2 id="split-total-due" style="text-align:center; color:var(--primary); margin-bottom:20px;">R$ 0,00</h2>
+                <div style="background:#f1f5f9; padding:10px; border-radius:8px; margin-bottom:15px;">
+                    <div class="input-wrapper" style="margin-bottom:5px;"><label>Valor a Pagar</label><input type="number" id="split-amount" class="input-field"></div>
+                    <div class="input-wrapper"><label>Forma</label><select id="split-method" class="input-field" onchange="App.payment.toggleCardFields()"><option value="dinheiro">Dinheiro</option><option value="cartao">Cartão</option><option value="pix">Pix</option></select></div>
+                    <div id="card-fields" style="display:none; gap:10px;"><input type="text" id="card-nsu" class="input-field" placeholder="NSU" style="flex:1"><input type="text" id="card-aut" class="input-field" placeholder="AUT" style="flex:1"></div>
+                    <button class="btn btn-primary btn-sm btn-full" style="margin-top:10px;" onclick="App.payment.addSplit()">Lançar</button>
+                </div>
+                <h5>Histórico</h5>
+                <div id="split-history" style="font-size:0.85rem; color:var(--text-muted);"></div>
+                <div style="text-align:right; margin-top:10px; font-weight:bold; color:var(--danger);">Restante: <span id="split-remaining">R$ 0,00</span></div>
+            </div>
+            <div class="modal-footer"><button id="btn-finish-split" class="btn btn-success btn-full" disabled onclick="App.payment.finalizeSplit()">Fechar Conta</button></div>
+        </div>
+    </div>
+
+    <div id="comanda-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width:600px;">
+            <div class="modal-header"><h3 id="comanda-title">Mesa 1</h3><button class="btn btn-secondary btn-sm" onclick="document.getElementById('comanda-modal').style.display='none'">Fechar</button></div>
+            <div class="modal-body">
+                <div class="input-wrapper"><label>Adicionar Produto</label><div style="display:flex; gap:10px;"><input type="text" id="waiter-prod-search" class="input-field" placeholder="Busque..."><button class="btn btn-primary btn-sm" style="width:auto;" onclick="App.waiter.addItem()">Add</button></div></div>
+                <h5>Itens</h5>
+                <div id="comanda-items-list" style="border:1px solid #eee; padding:10px; min-height:100px; margin-bottom:1rem;"></div>
+            </div>
+            <div class="modal-footer"><div style="display:flex; gap:10px;"><button class="btn btn-secondary" onclick="App.waiter.printBill()">Imprimir</button><button class="btn btn-success" onclick="App.waiter.sendToKitchen()">Cozinha</button></div></div>
+        </div>
+    </div>
+
     <div id="payment-modal" class="modal-overlay">
         <div class="modal-content">
-            <div class="modal-header">
-                <h3>Pagamento Seguro</h3>
-                <button class="btn btn-secondary btn-sm" onclick="App.payment.close()">Cancelar</button>
-            </div>
+            <div class="modal-header"><h3>Pagamento Seguro</h3><button class="btn btn-secondary btn-sm" onclick="App.payment.close()">Cancelar</button></div>
             <div class="modal-body">
                 <div style="text-align:center; margin-bottom:1.5rem; background: var(--info-bg); padding: 1rem; border-radius: var(--radius-sm);">
-                    <p style="color:var(--info-dark); margin-bottom:0.5rem;">Total a pagar:</p>
-                    <h2 id="pay-total-display" style="color:var(--primary); font-size:2.5rem; margin-bottom:0;">R$ 0,00</h2>
-                    <p class="text-xs text-muted" id="pay-detail-display" style="margin-top:0.5rem;">Segurança Mercado Pago</p>
+                    <p style="color:var(--info-dark); margin-bottom:0.5rem;">Total:</p><h2 id="pay-total-display" style="color:var(--primary); font-size:2.5rem; margin-bottom:0;">R$ 0,00</h2><p class="text-xs text-muted" style="margin-top:0.5rem;">Mercado Pago</p>
                 </div>
-                
                 <div id="payment-brick_container"></div>
             </div>
         </div>
     </div>
+    
+    <div id="cart-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header"><h3>Carrinho</h3><button class="btn btn-secondary btn-sm" onclick="document.getElementById('cart-modal').style.display='none'">Fechar</button></div>
+            <div class="modal-body">
+                <div id="cart-items-list" style="margin-bottom: 1rem;"></div>
+                <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; margin-top:10px; text-align:right;"><strong>Total: <span id="cart-total-modal">R$ 0,00</span></strong></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-success btn-full" onclick="App.cart.checkout()">Finalizar</button></div>
+        </div>
+    </div>
 
     <script>
-        // --- 1. CONFIGURAÇÃO GERAL ---
         const CONFIG = {
-            // URL e Chave do Supabase (Banco de Dados)
             sbUrl: 'https://groezaseypdbpgymgpvo.supabase.co',
             sbKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdyb2V6YXNleXBkYnBneW1ncHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNjkxNjYsImV4cCI6MjA4MTY0NTE2Nn0.5U5QeoGmZn_i9Y8POoUCkatBUAdSW-cjHRyfxpm_pyM',
-            
-            // Chave Pública de PRODUÇÃO do Administrador (Fallback/Padrão)
-            adminPublicKey: 'APP_USR-3f60abc3-0a70-4b62-b180-653ebcae79ec',
-            
-            // Token Mapbox
+            adminPublicKey: 'APP_USR-834374cc-7e6d-494f-9842-49a7e3e57357',
             mapboxToken: 'pk.eyJ1IjoiZXhhbXBsZXVzZXIiLCJhIjoiY2p5Y3Z6eG9jMDFlazNnbzQ4a3R4bWk4ZyJ9.ExampleTokenPlaceholder',
-            
-            // LISTA DE CATEGORIAS
-            categories: [
-                'Comidas',  // Separado
-                'Bebidas',  // Separado
-                'Roupas', 
-                'Serviços de Gesso', 
-                'Hoteis/Pousadas', 
-                'Manutenção Eletrodomésticos', 
-                'Serviços de Manutenção', 
-                'Serviços de Pedreiros', 
-                'Serviços de Pintores', 
-                'Materiais de Construção', 
-                'Eletrodomésticos',
-                'Fretes e Mudanças',
-                'Jardinagem',
-                'Outros'
-            ]
+            categories: ['Comidas', 'Bebidas', 'Roupas', 'Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Manutenção', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Materiais de Construção', 'Eletrodomésticos', 'Fretes e Mudanças', 'Jardinagem', 'Outros']
         };
-        
         const _sb = supabase.createClient(CONFIG.sbUrl, CONFIG.sbKey);
-        let mpInstance = null; // Instância dinâmica do Mercado Pago
+        let mpInstance = null;
 
-        // --- APP CONTROLLER ---
         const App = {
-            state: { 
-                user: null, 
-                profile: null, 
-                tempRole: null, 
-                deferredPrompt: null, 
-                mapInstance: null, 
-                marker: null, 
-                watchId: null, 
-                activeOrder: null, 
-                storeId: null, 
-                pendingPayment: null, 
-                brickController: null, 
-                pixInterval: null, 
-                activeChatStore: null, 
-                activeChatClient: null,
-                chatSub: null,
-                currentBudgetTotal: 0,
-                mediaRecorder: null,
-                audioChunks: []
-            },
+            state: { user: null, profile: null, tempRole: null, deferredPrompt: null, mapInstance: null, marker: null, watchId: null, activeOrder: null, storeId: null, pendingPayment: null, brickController: null, pixInterval: null, activeChatStore: null, activeChatClient: null, chatSub: null, currentBudgetTotal: 0, mediaRecorder: null, audioChunks: [], cart: [], currentComanda: null, paymentSplits: [], comandaTotal: 0 },
             
             init: async () => {
                 App.utils.setupPWA();
-                App.utils.setupCategories(); // Popula os selects e menus de categoria
-
+                App.utils.setupCategories();
                 const savedUser = localStorage.getItem('logimoveis_session');
                 if(savedUser) {
                     const profile = JSON.parse(savedUser);
@@ -1505,7 +682,7 @@
                     App.catalog.fetchPublic();
                 }
             },
-
+            // ... (Rest of modules)
             pwa: {
                 install: () => {
                     if (App.state.deferredPrompt) {
@@ -1517,7 +694,6 @@
                     }
                 }
             },
-
             router: {
                 go: (viewId) => {
                     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
@@ -1541,10 +717,10 @@
                     const role = App.state.profile?.role;
                     if(role === 'loja_admin') { App.store.init(); App.router.go('loja'); }
                     else if(role === 'cliente') { App.client.init(); App.router.go('cliente'); }
+                    else if(role === 'garcom') { App.waiter.init(); App.router.go('waiter'); }
                     else { App.provider.init(); App.router.go('provider'); }
                 }
             },
-
             auth: {
                 switchView: (view) => {
                     ['login', 'roles', 'register', 'recover'].forEach(v => document.getElementById(`auth-state-${v}`).style.display = 'none');
@@ -1554,12 +730,9 @@
                     App.state.tempRole = role;
                     document.getElementById('reg-title').innerText = `Cadastro - ${role === 'loja_admin' ? 'Lojista' : role.toUpperCase()}`;
                     App.auth.switchView('register');
-                    
                     const container = document.getElementById('reg-dynamic-fields');
                     let html = '';
-                    
                     if(role === 'loja_admin') {
-                        // Inclui WhatsApp no cadastro de loja
                         html = `<div class="input-wrapper"><label>Nome da Loja</label><input id="reg-store-name" class="input-field" placeholder="Ex: NexLog Center"></div><div class="input-wrapper"><label>WhatsApp da Loja</label><input id="reg-whatsapp" class="input-field" placeholder="(00) 00000-0000"></div><div class="input-wrapper"><label>CNPJ</label><input id="reg-cnpj" class="input-field" placeholder="00.000.000/0000-00"></div><div class="input-wrapper" style="border: 2px dashed var(--primary); padding: 10px; border-radius: 8px; background: var(--info-bg);"><label style="color:var(--primary)">🔑 Token de Autorização</label><input id="reg-token" class="input-field" placeholder="Código fornecido pelo Admin"><p class="text-xs text-muted">Cadastro restrito. Insira sua matrícula/token.</p></div>`;
                     } else if (role === 'motorista' || role === 'montador') {
                         html = `<div class="input-wrapper"><label>CPF</label><input id="reg-cpf" class="input-field" placeholder="000.000.000-00"></div><div class="input-wrapper"><label>Sua Chave Pix (Para Receber)</label><input id="reg-pix" class="input-field" placeholder="Email, CPF ou Aleatória"></div><div class="camera-container" id="cam-box"><video id="cam-video" autoplay playsinline></video><div class="camera-overlay">Selfie com capacete (validação facial)</div></div><div id="verified-msg" style="display:none; color:var(--success); font-weight:bold; margin-bottom:1rem;">✅ Identidade Confirmada</div><button class="btn btn-secondary btn-full" id="btn-cam" onclick="App.auth.runCamera()">Validar Identidade (Obrigatório)</button>`;
@@ -1574,7 +747,6 @@
                         const video = document.getElementById('cam-video');
                         document.getElementById('cam-box').style.display = 'block';
                         video.srcObject = stream;
-                        
                         const btn = document.getElementById('btn-cam');
                         btn.innerText = "Analisando rosto...";
                         btn.disabled = true;
@@ -1600,12 +772,9 @@
                         if (role === 'loja_admin') {
                             const token = document.getElementById('reg-token').value.trim();
                             if (!token) throw new Error("Token de autorização é obrigatório");
-                            // Verifica Token
                             const { error: tokenError } = await _sb.rpc('validate_store_token', { token_input: token });
                             if (tokenError) throw new Error(tokenError.message);
                         }
-
-                        // 1. Cria o perfil do usuário
                         const { data: newUser, error } = await _sb.from('profiles').insert({
                             nome_completo: name, email: email, password: pass, role: role,
                             cpf: document.getElementById('reg-cpf')?.value || null,
@@ -1613,39 +782,22 @@
                             chave_pix: document.getElementById('reg-pix')?.value || null, 
                             is_verified: document.getElementById('verified-msg')?.style.display === 'block'
                         }).select().single();
-
                         if(error) throw error;
-                        
-                        // 2. Se for lojista, cria a loja IMEDIATAMENTE com o nome correto
                         if(role === 'loja_admin') {
                             const storeName = document.getElementById('reg-store-name').value.trim();
                             const whatsApp = document.getElementById('reg-whatsapp').value.trim();
                             const cnpj = document.getElementById('reg-cnpj').value.trim();
-
-                            const { error: storeError } = await _sb.from('stores').insert({ 
-                                admin_id: newUser.id, 
-                                nome_loja: storeName || "Minha Loja Nova", // Fallback seguro, mas tenta usar o nome
-                                cnpj: cnpj,
-                                whatsapp: whatsApp
-                            });
-
+                            const { error: storeError } = await _sb.from('stores').insert({ admin_id: newUser.id, nome_loja: storeName || "Minha Loja Nova", cnpj: cnpj, whatsapp: whatsApp });
                             if(storeError) {
                                 console.error("Erro ao criar loja:", storeError);
                                 alert("Usuário criado, mas erro ao criar loja: " + storeError.message);
-                                return; // Para aqui se der erro na loja
+                                return; 
                             }
                         }
-                        
-                        // LIMPEZA EXPLÍCITA DO TOKEN APÓS SUCESSO PARA EVITAR VAZAMENTO
-                        if (document.getElementById('reg-token')) {
-                            document.getElementById('reg-token').value = "";
-                        }
-
+                        if (document.getElementById('reg-token')) document.getElementById('reg-token').value = "";
                         App.utils.toast('Cadastro realizado com sucesso!', 'success');
                         App.auth.switchView('login');
-                    } catch(e) { 
-                        App.utils.toast('Erro: ' + e.message, 'error'); 
-                    }
+                    } catch(e) { App.utils.toast('Erro: ' + e.message, 'error'); }
                 },
                 login: async () => {
                     const email = document.getElementById('login-email').value.trim();
@@ -1657,40 +809,21 @@
                 recoverPassword: async () => {
                     const email = document.getElementById('rec-email').value.trim();
                     const cpf = document.getElementById('rec-cpf').value.trim();
-                    
                     if(!email || !cpf) return App.utils.toast('Preencha Email e CPF', 'error');
-                    
                     const { data, error } = await _sb.from('profiles').select('id').eq('email', email).eq('cpf', cpf).maybeSingle();
-                    
-                    if(data) {
-                        App.utils.toast('Link de redefinição enviado para seu email!', 'success');
-                        App.auth.switchView('login');
-                    } else {
-                        App.utils.toast('Dados não conferem.', 'error');
-                    }
+                    if(data) { App.utils.toast('Link de redefinição enviado para seu email!', 'success'); App.auth.switchView('login'); } else { App.utils.toast('Dados não conferem.', 'error'); }
                 },
                 logout: () => { localStorage.removeItem('logimoveis_session'); location.reload(); }
             },
-
             store: {
                 init: async () => {
                     if (!App.state.user) return;
                     let { data: store } = await _sb.from('stores').select('*').eq('admin_id', App.state.user.id).maybeSingle();
-                    
-                    // CORREÇÃO: Não cria loja padrão "Minha Loja" se ela não existir. 
-                    // Assume-se que o cadastro criou corretamente. Se falhou, avisa.
                     if (!store) {
-                        // Tenta criar apenas se realmente não existir, mas usa um nome genérico provisório
-                        // Idealmente isso não deve acontecer se o cadastro funcionou.
-                        console.warn("Loja não encontrada para este usuário. Verifique o cadastro.");
-                        // Opcional: Criar fallback ou pedir para completar cadastro
                         const { data: newStore } = await _sb.from('stores').insert({ admin_id: App.state.user.id, nome_loja: 'Loja (Complete o Cadastro)' }).select().single();
                         store = newStore;
                     }
-                    
                     App.state.storeId = store.id;
-
-                    // Logica de Chaves e Parceiro
                     if(store.mp_access_token) {
                         document.getElementById('store-keys-area').style.display = 'none';
                         document.getElementById('store-keys-locked').style.display = 'block';
@@ -1698,76 +831,63 @@
                         document.getElementById('store-keys-area').style.display = 'block';
                         document.getElementById('store-keys-locked').style.display = 'none';
                     }
-
                     if(store.parceiro_exclusivo_id) {
                         const {data: p} = await _sb.from('profiles').select('nome_completo, email').eq('id', store.parceiro_exclusivo_id).single();
                         if(p) document.getElementById('active-partner-display').innerText = `Parceiro Vinculado: ${p.nome_completo} (${p.email})`;
                     }
-
-                    // Carrega Pedidos e Métricas
+                    App.store.loadComandas();
                     const { data: orders } = await _sb.from('orders').select('*, products(nome, categoria, delivery_info), profiles!orders_cliente_id_fkey(nome_completo, email, cpf), prestador:profiles!orders_prestador_id_fkey(nome_completo, chave_pix)').eq('store_id', store.id).order('created_at', { ascending: false });
                     App.store.calcMetrics(orders || []);
-                    
-                    document.getElementById('store-orders-list').innerHTML = orders?.map(o => {
-                        let providerHtml = '';
-                        if(o.prestador) {
-                            providerHtml = `
-                                <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:8px; margin-top:10px; font-size:0.85rem;">
-                                    <strong>Prestador:</strong> ${o.prestador.nome_completo}<br>
-                                    <strong>Chave Pix:</strong> <span style="font-family:monospace; background:#fff; padding:2px 5px; border-radius:4px;">${o.prestador.chave_pix || 'Não inf.'}</span><br>
-                                    <span style="color:var(--success-dark); font-weight:bold;">Pagar Comissão</span>
-                                </div>
-                            `;
-                        }
-                        
-                        // Botão de Impressão para Comidas e Bebidas
+                    App.store.renderOrders(orders);
+                    App.store.loadMyProducts();
+                    App.store.listenMessages();
+                    App.chat.loadHistory('loja');
+                },
+                loadComandas: async () => {
+                    const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', {ascending: true});
+                    const container = document.getElementById('admin-comanda-grid');
+                    if (data) {
+                        container.innerHTML = data.map(c => `
+                            <div class="comanda-card bg-${c.status}" onclick="App.payment.openSplitModal(${c.id}, ${JSON.stringify(c.items || []).replace(/"/g, '&quot;')})">
+                                <div class="comanda-corner"></div>
+                                <div class="comanda-dot"></div>
+                                <div style="font-size:1.5rem;">${c.numero}</div>
+                                <div class="text-xs" style="text-transform:uppercase;">${c.status}</div>
+                            </div>
+                        `).join('');
+                        if(document.getElementById('comanda-list-container')) document.getElementById('comanda-list-container').innerHTML = container.innerHTML;
+                    }
+                },
+                renderOrders: (orders) => {
+                     document.getElementById('store-orders-list').innerHTML = orders?.map(o => {
                         let printBtn = '';
                         if(o.products?.categoria === 'Comidas' || o.products?.categoria === 'Bebidas') {
                             printBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:auto; float:right;" onclick='App.store.printOrder(${JSON.stringify(o)})'><i class="ri-printer-line"></i> Imprimir</button>`;
                         }
-
                         return `
                         <div class="card" style="margin-bottom:1rem; border-left: 4px solid ${o.status==='pendente'?'var(--warning)':'var(--success)'};">
                             <div style="display:flex; justify-content:space-between"><strong>${o.products?.nome}</strong><span class="badge status-${o.status}">${o.status}</span></div>
-                            <p class="text-sm">Cliente: ${o.profiles?.nome_completo}</p>
-                            ${printBtn}
                             <div style="clear:both;"></div>
-                            ${o.status === 'pendente' ? `<button class="btn btn-primary btn-sm btn-full" onclick="App.store.dispatch('${o.id}')">Liberar para Entrega</button>` : ''}
-                            ${providerHtml}
-                        </div>`;
-                    }).join('') || '<p class="text-sm">Nenhum pedido.</p>';
-                    
-                    App.store.loadMyProducts();
-                    // INICIA O LISTENER DE MENSAGENS PARA O LOJISTA
-                    App.store.listenMessages();
-                    
-                    // CARREGA HISTORICO DE CONVERSAS (LOJA)
-                    App.chat.loadHistory('loja');
+                            ${printBtn}
+                            ${o.status === 'pendente' ? `<button class="btn btn-primary btn-sm btn-full" onclick="App.store.dispatch('${o.id}')">Liberar</button>` : ''}
+                        </div>`}).join('') || '<p class="text-sm">Nenhum pedido.</p>';
                 },
-                // NOVA FUNÇÃO: Escuta mensagens para o lojista
                 listenMessages: () => {
                     const myStoreId = App.state.storeId;
-                    // Inscreve no canal para a tabela de mensagens filtrada pela loja atual
-                    _sb.channel('store-notifications')
-                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `store_id=eq.${myStoreId}` }, 
-                    async (payload) => {
-                        // Se quem mandou a mensagem NÃO sou eu (o lojista), então é um cliente
+                    _sb.channel('store-notifications').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `store_id=eq.${myStoreId}` }, async (payload) => {
                         if(payload.new.sender_id !== App.state.user.id) {
                             const { data: sender } = await _sb.from('profiles').select('nome_completo').eq('id', payload.new.sender_id).single();
                             App.utils.showChatNotification(sender.nome_completo, payload.new.content, payload.new.client_id);
                         }
-                    })
-                    .subscribe();
+                    }).subscribe();
                 },
                 calcMetrics: (orders) => {
                     const now = new Date();
                     let dayTotal = 0, weekTotal = 0, monthTotal = 0;
-                    
                     orders.forEach(o => {
                         if(['aceito', 'concluido', 'em_rota', 'aguardando_prestador'].includes(o.status)) {
                             const orderDate = new Date(o.created_at);
                             const val = o.taxa_servico / 0.15; 
-                            
                             if(orderDate.toDateString() === now.toDateString()) dayTotal += val;
                             if(orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear()) monthTotal += val;
                             const diffTime = Math.abs(now - orderDate);
@@ -1775,7 +895,6 @@
                             if(diffDays <= 7) weekTotal += val;
                         }
                     });
-                    
                     document.getElementById('metric-day').innerText = `R$ ${dayTotal.toFixed(2)}`;
                     document.getElementById('metric-week').innerText = `R$ ${weekTotal.toFixed(2)}`;
                     document.getElementById('metric-month').innerText = `R$ ${monthTotal.toFixed(2)}`;
@@ -1784,16 +903,12 @@
                     const { data } = await _sb.from('products').select('*').eq('store_id', App.state.storeId);
                     document.getElementById('store-products-list').innerHTML = data?.map(p => `
                         <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
-                            <div>
-                                <div style="font-weight:bold">${p.nome} ${p.promocao ? '<span style="color:red; font-size:0.7rem">(Promo)</span>' : ''}</div>
-                                <div class="text-xs text-muted">R$ ${p.preco.toFixed(2)}</div>
-                            </div>
+                            <div><div style="font-weight:bold">${p.nome} ${p.promocao ? '<span style="color:red; font-size:0.7rem">(Promo)</span>' : ''}</div><div class="text-xs text-muted">R$ ${p.preco.toFixed(2)}</div></div>
                             <div style="display:flex; gap:5px;">
                                 <button class="btn btn-sm btn-secondary" style="width:auto" onclick='App.store.openEditProduct(${JSON.stringify(p)})'>Editar</button>
                                 <button class="btn btn-sm btn-danger" style="width:auto; padding:5px 8px;" onclick='App.store.deleteProduct("${p.id}")'><i class="ri-delete-bin-line"></i></button>
                             </div>
-                        </div>
-                    `).join('');
+                        </div>`).join('');
                 },
                 deleteProduct: async (id) => {
                     if(confirm("Deseja realmente excluir este produto?")) {
@@ -1810,12 +925,9 @@
                     document.getElementById('new-prod-name').value = "";
                     document.getElementById('new-prod-price').value = "";
                     document.getElementById('new-prod-promo').checked = false;
-                    
-                    // Reset campos Gesso e Entrega
                     document.getElementById('gesso-price-m2').value = "";
                     document.getElementById('gesso-labor-val').value = "";
                     document.getElementById('delivery-fee-val').value = "";
-                    
                     document.getElementById('new-prod-cat').value = CONFIG.categories[0];
                     App.store.checkCategory(CONFIG.categories[0]);
                     document.getElementById('product-modal').style.display = 'flex';
@@ -1828,8 +940,6 @@
                     document.getElementById('new-prod-name').value = p.nome;
                     document.getElementById('new-prod-price').value = p.preco;
                     document.getElementById('new-prod-promo').checked = p.promocao;
-                    
-                    // Popula dados de Gesso
                     if(p.gesso_info) {
                         try {
                             const g = typeof p.gesso_info === 'string' ? JSON.parse(p.gesso_info) : p.gesso_info;
@@ -1838,8 +948,6 @@
                             document.getElementById('gesso-labor-type').value = g.labor_type || "fixed";
                         } catch(e) { console.error("Erro ao parsear gesso_info", e); }
                     }
-
-                    // Popula dados de Entrega (Comida)
                     if(p.delivery_info) {
                         try {
                             const d = typeof p.delivery_info === 'string' ? JSON.parse(p.delivery_info) : p.delivery_info;
@@ -1847,132 +955,49 @@
                             document.getElementById('delivery-fee-type').value = d.fee_type || "fixed";
                         } catch(e) {}
                     }
-                    
                     App.store.checkCategory(p.categoria);
                     document.getElementById('product-modal').style.display = 'flex';
                 },
                 closeProductModal: () => document.getElementById('product-modal').style.display = 'none',
                 checkCategory: (cat) => {
-                    // Esconde todas as áreas especiais primeiro
                     document.getElementById('hotel-dates-area').style.display = 'none';
                     document.getElementById('gesso-options-area').style.display = 'none';
                     document.getElementById('delivery-options-area').style.display = 'none';
-                    
-                    if(cat === 'Hoteis/Pousadas') {
-                        document.getElementById('hotel-dates-area').style.display = 'block';
-                    } else if (cat === 'Serviços de Gesso') {
-                        document.getElementById('gesso-options-area').style.display = 'block';
-                    } else if (cat === 'Comidas' || cat === 'Bebidas') { // MODIFICADO AQUI
-                        document.getElementById('delivery-options-area').style.display = 'block';
-                    }
+                    if(cat === 'Hoteis/Pousadas') document.getElementById('hotel-dates-area').style.display = 'block';
+                    else if (cat === 'Serviços de Gesso') document.getElementById('gesso-options-area').style.display = 'block';
+                    else if (cat === 'Comidas' || cat === 'Bebidas') document.getElementById('delivery-options-area').style.display = 'block';
                 },
                 submitProduct: async () => {
-    if(!App.state.storeId) {
-        alert("Erro crítico: ID da Loja não encontrado.");
-        return;
-    }
-
-    const id = document.getElementById('edit-prod-id').value;
-    const nome = document.getElementById('new-prod-name').value;
-    const preco = document.getElementById('new-prod-price').value;
-    const cat = document.getElementById('new-prod-cat').value;
-    const promo = document.getElementById('new-prod-promo').checked;
-    
-    // PEGA MÚLTIPLOS ARQUIVOS
-    const fileInput = document.getElementById('new-prod-file');
-    const files = fileInput.files;
-
-    if (!nome || !preco) return App.utils.toast("Preencha nome e preço", "error");
-
-    // LÓGICA DE UPLOAD MÚLTIPLO
-    let galeriaUrls = [];
-    
-    // Se estiver editando, tentamos manter a galeria antiga se não enviou novas
-    // (Isso requereria carregar a galeria antiga no modal, mas para simplificar, 
-    // se enviar novas fotos, substitui as antigas).
-    
-    if (files.length > 0) {
-        App.utils.toast(`Enviando ${files.length} fotos... aguarde.`, "info");
-        
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const fileName = `${Date.now()}_${i}_${file.name.replace(/\s/g, '_')}`;
-            const { error: upErr } = await _sb.storage.from('produtos').upload(fileName, file);
-            
-            if (!upErr) {
-                const { data } = _sb.storage.from('produtos').getPublicUrl(fileName);
-                galeriaUrls.push(data.publicUrl);
-            }
-        }
-    }
-
-    // Prepara os JSONs
-    const dateStart = document.getElementById('hotel-start-date').value;
-    const dateEnd = document.getElementById('hotel-end-date').value;
-    let disp = (cat === 'Hoteis/Pousadas' && dateStart && dateEnd) ? `${dateStart}|${dateEnd}` : null;
-
-    let gessoInfo = (cat === 'Serviços de Gesso') ? JSON.stringify({
-        price_m2: document.getElementById('gesso-price-m2').value,
-        labor_val: document.getElementById('gesso-labor-val').value,
-        labor_type: document.getElementById('gesso-labor-type').value
-    }) : null;
-
-    let deliveryInfo = (cat === 'Comidas' || cat === 'Bebidas') ? JSON.stringify({
-        fee_val: document.getElementById('delivery-fee-val').value,
-        fee_type: document.getElementById('delivery-fee-type').value
-    }) : null;
-
-    // MONTA O PAYLOAD
-    const payload = { 
-        store_id: App.state.storeId, 
-        nome, 
-        preco: parseFloat(preco), 
-        categoria: cat, 
-        promocao: promo, 
-        disponibilidade: disp,
-        gesso_info: gessoInfo,
-        delivery_info: deliveryInfo
-    };
-
-    // Se houve upload de novas fotos, atualiza a galeria e a imagem principal
-    if (galeriaUrls.length > 0) {
-        payload.imagem_url = galeriaUrls[0]; // A primeira foto vira a capa
-        payload.galeria = galeriaUrls;       // Salva o array completo no campo JSON 'galeria'
-    }
-
-    let res;
-    if(id) {
-        // Se for update e não mandou fotos novas, não sobrescreve a galeria existente (o supabase faz merge se não enviar o campo)
-        res = await _sb.from('products').update(payload).eq('id', id);
-    } else {
-        if(galeriaUrls.length === 0) {
-            payload.imagem_url = 'https://placehold.co/400x300?text=Sem+Foto';
-            payload.galeria = [];
-        }
-        res = await _sb.from('products').insert(payload);
-    }
-
-    if(res.error) { 
-        console.error("Erro Supabase:", res.error); 
-        alert("Erro ao salvar: " + res.error.message); 
-    } else {
-        alert("Produto salvo com sucesso!");
-        App.store.closeProductModal(); 
-        App.catalog.fetchPublic(); 
-        App.store.init();
-    }
-}
-                    // Dados Delivery
+                    if(!App.state.storeId) {
+                        alert("Erro crítico: ID da Loja não encontrado. Tente sair e entrar novamente.");
+                        return;
+                    }
+                    const id = document.getElementById('edit-prod-id').value;
+                    const nome = document.getElementById('new-prod-name').value;
+                    const preco = document.getElementById('new-prod-price').value;
+                    const cat = document.getElementById('new-prod-cat').value;
+                    const promo = document.getElementById('new-prod-promo').checked;
+                    const file = document.getElementById('new-prod-file').files[0];
+                    const dateStart = document.getElementById('hotel-start-date').value;
+                    const dateEnd = document.getElementById('hotel-end-date').value;
+                    let disp = null;
+                    if(cat === 'Hoteis/Pousadas' && dateStart && dateEnd) disp = `${dateStart}|${dateEnd}`;
+                    let gessoInfo = null;
+                    if(cat === 'Serviços de Gesso') {
+                        gessoInfo = JSON.stringify({
+                            price_m2: document.getElementById('gesso-price-m2').value,
+                            labor_val: document.getElementById('gesso-labor-val').value,
+                            labor_type: document.getElementById('gesso-labor-type').value
+                        });
+                    }
                     let deliveryInfo = null;
-                    if(cat === 'Comidas' || cat === 'Bebidas') { // MODIFICADO AQUI
+                    if(cat === 'Comidas' || cat === 'Bebidas') {
                         deliveryInfo = JSON.stringify({
                             fee_val: document.getElementById('delivery-fee-val').value,
                             fee_type: document.getElementById('delivery-fee-type').value
                         });
                     }
-
                     if (!nome || !preco) return App.utils.toast("Preencha nome e preço", "error");
-                    
                     let imageUrl = null;
                     if (file) {
                         App.utils.toast("Enviando imagem...", "info");
@@ -1980,37 +1005,19 @@
                         const { error: upErr } = await _sb.storage.from('produtos').upload(fileName, file);
                         if (!upErr) imageUrl = _sb.storage.from('produtos').getPublicUrl(fileName).data.publicUrl;
                     }
-                    
                     const payload = { 
-                        store_id: App.state.storeId, 
-                        nome, 
-                        preco: parseFloat(preco), 
-                        categoria: cat, 
-                        promocao: promo, 
-                        disponibilidade: disp,
-                        gesso_info: gessoInfo,
-                        delivery_info: deliveryInfo
+                        store_id: App.state.storeId, nome, preco: parseFloat(preco), categoria: cat, promocao: promo, 
+                        disponibilidade: disp, gesso_info: gessoInfo, delivery_info: deliveryInfo
                     };
                     if(imageUrl) payload.imagem_url = imageUrl;
-
                     let res;
-                    if(id) {
-                        res = await _sb.from('products').update(payload).eq('id', id);
-                    } else {
-                        // Se não tiver imagem, usa placeholder
+                    if(id) res = await _sb.from('products').update(payload).eq('id', id);
+                    else {
                         if(!imageUrl && !id) payload.imagem_url = 'https://placehold.co/400x300?text=NexLog';
                         res = await _sb.from('products').insert(payload);
                     }
-
-                    if(res.error) { 
-                        console.error("Erro Supabase:", res.error); 
-                        alert("Erro ao salvar produto no banco de dados: " + res.error.message + "\nDetalhes: " + res.error.details); 
-                    } else {
-                        alert("Produto salvo com sucesso!");
-                        App.store.closeProductModal(); 
-                        App.catalog.fetchPublic(); 
-                        App.store.init();
-                    }
+                    if(res.error) alert("Erro ao salvar: " + res.error.message); 
+                    else { alert("Produto salvo!"); App.store.closeProductModal(); App.catalog.fetchPublic(); App.store.init(); }
                 },
                 saveCredentials: async () => {
                     const acc = document.getElementById('store-access-token').value.trim();
@@ -2039,13 +1046,8 @@
                     await _sb.from('orders').update({ status: 'aguardando_prestador', data_agendada: new Date().toISOString() }).eq('id', id);
                     App.utils.toast('Despachado!', 'success'); App.store.init();
                 },
-                setupPrinter: () => {
-                    // Navegadores web não acessam impressoras USB diretamente sem driver/app auxiliar.
-                    // A melhor abordagem "fácil" é abrir a janela de impressão nativa do SO.
-                    window.print();
-                },
+                setupPrinter: () => { window.print(); },
                 printOrder: (order) => {
-                    // Cria o layout do cupom térmico (58mm/80mm)
                     const content = `
                         <div style="font-family: monospace; width: 300px; padding: 10px; text-align: center;">
                             <h3>NEXLOG PEDIDOS</h3>
@@ -2060,16 +1062,79 @@
                             </div>
                             <hr style="border-top: 1px dashed black;">
                             <h3>TOTAL: R$ ${(order.taxa_servico/0.15).toFixed(2)}</h3>
-                            <p style="font-size: 0.8rem;">Obrigado pela preferência!</p>
                         </div>
                     `;
                     const area = document.getElementById('printable-area');
                     area.innerHTML = content;
-                    window.print(); // Dispara a impressão do navegador (que o usuário seleciona a térmica)
+                    window.print(); 
                 }
             },
-
+            admin: {
+                 createComandas: async () => {
+                     const start = parseInt(document.getElementById('comanda-start').value);
+                     const end = parseInt(document.getElementById('comanda-end').value);
+                     if (!start || !end || end < start) return alert("Intervalo inválido");
+                     const rows = [];
+                     for(let i=start; i<=end; i++) rows.push({ store_id: App.state.storeId, numero: i, status: 'livre' });
+                     const { error } = await _sb.from('comandas').insert(rows);
+                     if(error) alert("Erro ao criar: " + error.message);
+                     else { alert(`${rows.length} comandas criadas!`); App.store.loadComandas(); }
+                 },
+                 registerStaff: async () => {
+                     const name = document.getElementById('staff-name').value;
+                     const email = document.getElementById('staff-email').value;
+                     const pass = document.getElementById('staff-pass').value;
+                     const role = document.getElementById('staff-role').value;
+                     const rate = document.getElementById('staff-rate').value;
+                     if(!name || !email || !pass) return alert("Preencha todos os campos");
+                     const { data: newUser, error } = await _sb.from('profiles').insert({
+                        nome_completo: name, email: email, password: pass, role: role, is_verified: true
+                     }).select().single();
+                     if(error) return alert("Erro no perfil: " + error.message);
+                     await _sb.from('store_staff').insert({ store_id: App.state.storeId, profile_id: newUser.id, cargo: role, taxa_servico: rate });
+                     alert("Funcionário cadastrado!");
+                 }
+            },
             payment: {
+                openSplitModal: (comandaId, items) => {
+                    App.state.currentComanda = comandaId;
+                    App.state.paymentSplits = [];
+                    let total = 0;
+                    if(items && Array.isArray(items)) total = items.reduce((acc, item) => acc + (item.price * item.qtd), 0);
+                    App.state.comandaTotal = total;
+                    document.getElementById('split-total-due').innerText = `R$ ${total.toFixed(2)}`;
+                    document.getElementById('split-remaining').innerText = `R$ ${total.toFixed(2)}`;
+                    document.getElementById('split-amount').value = total.toFixed(2); 
+                    document.getElementById('split-history').innerHTML = '';
+                    document.getElementById('split-pay-modal').style.display = 'flex';
+                },
+                toggleCardFields: () => {
+                    const method = document.getElementById('split-method').value;
+                    document.getElementById('card-fields').style.display = (method === 'cartao') ? 'flex' : 'none';
+                },
+                addSplit: () => {
+                    const amount = parseFloat(document.getElementById('split-amount').value);
+                    const method = document.getElementById('split-method').value;
+                    const nsu = document.getElementById('card-nsu').value;
+                    const aut = document.getElementById('card-aut').value;
+                    if(!amount || amount <= 0) return alert("Valor inválido");
+                    App.state.paymentSplits.push({ amount, method, nsu, aut });
+                    const hist = document.getElementById('split-history');
+                    hist.innerHTML = App.state.paymentSplits.map(s => `<div>- R$ ${s.amount.toFixed(2)} (${s.method.toUpperCase()})</div>`).join('');
+                    const paid = App.state.paymentSplits.reduce((acc, s) => acc + s.amount, 0);
+                    const remain = App.state.comandaTotal - paid;
+                    document.getElementById('split-remaining').innerText = `R$ ${remain > 0 ? remain.toFixed(2) : '0.00'}`;
+                    if(remain <= 0) {
+                        document.getElementById('btn-finish-split').disabled = false;
+                        document.getElementById('split-amount').value = 0;
+                    } else document.getElementById('split-amount').value = remain.toFixed(2);
+                },
+                finalizeSplit: async () => {
+                    await _sb.from('comandas').update({ status: 'fechada', payments_info: App.state.paymentSplits, total_pago: App.state.comandaTotal }).eq('id', App.state.currentComanda);
+                    App.utils.toast("Conta Fechada com Sucesso!", "success");
+                    document.getElementById('split-pay-modal').style.display = 'none';
+                    App.store.loadComandas();
+                },
                 open: async (total, orderPayload) => {
                     App.state.pendingPayment = { total, orderPayload };
                     document.getElementById('pay-total-display').innerText = `R$ ${total.toFixed(2)}`;
@@ -2077,6 +1142,11 @@
                     document.getElementById('payment-brick_container').innerHTML = '';
                     const oldPix = document.getElementById('pix-display-area'); if(oldPix) oldPix.remove();
                     document.getElementById('payment-brick_container').style.display = 'block';
+                    if(total <= 0) {
+                         alert("Valor total é zero. Pedido será processado sem pagamento.");
+                         App.payment.finalizeSuccess();
+                         return;
+                    }
                     App.payment.renderBrick(total);
                 },
                 close: () => {
@@ -2131,13 +1201,24 @@
                     const { orderPayload } = App.state.pendingPayment;
                     await _sb.from('orders').insert({ cliente_id: App.state.user.id, product_id: orderPayload.product_id, store_id: orderPayload.store_id, endereco_destino: orderPayload.address, requer_montagem: orderPayload.requer_montagem, taxa_servico: orderPayload.taxa, status: 'pendente' });
                     App.utils.toast('Pedido realizado!', 'success'); App.router.go('cliente'); App.client.init();
-                    
-                    // IMPRESSÃO AUTOMÁTICA SE FOR COMIDA
-                    // (Simulação: buscaria a info do pedido recém criado para imprimir)
+                    if (orderPayload.address.includes("(Itens:")) {
+                        const content = `
+                            <div style="font-family: monospace; width: 300px; padding: 10px;">
+                                <h3 style="text-align:center;">PEDIDO COZINHA (Delivery)</h3>
+                                <p>Cliente: ${App.state.profile.nome_completo}</p>
+                                <p>Endereço: ${orderPayload.address.split('(Itens:')[0]}</p>
+                                <hr style="border-top: 1px dashed black;">
+                                <p><strong>Itens:</strong></p>
+                                <p>${orderPayload.address.split('(Itens:')[1].replace(')', '')}</p>
+                            </div>
+                        `;
+                        const area = document.getElementById('printable-area');
+                        area.innerHTML = content;
+                        window.print();
+                    }
                 }
             },
-
-         client: {
+            client: {
                 init: async () => {
                     const { data: orders } = await _sb.from('orders').select('*, products(nome)').eq('cliente_id', App.state.user.id).order('created_at', {ascending:false});
                     document.getElementById('client-orders-list').innerHTML = orders?.map(o => `
@@ -2318,309 +1399,56 @@
                     alert(`O valor total é R$ ${total.toFixed(2)}. Você pagará 50% (R$ ${downPayment.toFixed(2)}) agora.`);
                 }
             },
-
-            provider: {
-                init: async () => {
-                    const role = App.state.profile.role; document.getElementById('provider-role-label').innerText = role.toUpperCase();
-                    // MOSTRA PIX DO MOTORISTA
-                    document.getElementById('provider-pix-display').innerText = App.state.profile.chave_pix || "Toque em Alterar";
-
-                    // FILTRO DE FROTA EXCLUSIVA
-                    const { data: jobs } = await _sb.from('orders').select('*, products(nome), stores(nome_loja, parceiro_exclusivo_id)').or(`status.eq.aguardando_prestador,prestador_id.eq.${App.state.user.id}`);
-                    
-                    const filtered = (jobs||[]).filter(j => {
-                        if (j.stores?.parceiro_exclusivo_id) {
-                            return j.stores.parceiro_exclusivo_id === App.state.user.id;
-                        }
-                        return true; 
-                    });
-
-                    document.getElementById('provider-jobs-list').innerHTML = filtered.map(j => {
-                        const isMine = j.prestador_id === App.state.user.id;
-                        return `<div class="card" style="${isMine?'border-color:var(--success); border-left:5px solid var(--success)':''}"><h4>${j.products?.nome}</h4><p>${j.stores?.nome_loja} -> ${j.endereco_destino}</p><span class="badge ${isMine?'status-aceito':'status-pendente'}">${isMine?'ACEITO':'NOVO'}</span><hr style="margin:10px 0; border:0; border-top:1px solid #eee;">${!isMine ? `<button class="btn btn-primary btn-full" onclick="App.provider.accept('${j.id}')">Aceitar Corrida</button>` : `<button class="btn btn-success btn-full" onclick="App.map.open('${j.id}', true, '${j.endereco_destino}')">Iniciar Navegação</button>`}</div>`;
-                    }).join('') || '<p>Sem ofertas.</p>';
+            cart: {
+                open: () => { document.getElementById('cart-modal').style.display = 'flex'; App.cart.render(); },
+                add: (product, storeId) => {
+                     if (App.state.cart.length > 0 && App.state.cart[0].storeId !== storeId) {
+                         if(!confirm("Você tem itens de outra loja no carrinho. Deseja limpar o carrinho e iniciar um novo pedido?")) return;
+                         App.state.cart = [];
+                     }
+                     App.state.cart.push({ ...product, storeId });
+                     App.utils.toast("Adicionado ao carrinho!", "success");
+                     App.cart.updateFloater();
                 },
-                updatePix: async () => {
-                    const key = prompt("Digite sua chave Pix para receber comissões:");
-                    if(key) {
-                        await _sb.from('profiles').update({ chave_pix: key }).eq('id', App.state.user.id);
-                        alert("Chave salva com sucesso!"); location.reload();
-                    }
+                remove: (index) => { App.state.cart.splice(index, 1); App.cart.render(); App.cart.updateFloater(); },
+                render: () => {
+                     const container = document.getElementById('cart-items-list');
+                     if(App.state.cart.length === 0) {
+                         container.innerHTML = '<p class="text-center text-muted">Carrinho vazio.</p>';
+                         document.getElementById('cart-total-modal').innerText = "R$ 0,00";
+                         return;
+                     }
+                     let total = 0;
+                     container.innerHTML = App.state.cart.map((item, idx) => {
+                         total += item.preco;
+                         return `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding:10px;">
+                                 <div><div style="font-weight:bold">${item.nome}</div><div class="text-xs text-muted">R$ ${item.preco.toFixed(2)}</div></div>
+                                 <button class="btn btn-sm btn-danger" style="width:auto;" onclick="App.cart.remove(${idx})"><i class="ri-delete-bin-line"></i></button></div>`;
+                     }).join('');
+                     document.getElementById('cart-total-modal').innerText = `R$ ${total.toFixed(2)}`;
                 },
-                accept: async (id) => { await _sb.from('orders').update({ prestador_id: App.state.user.id, status: 'aceito' }).eq('id', id); App.utils.toast('Aceito!', 'success'); App.provider.init(); }
-            },
-            
-            chat: {
-                // MODIFICADO: Função que abre o chat
-                // Se storeId for passado, abre modo cliente falando com loja
-                // Se clientId for passado, abre modo loja falando com cliente
-                open: async (storeId, clientId = null) => {
-                    if(!App.state.user) return App.router.go('auth');
-                    
-                    App.state.activeChatStore = storeId;
-                    App.state.activeChatClient = clientId || App.state.user.id; // Se não passar cliente, sou eu mesmo
-                    
-                    document.getElementById('chat-modal').style.display = 'flex';
-                    const msgs = document.getElementById('chat-msgs');
-                    msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Carregando histórico...</div>';
-                    
-                    // Carrega mensagens onde store_id é X e client_id é Y
-                    const { data } = await _sb.from('messages')
-                        .select('*')
-                        .eq('store_id', storeId)
-                        .eq('client_id', App.state.activeChatClient)
-                        .order('created_at', { ascending: true });
-                    
-                    msgs.innerHTML = '';
-                    if(data && data.length > 0) {
-                        data.forEach(m => App.chat.renderMsg(m));
-                    } else {
-                        msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Inicie a conversa...</div>';
-                    }
-
-                    // Realtime Subscription
-                    if(App.state.chatSub) _sb.removeChannel(App.state.chatSub);
-                    App.state.chatSub = _sb.channel('public:messages')
-                        // MUDANÇA AQUI: Ouvimos 'UPDATE' também para refletir edições e exclusões
-                        .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `store_id=eq.${storeId}` }, 
-                        (payload) => {
-                            // Se a mensagem for deste chat atual
-                            if(payload.new.client_id === App.state.activeChatClient) {
-                                if (payload.eventType === 'INSERT') {
-                                    if(msgs.innerText === "Inicie a conversa...") msgs.innerHTML = "";
-                                    App.chat.renderMsg(payload.new);
-                                } else if (payload.eventType === 'UPDATE') {
-                                    // Atualiza a mensagem na tela se ela já existe
-                                    const msgDiv = document.getElementById(`msg-${payload.new.id}`);
-                                    if(msgDiv) {
-                                        // Re-renderiza o conteúdo interno da bolha
-                                        if (payload.new.is_deleted) {
-                                            msgDiv.innerHTML = `<span class="chat-deleted"><i class="ri-prohibited-line"></i> Mensagem apagada</span>`;
-                                        } else {
-                                            let contentHtml = payload.new.content;
-                                            if (payload.new.is_edited) contentHtml += `<span class="chat-edited-label"><i class="ri-pencil-line"></i> Editada</span>`;
-                                            
-                                            // Se for minha mensagem, recoloca o botão de opções e o status
-                                            if (msgDiv.classList.contains('mine')) {
-                                                 // USANDO ENCODEURICOMPONENT PARA EVITAR ERROS DE SINTAXE EM STRINGS COMPLEXAS (COMO HTML)
-                                                 const encodedContent = encodeURIComponent(payload.new.content);
-                                                 contentHtml += `<button class="chat-options-btn" onclick="App.chat.showOptions(${payload.new.id}, '${encodedContent}', ${payload.new.is_edited})"><i class="ri-more-2-fill"></i></button>`;
-                                                 contentHtml += `<div class="chat-status"><i class="ri-check-double-line" style="color:#fff"></i></div>`;
-                                            } else {
-                                                 contentHtml += `<div class="chat-status"><i class="ri-check-double-line" style="color:#2563eb"></i></div>`;
-                                            }
-                                            msgDiv.innerHTML = contentHtml;
-                                        }
-                                    }
-                                }
-                            }
-                        })
-                        .subscribe();
+                updateFloater: () => {
+                     const floater = document.getElementById('cart-floater');
+                     if(App.state.cart.length > 0) {
+                         floater.style.display = 'flex';
+                         const total = App.state.cart.reduce((sum, item) => sum + item.preco, 0);
+                         document.getElementById('cart-count').innerText = `${App.state.cart.length} itens`;
+                         document.getElementById('cart-total').innerText = `R$ ${total.toFixed(2)}`;
+                     } else floater.style.display = 'none';
                 },
-                loadHistory: async (viewType) => {
-                    const myId = App.state.user.id;
-                    let html = '';
-                    let query = _sb.from('messages').select('*, profiles:sender_id(nome_completo), stores:store_id(nome_loja)').order('created_at', {ascending:false}).limit(50);
-                    
-                    if(viewType === 'loja') query = query.eq('store_id', App.state.storeId);
-                    else query = query.eq('client_id', myId);
-                    
-                    const { data } = await query;
-                    
-                    if(!data || data.length === 0) {
-                        html = '<p class="text-sm text-muted">Nenhuma conversa iniciada.</p>';
-                    } else {
-                        const uniqueContacts = new Set();
-                        data.forEach(msg => {
-                            let contactId, contactName;
-                            if(viewType === 'loja') {
-                                contactId = msg.client_id;
-                                contactName = (msg.sender_id !== myId) ? msg.profiles?.nome_completo : "Cliente";
-                            } else {
-                                contactId = msg.store_id;
-                                contactName = msg.stores?.nome_loja;
-                            }
-                            
-                            if(!uniqueContacts.has(contactId)) {
-                                uniqueContacts.add(contactId);
-                                if(viewType === 'loja') {
-                                    html += `<div class="chat-history-item" onclick="App.chat.open('${App.state.storeId}', '${contactId}')"><div class="chat-user-info"><div><i class="ri-user-line"></i> Cliente</div><div class="text-xs">Clique para abrir</div></div><i class="ri-arrow-right-s-line"></i></div>`;
-                                } else {
-                                    html += `<div class="chat-history-item" onclick="App.chat.open('${contactId}')"><div class="chat-user-info"><div><i class="ri-store-line"></i> ${contactName || 'Loja'}</div><div class="text-xs">Clique para abrir</div></div><i class="ri-arrow-right-s-line"></i></div>`;
-                                }
-                            }
-                        });
-                    }
-                    
-                    if(viewType === 'loja') document.getElementById('store-chat-list').innerHTML = html;
-                    else document.getElementById('client-chat-list').innerHTML = html;
-                },
-                send: async (content = null, type = 'text') => {
-                    const txtInput = document.getElementById('chat-input');
-                    const txt = content || txtInput.value;
-                    
-                    if(!txt && type === 'text') return;
-                    
-                    let finalContent = txt;
-                    
-                    await _sb.from('messages').insert({
-                        store_id: App.state.activeChatStore,
-                        client_id: App.state.activeChatClient,
-                        sender_id: App.state.user.id,
-                        content: finalContent
-                    });
-                    
-                    if(type === 'text') txtInput.value = '';
-                },
-                recordAudio: async () => {
-                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                        return alert("Seu navegador não suporta gravação de áudio.");
-                    }
-                    
-                    if (!App.state.mediaRecorder) {
-                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        App.state.mediaRecorder = new MediaRecorder(stream);
-                        
-                        App.state.mediaRecorder.ondataavailable = e => App.state.audioChunks.push(e.data);
-                        App.state.mediaRecorder.onstop = async () => {
-                            const blob = new Blob(App.state.audioChunks, { type: 'audio/ogg; codecs=opus' });
-                            App.state.audioChunks = [];
-                            
-                            // UPLOAD REAL PARA SUPABASE
-                            const fileName = `audio_${Date.now()}.ogg`;
-                            const file = new File([blob], fileName, { type: 'audio/ogg' });
-                            
-                            const { data, error } = await _sb.storage.from('chat_uploads').upload(fileName, file);
-                            
-                            if(error) {
-                                alert("Erro ao enviar áudio: " + error.message);
-                                return;
-                            }
-                            
-                            const { data: urlData } = _sb.storage.from('chat_uploads').getPublicUrl(fileName);
-                            const audioUrl = urlData.publicUrl;
-                            
-                            const audioTag = `<audio controls src="${audioUrl}"></audio>`;
-                            App.chat.send(audioTag, 'audio'); 
-                        };
-                        
-                        App.state.mediaRecorder.start();
-                        App.utils.toast("Gravando... Clique novamente para parar.", "info");
-                    } else {
-                        if(App.state.mediaRecorder.state === 'recording') {
-                            App.state.mediaRecorder.stop();
-                            App.utils.toast("Áudio enviado.", "success");
-                        } else {
-                            App.state.mediaRecorder.start();
-                            App.utils.toast("Gravando...", "info");
-                        }
-                    }
-                },
-                // --- NOVAS FUNÇÕES DE EDIÇÃO/EXCLUSÃO ---
-                showOptions: (msgId, encodedContent, isEdited) => {
-                    // DECODIFICA O CONTEUDO PARA EXIBIR NO PROMPT
-                    const currentContent = decodeURIComponent(encodedContent);
-
-                    // Evita editar se for áudio (verificação simples se tem tag HTML)
-                    if (currentContent.includes('<audio')) {
-                        if(confirm("Deseja apagar este áudio para todos?")) {
-                            App.chat.deleteMsg(msgId);
-                        }
-                        return;
-                    }
-
-                    const action = prompt("Digite 'apagar' para excluir ou digite o novo texto para editar:", currentContent);
-                    if (action === null) return; // Cancelou
-
-                    if (action.toLowerCase() === 'apagar') {
-                        App.chat.deleteMsg(msgId);
-                    } else if (action !== currentContent) {
-                        if (isEdited) {
-                            alert("Esta mensagem já foi editada uma vez e não pode ser alterada novamente.");
-                        } else {
-                            App.chat.editMsg(msgId, action);
-                        }
-                    }
-                },
-                deleteMsg: async (id) => {
-                    const { error } = await _sb.from('messages').update({ is_deleted: true, content: '🚫 Mensagem apagada' }).eq('id', id);
-                    if(error) alert("Erro ao apagar: " + error.message);
-                },
-                editMsg: async (id, newContent) => {
-                    const { error } = await _sb.from('messages').update({ content: newContent, is_edited: true }).eq('id', id);
-                    if(error) alert("Erro ao editar: " + error.message);
-                },
-                renderMsg: (msg) => {
-                    const div = document.createElement('div');
-                    const isMine = msg.sender_id === App.state.user.id;
-                    div.className = `chat-bubble ${isMine ? 'mine' : 'theirs'}`;
-                    div.id = `msg-${msg.id}`; // ID para localizar e atualizar
-                    
-                    if (msg.is_deleted) {
-                        div.innerHTML = `<span class="chat-deleted"><i class="ri-prohibited-line"></i> Mensagem apagada</span>`;
-                    } else {
-                        let contentHtml = msg.content;
-                        if (msg.is_edited) contentHtml += `<span class="chat-edited-label"><i class="ri-pencil-line"></i> Editada</span>`;
-                        
-                        // Adiciona botão de opções se for minha mensagem
-                        if (isMine) {
-                             // CORREÇÃO: USANDO ENCODEURICOMPONENT PARA PASSAR O CONTEÚDO SEGURO
-                             const encodedContent = encodeURIComponent(msg.content);
-                             contentHtml += `<button class="chat-options-btn" onclick="App.chat.showOptions(${msg.id}, '${encodedContent}', ${msg.is_edited})"><i class="ri-more-2-fill"></i></button>`;
-                        }
-                        
-                        div.innerHTML = contentHtml;
-                    }
-
-                    // Status da mensagem
-                    const status = document.createElement('div');
-                    status.className = 'chat-status';
-                    status.innerHTML = `<i class="ri-check-double-line" style="color:${isMine ? '#fff' : '#2563eb'}"></i>`;
-                    div.appendChild(status);
-
-                    const container = document.getElementById('chat-msgs');
-                    container.appendChild(div);
-                    container.scrollTop = container.scrollHeight;
-                },
-                close: () => {
-                    document.getElementById('chat-modal').style.display = 'none';
-                    if(App.state.chatSub) _sb.removeChannel(App.state.chatSub);
+                checkout: async () => {
+                     if(App.state.cart.length === 0) return;
+                     const total = App.state.cart.reduce((sum, item) => sum + item.preco, 0);
+                     const storeId = App.state.cart[0].storeId;
+                     const itemsDesc = App.state.cart.map(i => i.nome).join(', ');
+                     document.getElementById('cart-modal').style.display = 'none';
+                     const address = prompt("Endereço de Entrega (ou Mesa):");
+                     if(!address) return;
+                     App.payment.open(total, { product_id: App.state.cart[0].id, store_id: storeId, basePrice: total, address: address + " (Itens: " + itemsDesc + ")", requer_montagem: false, taxa: total * 0.15 });
+                     App.state.cart = [];
+                     App.cart.updateFloater();
                 }
             },
-
-            map: {
-                open: (id, isDriver, addr='') => {
-                    App.state.activeOrder = id; document.getElementById('map-modal').style.display='flex';
-                    const dest = document.getElementById('map-dest-address'); if(isDriver) { dest.innerHTML=`<strong>Destino:</strong> ${addr}`; dest.style.display='block'; } else dest.style.display='none';
-                    document.getElementById('btn-start-gps').style.display = isDriver ? 'block' : 'none'; document.getElementById('btn-end-gps').style.display = 'none';
-                    setTimeout(() => {
-                        if(!App.state.mapInstance) { App.state.mapInstance = L.map('map').setView([-23.5505, -46.6333], 13); let tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'; if (CONFIG.mapboxToken.includes('pk.')) tileUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${CONFIG.mapboxToken}`; L.tileLayer(tileUrl, { attribution: 'Mapbox / OpenStreetMap' }).addTo(App.state.mapInstance); }
-                        App.state.mapInstance.invalidateSize(); if(!isDriver) App.map.watchOrder(id);
-                    }, 500);
-                },
-                watchOrder: (id) => { 
-                    _sb.channel(`track-${id}`).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, (payload) => { 
-                        const { lat_atual, lng_atual, status } = payload.new; 
-                        if(status==='em_rota') App.utils.toast('Saiu para entrega!', 'info'); 
-                        if(status==='concluido') { App.utils.toast('Entrega Finalizada!', 'success'); document.getElementById('map-status-badge').innerText="Concluído"; } 
-                        if(lat_atual && lng_atual) App.map.updatePin(lat_atual, lng_atual); 
-                    }).subscribe(); 
-                },
-                startGPS: () => { 
-                    document.getElementById('btn-start-gps').style.display='none'; document.getElementById('btn-end-gps').style.display='block'; 
-                    _sb.from('orders').update({ status: 'em_rota' }).eq('id', App.state.activeOrder); 
-                    
-                    App.state.watchId = navigator.geolocation.watchPosition(async (pos) => { 
-                        const { latitude, longitude } = pos.coords; 
-                        App.map.updatePin(latitude, longitude); 
-                        await _sb.from('orders').update({ lat_atual: latitude, lng_atual: longitude }).eq('id', App.state.activeOrder); 
-                    }, e=>console.log(e), {enableHighAccuracy:true, maximumAge:0, timeout:5000}); 
-                },
-                finishDelivery: async () => { if(confirm("Confirmar entrega?")) { navigator.geolocation.clearWatch(App.state.watchId); await _sb.from('orders').update({ status: 'concluido' }).eq('id', App.state.activeOrder); App.utils.toast("Finalizado!", "success"); App.map.close(); App.provider.init(); } },
-                updatePin: (lat, lng) => { if(App.state.marker) App.state.marker.setLatLng([lat,lng]); else App.state.marker=L.marker([lat,lng]).addTo(App.state.mapInstance); App.state.mapInstance.setView([lat,lng], 16); },
-                close: () => { document.getElementById('map-modal').style.display='none'; if(App.state.watchId) navigator.geolocation.clearWatch(App.state.watchId); _sb.removeAllChannels(); }
-            },
-
             catalog: {
                 currentCat: 'Todos',
                 filter: (cat, btn) => {
@@ -2649,80 +1477,76 @@
 
                     document.getElementById('public-catalog').innerHTML = html || '<p style="grid-column:1/-1; text-align:center">Nenhuma oferta nesta categoria.</p>';
                 },
-renderCard: (p) => {
-    let dispInfo = '';
-    let actionText = "Contratar Serviço";
-    
-    // Definição do texto do botão
-    if (p.categoria === 'Comidas' || p.categoria === 'Bebidas') actionText = "Fazer Pedido";
-    if (p.categoria === 'Serviços de Gesso') actionText = "Orçamento";
-    if (p.categoria === 'Roupas') actionText = "Comprar"; // Roupas
+                renderCard: (p) => {
+                    let dispInfo = '';
+                    let actionText = "Contratar Serviço";
+                    
+                    // Definição do texto do botão
+                    if (p.categoria === 'Comidas' || p.categoria === 'Bebidas') actionText = "Fazer Pedido";
+                    if (p.categoria === 'Serviços de Gesso') actionText = "Orçamento";
+                    if (p.categoria === 'Roupas') actionText = "Comprar"; 
 
-    // Lógica do Botão Principal
-    let actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick='App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${JSON.stringify(p.delivery_info || null)})'>${actionText}</button>`;
+                    // Lógica do Botão Principal - Escapando aspas corretamente
+                    const pJson = JSON.stringify(p).replace(/"/g, '&quot;');
+                    const dJson = JSON.stringify(p.delivery_info || null).replace(/"/g, '&quot;');
+                    
+                    let actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick='App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${dJson})'>${actionText}</button>`;
 
-    // Casos Especiais (Hotel/Gesso/Comida)
-    if(p.categoria === 'Hoteis/Pousadas' && p.disponibilidade) {
-         const [start, end] = p.disponibilidade.split('|');
-         const fmt = d => d.split('-').reverse().join('/');
-         dispInfo = `<div class="text-xs" style="background:#f0f9ff; padding:5px; border-radius:4px; margin-top:5px; color:#0369a1;">📅 Disp: ${fmt(start)} até ${fmt(end)}</div>`;
-         actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick="App.client.confirmOrder('${p.id}', '${p.store_id}', ${p.preco}, '${p.categoria}', null)">Contratar Serviço</button>`;
-    }
-    if(p.categoria === 'Serviços de Gesso' && p.gesso_info) {
-        actionBtn = `<button class="btn btn-warning btn-full" style="margin-top:10px" onclick='App.client.openBudget(${JSON.stringify(p)})'>Fazer Orçamento</button>`;
-        dispInfo = `<div class="text-xs" style="color:#854d0e; margin-top:5px;">Orçamento por m²</div>`;
-    }
-    if (p.categoria === 'Comidas' || p.categoria === 'Bebidas') {
-        const prodStr = JSON.stringify(p).replace(/"/g, '&quot;');
-        actionBtn = `<button class="btn btn-success btn-full" style="margin-top:10px" onclick='App.cart.add(${prodStr}, "${p.store_id}")'>Adicionar ao Carrinho</button>`;
-    }
-    
-    let chatBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>`;
+                    // Casos Especiais
+                    if(p.categoria === 'Hoteis/Pousadas' && p.disponibilidade) {
+                         const [start, end] = p.disponibilidade.split('|');
+                         const fmt = d => d.split('-').reverse().join('/');
+                         dispInfo = `<div class="text-xs" style="background:#f0f9ff; padding:5px; border-radius:4px; margin-top:5px; color:#0369a1;">📅 Disp: ${fmt(start)} até ${fmt(end)}</div>`;
+                         actionBtn = `<button class="btn btn-secondary btn-full" style="margin-top:10px" onclick='App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", null)'>Contratar Serviço</button>`;
+                    }
+                    if(p.categoria === 'Serviços de Gesso' && p.gesso_info) {
+                        actionBtn = `<button class="btn btn-warning btn-full" style="margin-top:10px" onclick='App.client.openBudget(${pJson})'>Fazer Orçamento</button>`;
+                        dispInfo = `<div class="text-xs" style="color:#854d0e; margin-top:5px;">Orçamento por m²</div>`;
+                    }
+                    if (p.categoria === 'Comidas' || p.categoria === 'Bebidas') {
+                        actionBtn = `<button class="btn btn-success btn-full" style="margin-top:10px" onclick='App.cart.add(${pJson}, "${p.store_id}")'>Adicionar ao Carrinho</button>`;
+                    }
+                    
+                    let chatBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>`;
 
-    // --- LÓGICA DA GALERIA DE FOTOS ---
-    let imagesHtml = '';
-    // Verifica se tem galeria e se é um array com itens
-    if (p.galeria && Array.isArray(p.galeria) && p.galeria.length > 0) {
-        // Cria todas as imagens lado a lado
-        const imgs = p.galeria.map(url => `<img src="${url}" class="gallery-img" loading="lazy">`).join('');
-        imagesHtml = `
-            <div class="product-gallery-wrapper">
-                <div class="product-gallery">${imgs}</div>
-                ${p.galeria.length > 1 ? '<div class="gallery-badge"><i class="ri-image-line"></i> ' + p.galeria.length + ' fotos</div>' : ''}
-            </div>
-        `;
-    } else {
-        // Fallback para imagem única antiga
-        imagesHtml = `
-            <div class="product-gallery-wrapper">
-                <div class="product-gallery">
-                    <img src="${p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto'}" class="gallery-img">
-                </div>
-            </div>
-        `;
-    }
+                    // --- LÓGICA DA GALERIA DE FOTOS ---
+                    let imagesHtml = '';
+                    if (p.galeria && Array.isArray(p.galeria) && p.galeria.length > 0) {
+                        const imgs = p.galeria.map(url => `<img src="${url}" class="gallery-img" loading="lazy">`).join('');
+                        imagesHtml = `
+                            <div class="product-gallery-wrapper">
+                                <div class="product-gallery">${imgs}</div>
+                                ${p.galeria.length > 1 ? '<div class="gallery-badge"><i class="ri-image-line"></i> ' + p.galeria.length + ' fotos</div>' : ''}
+                            </div>
+                        `;
+                    } else {
+                        imagesHtml = `
+                            <div class="product-gallery-wrapper">
+                                <div class="product-gallery">
+                                    <img src="${p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto'}" class="gallery-img">
+                                </div>
+                            </div>
+                        `;
+                    }
 
-    return `
-        <div class="card">
-            ${p.promocao ? '<div class="badge badge-promo">PROMOÇÃO</div>' : ''}
-            
-            ${imagesHtml}
-            
-            <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div>
-            <h4>${p.nome}</h4>
-            <h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
-            ${dispInfo}
-            ${actionBtn}
-            ${chatBtn}
-        </div>`;
-},
+                    return `
+                        <div class="card">
+                            ${p.promocao ? '<div class="badge badge-promo">PROMOÇÃO</div>' : ''}
+                            ${imagesHtml}
+                            <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div>
+                            <h4>${p.nome}</h4>
+                            <h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
+                            ${dispInfo}
+                            ${actionBtn}
+                            ${chatBtn}
+                        </div>`;
+                },
                 fetchPublic: async () => { App.catalog.load(); }
             },
 
             utils: {
                 toast: (msg, type='success') => { const c = document.getElementById('toast-container'); const e = document.createElement('div'); e.className=`toast ${type}`; e.innerHTML=`<span>${msg}</span>`; c.appendChild(e); setTimeout(()=>e.remove(), 4000); },
                 
-                // NOTIFICAÇÃO DO LOJISTA
                 showChatNotification: (name, msg, clientId) => {
                     const c = document.getElementById('store-notifications');
                     const e = document.createElement('div');
@@ -2748,7 +1572,8 @@ renderCard: (p) => {
                     });
                 }
             }
-        };
+        }; // FIM DO OBJETO APP
+
         window.addEventListener('load', App.init);
     </script>
 </body>
