@@ -224,7 +224,7 @@
         .product-gallery-wrapper {
             position: relative;
             width: 100%;
-            height: 250px;
+            height: 450px;
             background: #f1f5f9;
             margin: -1.5rem -1.5rem 1rem -1.5rem;
             overflow: hidden;
@@ -294,6 +294,10 @@
     <div class="toast-container" id="toast-container"></div>
     
     <div id="store-notifications"></div>
+    <div id="cart-floater" class="cart-floater" onclick="App.cart.open()">
+        <i class="ri-shopping-cart-2-line"></i>
+        <span id="cart-count">0 itens</span> | <span id="cart-total">R$ 0,00</span>
+    </div>
 
     <div id="pwa-banner" class="pwa-banner">
         <div style="display:flex; align-items:center; gap:12px;">
