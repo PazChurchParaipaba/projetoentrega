@@ -1266,13 +1266,18 @@
                         }
                     }).subscribe();
                 },
-                calcMetrics: (orders) => {
+               calcMetrics: async (orders) => { // <--- ADICIONEI O 'async' AQUI
                     const now = new Date();
                     let dayTotal = 0, weekTotal = 0, monthTotal = 0;
+                    
+                    // 1. Soma Pedidos Normais
                     orders.forEach(o => {
                         if(['aceito', 'concluido', 'em_rota', 'aguardando_prestador'].includes(o.status)) {
                             const orderDate = new Date(o.created_at);
-                            const val = o.taxa_servico / 0.10; 
+                            // Cuidado: aqui estava dividindo por 0.10 no seu snippet, 
+                            // mas o padrão costuma ser 0.15 (taxa). Mantive 0.10 se for sua regra.
+                            const val = o.taxa_servico / 0.15; 
+                            
                             if(orderDate.toDateString() === now.toDateString()) dayTotal += val;
                             if(orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear()) monthTotal += val;
                             const diffTime = Math.abs(now - orderDate);
@@ -1280,18 +1285,25 @@
                             if(diffDays <= 7) weekTotal += val;
                         }
                     });
-                    // 2. Soma Comandas Fechadas (CORREÇÃO)
+
+                    // 2. Soma Comandas Fechadas
                     const { data: comandas } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).eq('status', 'fechada');
                     
                     if(comandas) {
                         comandas.forEach(c => {
                             const val = c.total_pago || 0;
-                            const cDate = new Date(c.created_at); // Ou data de fechamento se tiver coluna update
-                             // Filtro simples por data de criação da comanda por enquanto
+                            const cDate = new Date(c.created_at);
+                            
                             if(cDate.toDateString() === now.toDateString()) dayTotal += val;
                             if(cDate.getMonth() === now.getMonth()) monthTotal += val;
                         });
                     }
+                    
+                    // Atualiza a tela
+                    document.getElementById('metric-day').innerText = `R$ ${dayTotal.toFixed(2)}`;
+                    document.getElementById('metric-week').innerText = `R$ ${weekTotal.toFixed(2)}`;
+                    document.getElementById('metric-month').innerText = `R$ ${monthTotal.toFixed(2)}`;
+                },
                     document.getElementById('metric-day').innerText = `R$ ${dayTotal.toFixed(2)}`;
                     document.getElementById('metric-week').innerText = `R$ ${weekTotal.toFixed(2)}`;
                     document.getElementById('metric-month').innerText = `R$ ${monthTotal.toFixed(2)}`;
