@@ -497,6 +497,14 @@
                             <label class="text-xs">Taxa %</label>
                             <input id="staff-rate" type="number" class="input-field" value="10">
                         </div>
+                        <div style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;">
+                       <h5>Histórico de Mesas Fechadas</h5>
+                          <div style="display: flex; gap: 10px; align-items: center;">
+                              <input type="date" id="history-date" class="input-field" style="max-width: 200px;">
+                                <button class="btn btn-secondary btn-sm" style="width: auto;" onclick="App.store.filterHistory()">Filtrar</button>
+                                        </div>
+                                              <div id="history-results" style="margin-top: 10px; max-height: 200px; overflow-y: auto;"></div>
+                                       </div>
                         <button class="btn btn-success btn-sm" style="width: auto; height: 46px;" onclick="App.admin.registerStaff()">Cadastrar</button>
                     </div>
                 </div>
@@ -1154,20 +1162,79 @@
                     App.store.listenMessages();
                     App.chat.loadHistory('loja');
                 },
-                loadComandas: async () => {
+               loadComandas: async () => {
                     const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', {ascending: true});
                     const container = document.getElementById('admin-comanda-grid');
                     if (data) {
                         container.innerHTML = data.map(c => `
-                            <div class="comanda-card bg-${c.status}" onclick="App.payment.openSplitModal('${c.id}', ${JSON.stringify(c.items || []).replace(/"/g, '&quot;')}, ${c.numero})">
+                            <div class="comanda-card bg-${c.status}" onclick="App.store.manageComanda('${c.id}', ${JSON.stringify(c.items || []).replace(/"/g, '&quot;')}, ${c.numero}, '${c.status}')">
                                 <div class="comanda-corner"></div>
                                 <div class="comanda-dot"></div>
+                                <div style="position:absolute; top:5px; right:5px; font-size:0.8rem; background:rgba(0,0,0,0.2); padding:2px 6px; border-radius:4px; z-index:10;" onclick="event.stopPropagation(); App.store.deleteComanda('${c.id}')">✕</div>
                                 <div style="font-size:1.5rem;">${c.numero}</div>
                                 <div class="text-xs" style="text-transform:uppercase;">${c.status}</div>
                             </div>
                         `).join('');
                         if(document.getElementById('comanda-list-container')) document.getElementById('comanda-list-container').innerHTML = container.innerHTML;
                     }
+                },
+                // NOVA: Excluir Comanda (Limpeza)
+                deleteComanda: async (id) => {
+                    if(confirm("Excluir esta comanda permanentemente?")) {
+                        await _sb.from('comandas').delete().eq('id', id);
+                        App.store.loadComandas();
+                    }
+                },
+                // NOVA: Modal de Gerenciamento da Comanda (Lojista)
+                manageComanda: (id, items, num, status) => {
+                    if (status === 'livre') return alert("Comanda livre. Garçom deve abrir lançando pedidos.");
+                    
+                    App.state.currentComanda = id;
+                    App.state.currentComandaItems = items;
+                    App.state.currentMesaNum = num;
+                    App.state.comandaTotal = items.reduce((acc, i) => acc + (i.price * i.qtd), 0);
+
+                    // Cria o HTML da lista com opção de excluir item
+                    const itemsHtml = items.map((item, idx) => `
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding:8px;">
+                            <div>
+                                <span style="font-weight:bold;">${item.qtd}x ${item.nome}</span><br>
+                                <span class="text-xs text-muted">Garçom: ${item.garcom || 'N/A'}</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span>R$ ${(item.price * item.qtd).toFixed(2)}</span>
+                                <button class="btn btn-danger btn-sm" style="padding:2px 8px;" onclick="App.store.removeItemFromComanda(${idx})"><i class="ri-delete-bin-line"></i></button>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    // Reusa o modal de split (pagamento), mas injeta a lista editável antes
+                    App.payment.openSplitModal(id, items, num);
+                    
+                    // Injeta a lista editável no topo do corpo do modal de pagamento para o lojista ver antes de fechar
+                    const modalBody = document.querySelector('#split-pay-modal .modal-body');
+                    const editDiv = document.createElement('div');
+                    editDiv.id = 'admin-comanda-edit-list';
+                    editDiv.innerHTML = `<h5>Itens da Mesa ${num}</h5><div style="max-height:150px; overflow-y:auto; margin-bottom:15px; border:1px solid #eee;">${itemsHtml}</div>`;
+                    
+                    // Remove anterior se existir
+                    const old = document.getElementById('admin-comanda-edit-list');
+                    if(old) old.remove();
+                    
+                    modalBody.insertBefore(editDiv, modalBody.firstChild);
+                },
+                // NOVA: Remover item específico
+                removeItemFromComanda: async (index) => {
+                    if(!confirm("Remover este item?")) return;
+                    const items = App.state.currentComandaItems;
+                    items.splice(index, 1); // Remove do array
+                    
+                    // Atualiza no banco
+                    await _sb.from('comandas').update({ items: items }).eq('id', App.state.currentComanda);
+                    
+                    // Recarrega o modal
+                    App.store.manageComanda(App.state.currentComanda, items, App.state.currentMesaNum, 'aberta');
+                    App.store.loadComandas(); // Atualiza grid fundo
                 },
                 renderOrders: (orders) => {
                      document.getElementById('store-orders-list').innerHTML = orders?.map(o => {
@@ -1205,7 +1272,7 @@
                     orders.forEach(o => {
                         if(['aceito', 'concluido', 'em_rota', 'aguardando_prestador'].includes(o.status)) {
                             const orderDate = new Date(o.created_at);
-                            const val = o.taxa_servico / 0.15; 
+                            const val = o.taxa_servico / 0.10; 
                             if(orderDate.toDateString() === now.toDateString()) dayTotal += val;
                             if(orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear()) monthTotal += val;
                             const diffTime = Math.abs(now - orderDate);
@@ -1213,6 +1280,18 @@
                             if(diffDays <= 7) weekTotal += val;
                         }
                     });
+                    // 2. Soma Comandas Fechadas (CORREÇÃO)
+                    const { data: comandas } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).eq('status', 'fechada');
+                    
+                    if(comandas) {
+                        comandas.forEach(c => {
+                            const val = c.total_pago || 0;
+                            const cDate = new Date(c.created_at); // Ou data de fechamento se tiver coluna update
+                             // Filtro simples por data de criação da comanda por enquanto
+                            if(cDate.toDateString() === now.toDateString()) dayTotal += val;
+                            if(cDate.getMonth() === now.getMonth()) monthTotal += val;
+                        });
+                    }
                     document.getElementById('metric-day').innerText = `R$ ${dayTotal.toFixed(2)}`;
                     document.getElementById('metric-week').innerText = `R$ ${weekTotal.toFixed(2)}`;
                     document.getElementById('metric-month').innerText = `R$ ${monthTotal.toFixed(2)}`;
@@ -1393,6 +1472,44 @@
                     window.print(); 
                 }
             },
+            filterHistory: async () => {
+    const dateStr = document.getElementById('history-date').value;
+    if(!dateStr) return alert("Selecione uma data");
+
+    // Busca comandas fechadas na data selecionada (considerando fuso horário UTC do banco)
+    const { data } = await _sb.from('comandas')
+        .select('*')
+        .eq('store_id', App.state.storeId)
+        .eq('status', 'fechada')
+        .gte('created_at', `${dateStr}T00:00:00`)
+        .lte('created_at', `${dateStr}T23:59:59`);
+
+    const container = document.getElementById('history-results');
+    
+    if(!data || data.length === 0) {
+        container.innerHTML = '<p class="text-sm text-muted">Nenhuma venda encontrada neste dia.</p>';
+        return;
+    }
+
+    let totalDay = 0;
+    const list = data.map(c => {
+        const val = c.total_pago || 0;
+        totalDay += val;
+        return `
+            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px 0; font-size:0.9rem;">
+                <span>Mesa ${c.numero}</span>
+                <strong>R$ ${val.toFixed(2)}</strong>
+            </div>
+        `;
+    }).join('');
+
+    container.innerHTML = `
+        <div style="background:var(--success-bg); color:var(--success-dark); padding:10px; border-radius:8px; margin-bottom:10px; font-weight:bold; text-align:center;">
+            Total em ${dateStr.split('-').reverse().join('/')}: R$ ${totalDay.toFixed(2)}
+        </div>
+        ${list}
+    `;
+},
             admin: {
                  createComandas: async () => {
                      const start = parseInt(document.getElementById('comanda-start').value);
@@ -1618,20 +1735,20 @@
                     }
                     const serviceCats = ['Fretes e Mudanças', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Manutenção Eletrodomésticos', 'Jardinagem', 'Serviços de Manutenção', 'Outros'];
                     if (serviceCats.includes(category)) {
-                        if (feeVal === 0) { feeVal = 35.00; alert("Taxa de serviço padrão de R$ 35,00 aplicada."); }
+                        if (feeVal === 0) { feeVal = 00.01; alert("Não cobramos taxa"); }
                     }
                     finalPrice += feeVal;
                     const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', sid).single();
                     const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
                     mpInstance = new MercadoPago(publicKeyToUse);
-                    const commission = finalPrice * 0.15;
+                    const commission = finalPrice * 0.10;
                     App.payment.open(finalPrice, { product_id: pid, store_id: sid, basePrice: finalPrice, address, requer_montagem: false, taxa: commission });
                 },
                 finalizeCart: async (pid, sid, price, address) => {
                      const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', sid).single();
                      const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
                      mpInstance = new MercadoPago(publicKeyToUse);
-                     const commission = price * 0.15;
+                     const commission = price * 0.10;
                      App.payment.open(price, { product_id: pid, store_id: sid, basePrice: price, address, requer_montagem: false, taxa: commission });
                 },
                 openBudget: (p) => {
