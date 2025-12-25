@@ -1679,56 +1679,131 @@
                     alert(`O valor total é R$ ${total.toFixed(2)}. Você pagará 50% (R$ ${downPayment.toFixed(2)}) agora.`);
                 }
             },
-            waiter: {
+           waiter: {
                 init: async () => {
                     const { data: staffData } = await _sb.from('store_staff').select('store_id').eq('profile_id', App.state.user.id).single();
                     if(!staffData) return alert("Você não está vinculado a nenhuma loja.");
                     App.state.storeId = staffData.store_id; 
-                    App.store.loadComandas(); 
+                    
+                    // CORREÇÃO: Chama a função própria do garçom, não a da loja
+                    App.waiter.loadTables(); 
+                    
+                    // Configura atualização em tempo real para o garçom ver mesas abrindo/fechando
+                    _sb.channel('waiter-updates')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: `store_id=eq.${App.state.storeId}` }, 
+                    () => { App.waiter.loadTables(); })
+                    .subscribe();
                 },
-                openComanda: async (id, status) => {
+                // NOVA FUNÇÃO: Carrega mesas com clique configurado para PEDIDOS
+                loadTables: async () => {
+                    const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', {ascending: true});
+                    const container = document.getElementById('comanda-list-container');
+                    
+                    if (data) {
+                        container.innerHTML = data.map(c => `
+                            <div class="comanda-card bg-${c.status}" onclick="App.waiter.openComanda('${c.id}', '${c.numero}')">
+                                <div class="comanda-corner"></div>
+                                <div class="comanda-dot"></div>
+                                <div style="font-size:1.5rem;">${c.numero}</div>
+                                <div class="text-xs" style="text-transform:uppercase;">${c.status}</div>
+                            </div>
+                        `).join('');
+                    }
+                },
+                openComanda: async (id, numero) => {
                     App.state.currentComanda = id;
-                    document.getElementById('comanda-title').innerText = `Mesa ${id}`; 
+                    document.getElementById('comanda-title').innerText = `Mesa ${numero}`; 
+                    
+                    // Limpa o campo de busca
+                    document.getElementById('waiter-prod-search').value = "";
+                    document.getElementById('waiter-search-results').style.display = 'none';
+                    
                     document.getElementById('comanda-modal').style.display = 'flex';
                     App.waiter.loadItems(id);
                 },
                 loadItems: async (comandaId) => {
-                    const { data } = await _sb.from('comandas').select('items, numero').eq('id', comandaId).single();
+                    const { data } = await _sb.from('comandas').select('items').eq('id', comandaId).single();
                     const list = document.getElementById('comanda-items-list');
+                    
                     if(data && data.items && data.items.length > 0) {
                         list.innerHTML = data.items.map(item => `
-                            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:5px;">
-                                <span>${item.qtd}x ${item.nome}</span>
+                            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px;">
+                                <span style="font-weight:bold;">${item.qtd}x ${item.nome}</span>
                                 <span>R$ ${(item.price * item.qtd).toFixed(2)}</span>
                             </div>
                         `).join('');
                     } else {
-                        list.innerHTML = '<p class="text-sm text-muted">Nenhum item lançado.</p>';
+                        list.innerHTML = '<p class="text-sm text-muted text-center" style="padding:10px">Nenhum item lançado.</p>';
                     }
                 },
                 addItem: async () => {
                     const term = document.getElementById('waiter-prod-search').value;
-                    if(!term) return alert("Digite o código ou nome do produto");
-                    const { data } = await _sb.from('products').select('*').eq('store_id', App.state.storeId).ilike('nome', `%${term}%`).limit(1);
+                    if(!term) return alert("Digite o nome do produto");
+                    
+                    App.utils.toast("Buscando...", "info");
+                    
+                    // Busca produto pelo nome (case insensitive)
+                    const { data } = await _sb.from('products')
+                        .select('*')
+                        .eq('store_id', App.state.storeId)
+                        .ilike('nome', `%${term}%`)
+                        .limit(5); // Traz até 5 resultados
+                    
+                    const resultBox = document.getElementById('waiter-search-results');
+                    
                     if(data && data.length > 0) {
-                        const p = data[0];
-                        const { data: current } = await _sb.from('comandas').select('items').eq('id', App.state.currentComanda).single();
-                        const currentItems = current.items || [];
-                        currentItems.push({ id: p.id, nome: p.nome, price: p.preco, qtd: 1 });
-                        await _sb.from('comandas').update({ items: currentItems, status: 'aberta' }).eq('id', App.state.currentComanda);
-                        App.utils.toast(`Adicionado: ${p.nome}`, 'success');
-                        App.waiter.loadItems(App.state.currentComanda);
+                        // Se tiver só 1 resultado exato, adiciona direto? Não, melhor listar pra evitar erro.
+                        resultBox.style.display = 'block';
+                        resultBox.innerHTML = data.map(p => `
+                            <div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; background:#fff;" 
+                                 onclick="App.waiter.confirmAdd('${p.id}', '${p.nome}', ${p.preco})">
+                                <strong>${p.nome}</strong> - R$ ${p.preco.toFixed(2)}
+                            </div>
+                        `).join('');
                     } else {
                         alert("Produto não encontrado");
+                        resultBox.style.display = 'none';
                     }
                 },
+                confirmAdd: async (id, nome, price) => {
+                    // Adiciona o item na comanda
+                    const { data: current } = await _sb.from('comandas').select('items').eq('id', App.state.currentComanda).single();
+                    let currentItems = current.items || [];
+                    
+                    // Verifica se já tem o item pra somar quantidade
+                    const existing = currentItems.find(i => i.id === id);
+                    if(existing) {
+                        existing.qtd += 1;
+                    } else {
+                        currentItems.push({ id: id, nome: nome, price: price, qtd: 1 });
+                    }
+                    
+                    await _sb.from('comandas').update({ items: currentItems, status: 'aberta' }).eq('id', App.state.currentComanda);
+                    
+                    document.getElementById('waiter-search-results').style.display = 'none';
+                    document.getElementById('waiter-prod-search').value = '';
+                    App.utils.toast(`Adicionado: ${nome}`, 'success');
+                    App.waiter.loadItems(App.state.currentComanda);
+                    
+                    // Atualiza a lista de mesas (para mudar cor pra vermelha/aberta)
+                    App.waiter.loadTables();
+                },
                 printBill: () => {
+                     // IMPRESSÃO DE CONFERÊNCIA (NÃO FISCAL)
+                     const itemsHtml = document.getElementById('comanda-items-list').innerHTML;
+                     const mesa = document.getElementById('comanda-title').innerText;
+                     
                      const content = `
-                        <div style="font-family: monospace; width: 300px; padding: 10px;">
-                            <h3 style="text-align:center;">PRÉ-CONFERÊNCIA</h3>
-                            <p>Mesa: ${document.getElementById('comanda-title').innerText}</p>
-                            <hr>${document.getElementById('comanda-items-list').innerHTML}<hr>
-                            <p style="text-align:center;">* Não vale como cupom fiscal *</p>
+                        <div style="font-family: monospace; width: 300px; padding: 0 10px;">
+                            <br>
+                            <h3 style="text-align:center; margin:0;">CONFERÊNCIA</h3>
+                            <p style="text-align:center; margin:5px 0;">${mesa}</p>
+                            <p style="text-align:center; font-size:0.8rem;">${new Date().toLocaleString()}</p>
+                            <hr style="border-top: 1px dashed black;">
+                            ${itemsHtml}
+                            <hr style="border-top: 1px dashed black;">
+                            <p style="text-align:center; font-size:0.8rem;">* Não vale como documento fiscal *</p>
+                            <br><br>
                         </div>
                     `;
                     const area = document.getElementById('printable-area');
@@ -1736,22 +1811,30 @@
                     window.print();
                 },
                 sendToKitchen: () => {
+                    // IMPRESSÃO PARA COZINHA
+                    const itemsHtml = document.getElementById('comanda-items-list').innerHTML;
+                    const mesa = document.getElementById('comanda-title').innerText;
+                    
                     const content = `
-                        <div style="font-family: monospace; width: 300px; padding: 10px;">
-                            <h3 style="text-align:center;">PEDIDO COZINHA</h3>
-                            <p><strong>${document.getElementById('comanda-title').innerText}</strong></p>
-                            <p>Hora: ${new Date().toLocaleTimeString()}</p>
-                            <hr style="border-top: 1px dashed black;">
-                            ${document.getElementById('comanda-items-list').innerHTML}
-                            <hr style="border-top: 1px dashed black;">
+                        <div style="font-family: monospace; width: 300px; padding: 0 10px;">
+                            <br>
+                            <h3 style="text-align:center; margin:0;">PEDIDO COZINHA</h3>
+                            <p style="text-align:center; font-size:1.2rem; font-weight:bold; margin:5px 0;">${mesa}</p>
+                            <p style="text-align:center;">${new Date().toLocaleTimeString()}</p>
+                            <hr style="border-top: 2px solid black;">
+                            <div style="font-size:1.1rem; font-weight:bold;">
+                                ${itemsHtml}
+                            </div>
+                            <hr style="border-top: 2px solid black;">
+                            <br>
                         </div>
                     `;
                     const area = document.getElementById('printable-area');
                     area.innerHTML = content;
                     window.print();
+                    
                     document.getElementById('comanda-modal').style.display = 'none';
                     App.utils.toast("Enviado para cozinha!", "success");
-                    App.store.loadComandas(); 
                 }
             },
             cart: {
