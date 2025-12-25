@@ -1623,7 +1623,7 @@
                      alert("Funcionário cadastrado!");
                  }
             },
-            payment: {
+           payment: {
                 openSplitModal: (comandaId, items, numeroMesa) => {
                     App.state.currentComanda = comandaId;
                     App.state.paymentSplits = [];
@@ -1633,21 +1633,24 @@
                     let total = 0;
                     if(items && Array.isArray(items)) total = items.reduce((acc, item) => acc + (item.price * item.qtd), 0);
                     App.state.comandaTotal = total;
+                    
                     document.getElementById('split-total-due').innerText = `R$ ${total.toFixed(2)}`;
                     document.getElementById('split-remaining').innerText = `R$ ${total.toFixed(2)}`;
                     document.getElementById('split-amount').value = total.toFixed(2); 
                     document.getElementById('split-history').innerHTML = '';
                     
-                    // Adiciona botão imprimir
+                    // Configura botão de impressão
                     const modalBody = document.querySelector('#split-pay-modal .modal-body');
                     const oldBtn = document.getElementById('btn-print-split-detail');
                     if(oldBtn) oldBtn.remove();
+                    
                     const printBtn = document.createElement('button');
                     printBtn.id = 'btn-print-split-detail';
                     printBtn.className = 'btn btn-info btn-sm btn-full';
                     printBtn.style.marginBottom = '10px';
                     printBtn.innerHTML = '<i class="ri-printer-line"></i> Imprimir Conferência';
                     printBtn.onclick = () => App.payment.printCheck();
+                    
                     const historyTitle = modalBody.querySelector('h5');
                     modalBody.insertBefore(printBtn, historyTitle);
                     
@@ -1671,23 +1674,45 @@
                     const amount = parseFloat(document.getElementById('split-amount').value);
                     const method = document.getElementById('split-method').value;
                     const nsu = document.getElementById('card-nsu').value;
+                    
                     if(!amount || amount <= 0) return alert("Valor inválido");
+                    
                     App.state.paymentSplits.push({ amount, method, nsu });
+                    
                     const hist = document.getElementById('split-history');
                     hist.innerHTML = App.state.paymentSplits.map(s => `<div>- R$ ${s.amount.toFixed(2)} (${s.method.toUpperCase()})</div>`).join('');
+                    
                     const paid = App.state.paymentSplits.reduce((acc, s) => acc + s.amount, 0);
                     const remain = App.state.comandaTotal - paid;
+                    
                     document.getElementById('split-remaining').innerText = `R$ ${remain > 0 ? remain.toFixed(2) : '0.00'}`;
+                    
                     if(remain <= 0.01) {
                         document.getElementById('btn-finish-split').disabled = false;
                         document.getElementById('split-amount').value = 0;
-                    } else document.getElementById('split-amount').value = remain.toFixed(2);
+                    } else {
+                        document.getElementById('split-amount').value = remain.toFixed(2);
+                    }
                 },
                 finalizeSplit: async () => {
-                    await _sb.from('comandas').update({ status: 'fechada', payments_info: App.state.paymentSplits, total_pago: App.state.comandaTotal }).eq('id', App.state.currentComanda);
+                    // 1. Atualiza no Banco
+                    await _sb.from('comandas').update({ 
+                        status: 'fechada', 
+                        payments_info: App.state.paymentSplits, 
+                        total_pago: App.state.comandaTotal 
+                    }).eq('id', App.state.currentComanda);
+                    
                     App.utils.toast("Conta Fechada!", "success");
                     document.getElementById('split-pay-modal').style.display = 'none';
-                    App.store.loadComandas();
+                    
+                    // 2. ATUALIZAÇÃO CRÍTICA: RECARREGA O PAINEL PARA SOMAR O DINHEIRO
+                    if(App.state.profile.role === 'loja_admin') {
+                        // Se for o dono, recarrega tudo (inclusive métricas financeiras)
+                        App.store.init();
+                    } else {
+                        // Se for garçom, só recarrega as mesas
+                        if(App.waiter && App.waiter.loadTables) App.waiter.loadTables();
+                    }
                 },
                 open: async (total, orderPayload) => {
                     App.state.pendingPayment = { total, orderPayload };
@@ -1696,11 +1721,13 @@
                     document.getElementById('payment-brick_container').innerHTML = '';
                     const oldPix = document.getElementById('pix-display-area'); if(oldPix) oldPix.remove();
                     document.getElementById('payment-brick_container').style.display = 'block';
+                    
                     if(total <= 0) {
                          alert("Valor total é zero. Pedido processado.");
                          App.payment.finalizeSuccess();
                          return;
                     }
+                    
                     App.payment.renderBrick(total);
                 },
                 close: () => {
