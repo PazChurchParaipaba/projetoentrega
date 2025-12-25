@@ -1739,9 +1739,13 @@
                             if(feeVal > 0) alert(`Será adicionada uma taxa de entrega de R$ ${feeVal.toFixed(2)}`);
                         } catch(e) {}
                     }
-                    const serviceCats = ['Fretes e Mudanças', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Manutenção Eletrodomésticos', 'Jardinagem', 'Serviços de Manutenção', 'Outros'];
+                   const serviceCats = ['Fretes e Mudanças', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Manutenção Eletrodomésticos', 'Jardinagem', 'Serviços de Manutenção', 'Outros'];
                     if (serviceCats.includes(category)) {
-                        if (feeVal === 0) { feeVal = 00.01; alert("Não cobramos taxa"); }
+                        // Se for serviço e não tiver taxa definida, mantém zero e avisa
+                        if (feeVal === 0) { 
+                            feeVal = 0; 
+                            alert("Não cobramos taxa de deslocamento para este serviço."); 
+                        }
                     }
                     finalPrice += feeVal;
                     const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', sid).single();
