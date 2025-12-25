@@ -1266,7 +1266,7 @@
                         }
                     }).subscribe();
                 },
-               calcMetrics: async (orders) => { // <--- ADICIONEI O 'async' AQUI
+              calcMetrics: async (orders) => {
                     const now = new Date();
                     let dayTotal = 0, weekTotal = 0, monthTotal = 0;
                     
@@ -1274,8 +1274,6 @@
                     orders.forEach(o => {
                         if(['aceito', 'concluido', 'em_rota', 'aguardando_prestador'].includes(o.status)) {
                             const orderDate = new Date(o.created_at);
-                            // Cuidado: aqui estava dividindo por 0.10 no seu snippet, 
-                            // mas o padrão costuma ser 0.15 (taxa). Mantive 0.10 se for sua regra.
                             const val = o.taxa_servico / 0.15; 
                             
                             if(orderDate.toDateString() === now.toDateString()) dayTotal += val;
@@ -1300,10 +1298,6 @@
                     }
                     
                     // Atualiza a tela
-                    document.getElementById('metric-day').innerText = `R$ ${dayTotal.toFixed(2)}`;
-                    document.getElementById('metric-week').innerText = `R$ ${weekTotal.toFixed(2)}`;
-                    document.getElementById('metric-month').innerText = `R$ ${monthTotal.toFixed(2)}`;
-                },
                     document.getElementById('metric-day').innerText = `R$ ${dayTotal.toFixed(2)}`;
                     document.getElementById('metric-week').innerText = `R$ ${weekTotal.toFixed(2)}`;
                     document.getElementById('metric-month').innerText = `R$ ${monthTotal.toFixed(2)}`;
