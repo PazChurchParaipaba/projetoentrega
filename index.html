@@ -460,7 +460,7 @@
                 </div>
             </div>
 
-            <div style="margin-bottom: 2rem; background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
+           <div id="admin-restaurant-panel" style="display:none; margin-bottom: 2rem; background: #fff; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0;">
                 <h4>Gestão de Salão (Restaurante)</h4>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <div class="input-wrapper" style="margin-bottom:0; flex:1;">
@@ -1128,6 +1128,13 @@
                         store = newStore;
                     }
                     App.state.storeId = store.id;
+                    // --- CÓDIGO NOVO: MOSTRAR PAINEL DE RESTAURANTE SE FOR O CASO ---
+           if (store.tipo_loja === 'Restaurante') {
+            document.getElementById('admin-restaurant-panel').style.display = 'block';
+              } else {
+            document.getElementById('admin-restaurant-panel').style.display = 'none';
+        }
+        // ---------------------------------------------------------------
                     if(store.mp_access_token) {
                         document.getElementById('store-keys-area').style.display = 'none';
                         document.getElementById('store-keys-locked').style.display = 'block';
