@@ -549,6 +549,22 @@
                             </div>
                             <button class="btn btn-success btn-sm" onclick="App.store.saveCredentials()">Salvar e Ativar</button>
                         </div>
+                        <div class="card" style="border-left: 5px solid #8b5cf6; margin-top: 1.5rem;">
+    <h4><i class="ri-truck-line"></i> Configuração de Entrega/Retirada</h4>
+    <p class="text-sm">Defina seu endereço para retirada e o valor padrão da entrega.</p>
+    
+    <div class="input-wrapper">
+        <label>Endereço para Retirada (Sua Loja/Casa)</label>
+        <input type="text" id="store-pickup-address" class="input-field" placeholder="Ex: Rua das Flores, 123 - Centro">
+    </div>
+
+    <div class="input-wrapper">
+        <label>Taxa de Entrega Padrão (R$)</label>
+        <input type="number" id="store-delivery-fee" class="input-field" placeholder="0.00">
+    </div>
+
+    <button class="btn btn-sm" style="background:#8b5cf6; color:white;" onclick="App.store.saveLogistics()">Salvar Configurações</button>
+</div>
                         <div class="card" style="border-left: 5px solid #be185d; margin-top: 1.5rem;">
                            <h4><i class="ri-ticket-line"></i> Criar Cupom (Roupas)</h4>
                            <p class="text-sm">Gere descontos exclusivos para produtos da categoria Roupas.</p>
@@ -957,6 +973,25 @@
                 <h3>Carrinho de Compras</h3>
                 <button class="btn btn-secondary btn-sm" onclick="document.getElementById('cart-modal').style.display='none'">Fechar</button>
             </div>
+            <div style="margin-bottom:15px; padding:10px; border:1px dashed #cbd5e1; border-radius:8px;">
+    <label style="font-weight:bold; font-size:0.9rem; display:block; margin-bottom:5px;">Forma de Entrega:</label>
+    
+    <div style="display:flex; gap:15px;">
+        <div style="display:flex; align-items:center; gap:5px;">
+            <input type="radio" name="delivery-method" id="method-delivery" value="entrega" checked onchange="App.cart.updateFloater()">
+            <label for="method-delivery" class="text-sm">Entrega (+<span id="label-delivery-fee">R$ 0,00</span>)</label>
+        </div>
+        
+        <div style="display:flex; align-items:center; gap:5px;">
+            <input type="radio" name="delivery-method" id="method-pickup" value="retirada" onchange="App.cart.updateFloater()">
+            <label for="method-pickup" class="text-sm">Retirada (Grátis)</label>
+        </div>
+    </div>
+    
+    <div id="pickup-info-display" style="display:none; margin-top:8px; font-size:0.8rem; color:#8b5cf6; background:#f3e8ff; padding:5px; border-radius:4px;">
+        <strong>Retirar em:</strong> <span id="txt-pickup-addr">...</span>
+    </div>
+</div>
             <div class="modal-body">
                 <div id="cart-items-list" style="margin-bottom: 1rem;"></div>
                 <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; margin-top:10px; text-align:right;">
@@ -1161,494 +1196,498 @@
                 logout: () => { localStorage.removeItem('logimoveis_session'); location.reload(); }
             },
             store: {
-                init: async () => {
-                    if (!App.state.user) return;
-                    let { data: store } = await _sb.from('stores').select('*').eq('admin_id', App.state.user.id).maybeSingle();
-                    
-                    if (!store) {
-                        const { data: newStore } = await _sb.from('stores').insert({ admin_id: App.state.user.id, nome_loja: 'Loja (Complete o Cadastro)' }).select().single();
-                        store = newStore;
-                    }
-                    
-                    App.state.storeId = store.id;
-                    App.state.currentStore = store; // <--- LINHA NOVA: Salva dados da loja para impressão
+            init: async () => {
+                if (!App.state.user) return;
+                let { data: store } = await _sb.from('stores').select('*').eq('admin_id', App.state.user.id).maybeSingle();
+                
+                if (!store) {
+                    const { data: newStore } = await _sb.from('stores').insert({ admin_id: App.state.user.id, nome_loja: 'Loja (Complete o Cadastro)' }).select().single();
+                    store = newStore;
+                }
+                
+                App.state.storeId = store.id;
+                App.state.currentStore = store;
 
-                    // MOSTRAR PAINEL DE RESTAURANTE SE FOR O CASO
-                    if (store.tipo_loja === 'Restaurante') {
-                        document.getElementById('admin-restaurant-panel').style.display = 'block';
-                    } else {
-                        document.getElementById('admin-restaurant-panel').style.display = 'none';
-                    }
+                // Carrega configurações de Logística
+                document.getElementById('store-pickup-address').value = store.endereco_retirada || '';
+                document.getElementById('store-delivery-fee').value = store.taxa_entrega_padrao || '';
 
-                    if(store.mp_access_token) {
-                        document.getElementById('store-keys-area').style.display = 'none';
-                        document.getElementById('store-keys-locked').style.display = 'block';
-                    } else {
-                        document.getElementById('store-keys-area').style.display = 'block';
-                        document.getElementById('store-keys-locked').style.display = 'none';
-                    }
+                if (store.tipo_loja === 'Restaurante') {
+                    document.getElementById('admin-restaurant-panel').style.display = 'block';
+                } else {
+                    document.getElementById('admin-restaurant-panel').style.display = 'none';
+                }
 
-                    if(store.parceiro_exclusivo_id) {
-                        const {data: p} = await _sb.from('profiles').select('nome_completo, email').eq('id', store.parceiro_exclusivo_id).single();
-                        if(p) document.getElementById('active-partner-display').innerText = `Parceiro Vinculado: ${p.nome_completo} (${p.email})`;
-                    }
+                if(store.mp_access_token) {
+                    document.getElementById('store-keys-area').style.display = 'none';
+                    document.getElementById('store-keys-locked').style.display = 'block';
+                } else {
+                    document.getElementById('store-keys-area').style.display = 'block';
+                    document.getElementById('store-keys-locked').style.display = 'none';
+                }
 
-                    App.store.loadComandas();
+                if(store.parceiro_exclusivo_id) {
+                    const {data: p} = await _sb.from('profiles').select('nome_completo, email').eq('id', store.parceiro_exclusivo_id).single();
+                    if(p) document.getElementById('active-partner-display').innerText = `Parceiro Vinculado: ${p.nome_completo} (${p.email})`;
+                }
 
-                    const { data: orders } = await _sb.from('orders').select('*, products(nome, categoria, delivery_info), profiles!orders_cliente_id_fkey(nome_completo, email, cpf), prestador:profiles!orders_prestador_id_fkey(nome_completo, chave_pix)').eq('store_id', store.id).order('created_at', { ascending: false });
-                    App.store.calcMetrics(orders || []);
-                    App.store.renderOrders(orders);
-                    
-                    App.store.loadMyProducts();
-                    App.store.listenMessages();
-                    App.chat.loadHistory('loja');
-                },
-                loadComandas: async () => {
-                    const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', {ascending: true});
-                    const container = document.getElementById('admin-comanda-grid');
-                    if (data) {
-                        container.innerHTML = data.map(c => `
-                            <div class="comanda-card bg-${c.status}" onclick="App.store.manageComanda('${c.id}', ${JSON.stringify(c.items || []).replace(/"/g, '&quot;')}, ${c.numero}, '${c.status}')">
-                                <div class="comanda-corner"></div>
-                                <div class="comanda-dot"></div>
-                                <div style="position:absolute; top:5px; right:5px; font-size:0.8rem; background:rgba(0,0,0,0.2); padding:2px 6px; border-radius:4px; z-index:10;" onclick="event.stopPropagation(); App.store.deleteComanda('${c.id}')">✕</div>
-                                <div style="font-size:1.5rem;">${c.numero}</div>
-                                <div class="text-xs" style="text-transform:uppercase;">${c.status}</div>
-                            </div>
-                        `).join('');
-                        if(document.getElementById('comanda-list-container')) document.getElementById('comanda-list-container').innerHTML = container.innerHTML;
-                    }
-                },
-                deleteComanda: async (id) => {
-                    if(confirm("Excluir esta comanda permanentemente?")) {
-                        await _sb.from('comandas').delete().eq('id', id);
-                        App.store.loadComandas();
-                    }
-                },
-                manageComanda: (id, items, num, status) => {
-                    if (status === 'livre') return alert("Comanda livre. Garçom deve abrir lançando pedidos.");
-                    
-                    App.state.currentComanda = id;
-                    App.state.currentComandaItems = items;
-                    App.state.currentMesaNum = num;
-                    App.state.comandaTotal = items.reduce((acc, i) => acc + (i.price * i.qtd), 0);
+                App.store.loadComandas();
+                // Carrega Cupons
+                App.store.loadCoupons();
 
-                    // Cria o HTML da lista com opção de excluir item
-                    const itemsHtml = items.map((item, idx) => `
-                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding:8px;">
-                            <div>
-                                <span style="font-weight:bold;">${item.qtd}x ${item.nome}</span><br>
-                                <span class="text-xs text-muted">Garçom: ${item.garcom || 'N/A'}</span>
-                            </div>
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <span>R$ ${(item.price * item.qtd).toFixed(2)}</span>
-                                <button class="btn btn-danger btn-sm" style="padding:2px 8px;" onclick="App.store.removeItemFromComanda(${idx})"><i class="ri-delete-bin-line"></i></button>
-                            </div>
+                const { data: orders } = await _sb.from('orders').select('*, products(nome, categoria, delivery_info), profiles!orders_cliente_id_fkey(nome_completo, email, cpf), prestador:profiles!orders_prestador_id_fkey(nome_completo, chave_pix)').eq('store_id', store.id).order('created_at', { ascending: false });
+                App.store.calcMetrics(orders || []);
+                App.store.renderOrders(orders);
+                
+                App.store.loadMyProducts();
+                App.store.listenMessages();
+                App.chat.loadHistory('loja');
+            },
+            saveLogistics: async () => {
+                const addr = document.getElementById('store-pickup-address').value;
+                const fee = document.getElementById('store-delivery-fee').value;
+                
+                await _sb.from('stores').update({ 
+                    endereco_retirada: addr, 
+                    taxa_entrega_padrao: fee 
+                }).eq('id', App.state.storeId);
+                
+                App.utils.toast("Configurações de entrega salvas!", "success");
+            },
+            loadComandas: async () => {
+                const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', {ascending: true});
+                const container = document.getElementById('admin-comanda-grid');
+                if (data) {
+                    container.innerHTML = data.map(c => `
+                        <div class="comanda-card bg-${c.status}" onclick="App.store.manageComanda('${c.id}', ${JSON.stringify(c.items || []).replace(/"/g, '&quot;')}, ${c.numero}, '${c.status}')">
+                            <div class="comanda-corner"></div>
+                            <div class="comanda-dot"></div>
+                            <div style="position:absolute; top:5px; right:5px; font-size:0.8rem; background:rgba(0,0,0,0.2); padding:2px 6px; border-radius:4px; z-index:10;" onclick="event.stopPropagation(); App.store.deleteComanda('${c.id}')">✕</div>
+                            <div style="font-size:1.5rem;">${c.numero}</div>
+                            <div class="text-xs" style="text-transform:uppercase;">${c.status}</div>
                         </div>
                     `).join('');
-
-                    App.payment.openSplitModal(id, items, num);
-                    
-                    const modalBody = document.querySelector('#split-pay-modal .modal-body');
-                    const editDiv = document.createElement('div');
-                    editDiv.id = 'admin-comanda-edit-list';
-                    editDiv.innerHTML = `<h5>Itens da Mesa ${num}</h5><div style="max-height:150px; overflow-y:auto; margin-bottom:15px; border:1px solid #eee;">${itemsHtml}</div>`;
-                    
-                    const old = document.getElementById('admin-comanda-edit-list');
-                    if(old) old.remove();
-                    
-                    modalBody.insertBefore(editDiv, modalBody.firstChild);
-                },
-                removeItemFromComanda: async (index) => {
-                    if(!confirm("Remover este item?")) return;
-                    const items = App.state.currentComandaItems;
-                    items.splice(index, 1); 
-                    await _sb.from('comandas').update({ items: items }).eq('id', App.state.currentComanda);
-                    App.store.manageComanda(App.state.currentComanda, items, App.state.currentMesaNum, 'aberta');
-                    App.store.loadComandas();
-                },
-                filterHistory: async () => {
-                    const dateStr = document.getElementById('history-date').value;
-                    if(!dateStr) return alert("Selecione uma data");
-
-                    const { data } = await _sb.from('comandas')
-                        .select('*')
-                        .eq('store_id', App.state.storeId)
-                        .eq('status', 'fechada')
-                        .gte('created_at', `${dateStr}T00:00:00`)
-                        .lte('created_at', `${dateStr}T23:59:59`);
-
-                    const container = document.getElementById('history-results');
-                    
-                    if(!data || data.length === 0) {
-                        container.innerHTML = '<p class="text-sm text-muted">Nenhuma venda encontrada neste dia.</p>';
-                        return;
-                    }
-
-                    let totalDay = 0;
-                    const list = data.map(c => {
-                        const val = c.total_pago || 0;
-                        totalDay += val;
-                        return `<div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px 0; font-size:0.9rem;"><span>Mesa ${c.numero}</span><strong>R$ ${val.toFixed(2)}</strong></div>`;
-                    }).join('');
-
-                    container.innerHTML = `<div style="background:var(--success-bg); color:var(--success-dark); padding:10px; border-radius:8px; margin-bottom:10px; font-weight:bold; text-align:center;">Total em ${dateStr.split('-').reverse().join('/')}: R$ ${totalDay.toFixed(2)}</div>${list}`;
-                },
-                renderOrders: (orders) => {
-                     document.getElementById('store-orders-list').innerHTML = orders?.map(o => {
-                        let providerHtml = '';
-                        if(o.prestador) {
-                            providerHtml = `<div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:8px; margin-top:10px; font-size:0.85rem;"><strong>Prestador:</strong> ${o.prestador.nome_completo}<br><strong>Chave Pix:</strong> ${o.prestador.chave_pix || 'Não inf.'}</div>`;
-                        }
-                        
-                        let printBtn = '';
-                        if(o.products?.categoria === 'Comidas' || o.products?.categoria === 'Bebidas') {
-                            const oSafe = JSON.stringify(o).replace(/"/g, '&quot;');
-                            printBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:auto; float:right;" onclick='App.store.printOrder(${oSafe})'><i class="ri-printer-line"></i> Imprimir</button>`;
-                        }
-
-                        return `
-                        <div class="card" style="margin-bottom:1rem; border-left: 4px solid ${o.status==='pendente'?'var(--warning)':'var(--success)'};">
-                            <div style="display:flex; justify-content:space-between"><strong>${o.products?.nome}</strong><span class="badge status-${o.status}">${o.status}</span></div>
-                            <p class="text-sm">Cliente: ${o.profiles?.nome_completo}</p>
-                            ${printBtn}
-                            <div style="clear:both;"></div>
-                            ${o.status === 'pendente' ? `<button class="btn btn-primary btn-sm btn-full" onclick="App.store.dispatch('${o.id}')">Liberar para Entrega</button>` : ''}
-                            ${providerHtml}
-                        </div>`;
-                    }).join('') || '<p class="text-sm">Nenhum pedido.</p>';
-                },
-                listenMessages: () => {
-                    const myStoreId = App.state.storeId;
-                    _sb.channel('store-notifications')
-                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `store_id=eq.${myStoreId}` }, 
-                    async (payload) => {
-                        if(payload.new.sender_id !== App.state.user.id) {
-                            const { data: sender } = await _sb.from('profiles').select('nome_completo').eq('id', payload.new.sender_id).single();
-                            App.utils.showChatNotification(sender.nome_completo, payload.new.content, payload.new.client_id);
-                        }
-                    })
-                    .subscribe();
-                },
-                calcMetrics: async (orders) => {
-                    const now = new Date();
-                    let dayTotal = 0, weekTotal = 0, monthTotal = 0;
-                    
-                    // 1. Soma Pedidos Normais (Delivery/Serviços)
-                    orders.forEach(o => {
-                        if(['aceito', 'concluido', 'em_rota', 'aguardando_prestador'].includes(o.status)) {
-                            const val = o.taxa_servico / 0.15; 
-                            const orderDate = new Date(o.created_at);
-                            if(orderDate.toDateString() === now.toDateString()) dayTotal += val;
-                            if(orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear()) monthTotal += val;
-                            const diffTime = Math.abs(now - orderDate);
-                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-                            if(diffDays <= 7) weekTotal += val;
-                        }
-                    });
-
-                    // 2. Soma Comandas Fechadas
-                    const { data: comandas } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).eq('status', 'fechada');
-                    
-                    if(comandas) {
-                        comandas.forEach(c => {
-                            const val = c.total_pago || 0;
-                            const cDate = new Date(c.created_at);
-                            if(cDate.toDateString() === now.toDateString()) dayTotal += val;
-                            if(cDate.getMonth() === now.getMonth()) monthTotal += val;
-                        });
-                    }
-                    
-                    document.getElementById('metric-day').innerText = `R$ ${dayTotal.toFixed(2)}`;
-                    document.getElementById('metric-week').innerText = `R$ ${weekTotal.toFixed(2)}`;
-                    document.getElementById('metric-month').innerText = `R$ ${monthTotal.toFixed(2)}`;
-                },
-                loadMyProducts: async () => {
-                    const { data } = await _sb.from('products').select('*').eq('store_id', App.state.storeId);
-                    document.getElementById('store-products-list').innerHTML = data?.map(p => {
-                        // CORREÇÃO GALERIA LOJISTA
-                        const pSafe = JSON.stringify(p).replace(/"/g, '&quot;');
-                        return `
-                        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
-                            <div>
-                                <div style="font-weight:bold">${p.nome} ${p.promocao ? '<span style="color:red; font-size:0.7rem">(Promo)</span>' : ''}</div>
-                                <div class="text-xs text-muted">R$ ${p.preco.toFixed(2)}</div>
-                            </div>
-                            <div style="display:flex; gap:5px;">
-                                <button class="btn btn-sm btn-secondary" style="width:auto" onclick='App.store.openEditProduct(${pSafe})'>Editar</button>
-                                <button class="btn btn-sm btn-danger" style="width:auto; padding:5px 8px;" onclick="App.store.deleteProduct('${p.id}')"><i class="ri-delete-bin-line"></i></button>
-                            </div>
-                        </div>`;
-                    }).join('');
-                },
-                deleteProduct: async (id) => {
-                    if(confirm("Deseja realmente excluir este produto?")) {
-                        await _sb.from('products').delete().eq('id', id);
-                        App.utils.toast("Produto excluído!", "success");
-                        App.store.loadMyProducts();
-                        App.catalog.fetchPublic();
-                    }
-                },
-                openProductModal: () => {
-                    document.getElementById('prod-modal-title').innerText = "Adicionar Serviço/Produto";
-                    document.getElementById('btn-save-prod').innerText = "Publicar Serviço";
-                    document.getElementById('edit-prod-id').value = "";
-                    document.getElementById('new-prod-name').value = "";
-                    document.getElementById('new-prod-price').value = "";
-                    document.getElementById('new-prod-promo').checked = false;
-                    document.getElementById('gesso-price-m2').value = "";
-                    document.getElementById('gesso-labor-val').value = "";
-                    document.getElementById('delivery-fee-val').value = "";
-                    document.getElementById('new-prod-file').value = ""; // Limpa fotos
-                    document.getElementById('new-prod-desc').value = "";
-                    document.getElementById('clothing-sizes').value = "";
-                    
-                    document.getElementById('new-prod-cat').value = CONFIG.categories[0];
-                    App.store.checkCategory(CONFIG.categories[0]);
-                    document.getElementById('product-modal').style.display = 'flex';
-                },
-                openEditProduct: (p) => {
-                    document.getElementById('prod-modal-title').innerText = "Editar Serviço/Produto";
-                    document.getElementById('btn-save-prod').innerText = "Salvar Alterações";
-                    document.getElementById('edit-prod-id').value = p.id;
-                    document.getElementById('new-prod-cat').value = p.categoria;
-                    document.getElementById('new-prod-name').value = p.nome;
-                    document.getElementById('new-prod-price').value = p.preco;
-                    document.getElementById('new-prod-promo').checked = p.promocao;
-                    // Adicione estas linhas para carregar os dados
-                   document.getElementById('new-prod-desc').value = p.descricao || "";
-                   document.getElementById('clothing-sizes').value = p.sizes || "";
-
-                    
-                    if(p.gesso_info) {
-                        try {
-                            const g = typeof p.gesso_info === 'string' ? JSON.parse(p.gesso_info) : p.gesso_info;
-                            document.getElementById('gesso-price-m2').value = g.price_m2 || "";
-                            document.getElementById('gesso-labor-val').value = g.labor_val || "";
-                            document.getElementById('gesso-labor-type').value = g.labor_type || "fixed";
-                        } catch(e) {}
-                    }
-
-                    if(p.delivery_info) {
-                        try {
-                            const d = typeof p.delivery_info === 'string' ? JSON.parse(p.delivery_info) : p.delivery_info;
-                            document.getElementById('delivery-fee-val').value = d.fee_val || "";
-                            document.getElementById('delivery-fee-type').value = d.fee_type || "fixed";
-                        } catch(e) {}
-                    }
-                    
-                    App.store.checkCategory(p.categoria);
-                    document.getElementById('product-modal').style.display = 'flex';
-                },
-                closeProductModal: () => document.getElementById('product-modal').style.display = 'none',
-                checkCategory: (cat) => {
-        
-    // ... (oculta os outros areas como antes)
-                  document.getElementById('hotel-dates-area').style.display = 'none';
-                  document.getElementById('gesso-options-area').style.display = 'none';
-               document.getElementById('delivery-options-area').style.display = 'none';
-              document.getElementById('clothing-options-area').style.display = 'none'; // Novo
-
-    if(cat === 'Hoteis/Pousadas') {
-        document.getElementById('hotel-dates-area').style.display = 'block';
-    } else if (cat === 'Serviços de Gesso') {
-        document.getElementById('gesso-options-area').style.display = 'block';
-    } else if (cat === 'Comidas' || cat === 'Bebidas') {
-        document.getElementById('delivery-options-area').style.display = 'block';
-    } else if (cat === 'Roupas') { // Lógica Nova
-        document.getElementById('clothing-options-area').style.display = 'block';
-    }
-},
-                submitProduct: async () => {
-                    if(!App.state.storeId) {
-                        alert("Erro crítico: ID da Loja não encontrado.");
-                        return;
-                    }
-
-                    const id = document.getElementById('edit-prod-id').value;
-                    const nome = document.getElementById('new-prod-name').value;
-                    const preco = document.getElementById('new-prod-price').value;
-                    const cat = document.getElementById('new-prod-cat').value;
-                    const promo = document.getElementById('new-prod-promo').checked;
-                    // Dentro da função, onde pega as variáveis (const nome = ...), adicione:
-                    const descricao = document.getElementById('new-prod-desc').value;
-                    const sizes = document.getElementById('clothing-sizes').value;
-
-                    const fileInput = document.getElementById('new-prod-file');
-                    const files = fileInput.files;
-
-                    if (!nome || !preco) return App.utils.toast("Preencha nome e preço", "error");
-                    
-                    let galeriaUrls = [];
-                    
-                    if (files.length > 0) {
-                        App.utils.toast(`Enviando ${files.length} fotos... aguarde.`, "info");
-                        
-                        for (let i = 0; i < files.length; i++) {
-                            const file = files[i];
-                            const fileName = `${Date.now()}_${i}_${file.name.replace(/\s/g, '_')}`;
-                            const { error: upErr } = await _sb.storage.from('produtos').upload(fileName, file);
-                            
-                            if (!upErr) {
-                                const { data } = _sb.storage.from('produtos').getPublicUrl(fileName);
-                                galeriaUrls.push(data.publicUrl);
-                            }
-                        }
-                    }
-
-                    const dateStart = document.getElementById('hotel-start-date').value;
-                    const dateEnd = document.getElementById('hotel-end-date').value;
-                    let disp = null;
-                    if(cat === 'Hoteis/Pousadas' && dateStart && dateEnd) disp = `${dateStart}|${dateEnd}`;
-
-                    let gessoInfo = null;
-                    if(cat === 'Serviços de Gesso') {
-                        gessoInfo = JSON.stringify({
-                            price_m2: document.getElementById('gesso-price-m2').value,
-                            labor_val: document.getElementById('gesso-labor-val').value,
-                            labor_type: document.getElementById('gesso-labor-type').value
-                        });
-                    }
-
-                    let deliveryInfo = null;
-                    if(cat === 'Comidas' || cat === 'Bebidas') {
-                        deliveryInfo = JSON.stringify({
-                            fee_val: document.getElementById('delivery-fee-val').value,
-                            fee_type: document.getElementById('delivery-fee-type').value
-                        });
-                    }
-                    
-                    const payload = { 
-                        store_id: App.state.storeId, 
-                        nome, 
-                        preco: parseFloat(preco), 
-                        categoria: cat, 
-                        promocao: promo, 
-                        disponibilidade: disp,
-                        gesso_info: gessoInfo,
-                        delivery_info: deliveryInfo,
-                        descricao: descricao,
-                        sizes: sizes
-                    };
-
-                    if (galeriaUrls.length > 0) {
-                        payload.imagem_url = galeriaUrls[0]; 
-                        payload.galeria = galeriaUrls;       
-                    }
-
-                    let res;
-                    if(id) {
-                        res = await _sb.from('products').update(payload).eq('id', id);
-                    } else {
-                        if(galeriaUrls.length === 0 && !id) payload.imagem_url = 'https://placehold.co/400x300?text=NexLog';
-                        res = await _sb.from('products').insert(payload);
-                    }
-
-                    if(res.error) { 
-                        alert("Erro ao salvar: " + res.error.message); 
-                    } else {
-                        alert("Produto salvo com sucesso!");
-                        App.store.closeProductModal(); 
-                        App.catalog.fetchPublic(); 
-                        App.store.init();
-                    }
-                },
-                saveCredentials: async () => {
-                    const acc = document.getElementById('store-access-token').value.trim();
-                    const pub = document.getElementById('store-public-key').value.trim();
-                    if(!acc || !pub) return App.utils.toast("Preencha ambas as chaves!", "error");
-                    await _sb.from('stores').update({ mp_access_token: acc, mp_public_key: pub }).eq('id', App.state.storeId);
-                    App.utils.toast("Chaves salvas e protegidas!", "success");
-                    App.store.init();
-                },
-                resetKeys: async () => {
-                    if(confirm("Isso pausará seus recebimentos. Continuar?")) {
-                        await _sb.from('stores').update({ mp_access_token: null, mp_public_key: null }).eq('id', App.state.storeId);
-                        App.store.init();
-                    }
-                },
-                linkPartner: async () => {
-                    const email = document.getElementById('partner-email-input').value.trim();
-                    if(!email) return App.utils.toast("Digite o email do motorista", "error");
-                    const { data: user } = await _sb.from('profiles').select('id').eq('email', email).single();
-                    if(!user) return App.utils.toast("Motorista não encontrado no sistema.", "error");
-                    await _sb.from('stores').update({ parceiro_exclusivo_id: user.id }).eq('id', App.state.storeId);
-                    App.utils.toast("Parceiro vinculado com sucesso!", "success");
-                    App.store.init();
-                },
-                dispatch: async (id) => {
-                    await _sb.from('orders').update({ status: 'aguardando_prestador', data_agendada: new Date().toISOString() }).eq('id', id);
-                    App.utils.toast('Despachado!', 'success'); App.store.init();
-                },
-                setupPrinter: () => {
-                    window.print();
-                },
-                printOrder: (order) => {
-                    const store = App.state.currentStore || {};
-                    const content = `
-                        <div style="font-family: monospace; width: 300px; padding: 10px; text-align: center;">
-                            <h3>${store.nome_loja || 'NEXLOG PEDIDOS'}</h3>
-                            ${store.cnpj ? `<p style="font-size:0.8rem; margin:0;">CNPJ: ${store.cnpj}</p>` : ''}
-                            ${store.whatsapp ? `<p style="font-size:0.8rem; margin:0;">Tel: ${store.whatsapp}</p>` : ''}
-                            <p style="margin-top:5px; border-bottom: 1px dashed black; padding-bottom:5px;">${new Date().toLocaleString()}</p>
-                            <p><strong>Pedido #${order.id}</strong></p>
-                            <p>Cliente: ${order.profiles?.nome_completo}</p>
-                            <hr style="border-top: 1px dashed black;">
-                            <div style="text-align: left;">
-                                <p><strong>Item:</strong> ${order.products?.nome}</p>
-                                <p><strong>Valor:</strong> R$ ${(order.taxa_servico/0.15).toFixed(2)}</p>
-                            </div>
-                            <hr style="border-top: 1px dashed black;">
-                            <h3>TOTAL: R$ ${(order.taxa_servico/0.15).toFixed(2)}</h3>
-                            <p style="font-size: 0.8rem;">Obrigado pela preferência!</p>
-                        </div>
-                    `;
-                    const area = document.getElementById('printable-area');
-                    area.innerHTML = content;
-                    window.print(); 
+                    if(document.getElementById('comanda-list-container')) document.getElementById('comanda-list-container').innerHTML = container.innerHTML;
                 }
             },
-        createCoupon: async () => {
-    const code = document.getElementById('new-coupon-code').value.toUpperCase().trim();
-    const percent = parseInt(document.getElementById('new-coupon-percent').value);
-    
-    if(!code || !percent) return App.utils.toast("Preencha código e porcentagem", "error");
+            deleteComanda: async (id) => {
+                if(confirm("Excluir esta comanda permanentemente?")) {
+                    await _sb.from('comandas').delete().eq('id', id);
+                    App.store.loadComandas();
+                }
+            },
+            manageComanda: (id, items, num, status) => {
+                if (status === 'livre') return alert("Comanda livre. Garçom deve abrir lançando pedidos.");
+                
+                App.state.currentComanda = id;
+                App.state.currentComandaItems = items;
+                App.state.currentMesaNum = num;
+                App.state.comandaTotal = items.reduce((acc, i) => acc + (i.price * i.qtd), 0);
 
-    const { error } = await _sb.from('coupons').insert({
-        store_id: App.state.storeId,
-        code: code,
-        percent: percent
-    });
+                const itemsHtml = items.map((item, idx) => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding:8px;">
+                        <div>
+                            <span style="font-weight:bold;">${item.qtd}x ${item.nome}</span>
+                            <span class="text-xs text-muted">Garçom: ${item.garcom || 'N/A'}</span>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span>R$ ${(item.price * item.qtd).toFixed(2)}</span>
+                            <button class="btn btn-danger btn-sm" style="padding:2px 8px;" onclick="App.store.removeItemFromComanda(${idx})"><i class="ri-delete-bin-line"></i></button>
+                        </div>
+                    </div>
+                `).join('');
 
-    if(error) App.utils.toast("Erro ao criar cupom", "error");
-    else {
-        App.utils.toast("Cupom criado!", "success");
-        App.store.loadCoupons();
-        document.getElementById('new-coupon-code').value = "";
-    }
-},
+                App.payment.openSplitModal(id, items, num);
+                
+                const modalBody = document.querySelector('#split-pay-modal .modal-body');
+                const editDiv = document.createElement('div');
+                editDiv.id = 'admin-comanda-edit-list';
+                editDiv.innerHTML = `<h5>Itens da Mesa ${num}</h5><div style="max-height:150px; overflow-y:auto; margin-bottom:15px; border:1px solid #eee;">${itemsHtml}</div>`;
+                
+                const old = document.getElementById('admin-comanda-edit-list');
+                if(old) old.remove();
+                
+                modalBody.insertBefore(editDiv, modalBody.firstChild);
+            },
+            removeItemFromComanda: async (index) => {
+                if(!confirm("Remover este item?")) return;
+                const items = App.state.currentComandaItems;
+                items.splice(index, 1); 
+                await _sb.from('comandas').update({ items: items }).eq('id', App.state.currentComanda);
+                App.store.manageComanda(App.state.currentComanda, items, App.state.currentMesaNum, 'aberta');
+                App.store.loadComandas();
+            },
+            filterHistory: async () => {
+                const dateStr = document.getElementById('history-date').value;
+                if(!dateStr) return alert("Selecione uma data");
 
-loadCoupons: async () => {
-    const { data } = await _sb.from('coupons').select('*').eq('store_id', App.state.storeId).eq('active', true);
-    const div = document.getElementById('coupon-list-display');
-    if(!data || data.length === 0) {
-        div.innerHTML = '<span class="text-xs text-muted">Nenhum cupom ativo.</span>';
-        return;
-    }
-    div.innerHTML = data.map(c => `
-        <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:5px; font-size:0.8rem;">
-            <strong>${c.code} (${c.percent}%)</strong>
-            <span style="color:red; cursor:pointer;" onclick="App.store.deleteCoupon('${c.id}')">Excluir</span>
-        </div>
-    `).join('');
-},
+                const { data } = await _sb.from('comandas')
+                    .select('*')
+                    .eq('store_id', App.state.storeId)
+                    .eq('status', 'fechada')
+                    .gte('created_at', `${dateStr}T00:00:00`)
+                    .lte('created_at', `${dateStr}T23:59:59`);
 
-deleteCoupon: async (id) => {
-    if(confirm("Excluir cupom?")) {
-        await _sb.from('coupons').delete().eq('id', id);
-        App.store.loadCoupons();
-    }
-},
+                const container = document.getElementById('history-results');
+                
+                if(!data || data.length === 0) {
+                    container.innerHTML = '<p class="text-sm text-muted">Nenhuma venda encontrada neste dia.</p>';
+                    return;
+                }
+
+                let totalDay = 0;
+                const list = data.map(c => {
+                    const val = c.total_pago || 0;
+                    totalDay += val;
+                    return `<div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px 0; font-size:0.9rem;"><span>Mesa ${c.numero}</span><strong>R$ ${val.toFixed(2)}</strong></div>`;
+                }).join('');
+
+                container.innerHTML = `<div style="background:var(--success-bg); color:var(--success-dark); padding:10px; border-radius:8px; margin-bottom:10px; font-weight:bold; text-align:center;">Total em ${dateStr.split('-').reverse().join('/')}: R$ ${totalDay.toFixed(2)}</div>${list}`;
+            },
+            renderOrders: (orders) => {
+                    document.getElementById('store-orders-list').innerHTML = orders?.map(o => {
+                    let providerHtml = '';
+                    if(o.prestador) {
+                        providerHtml = `<div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:8px; margin-top:10px; font-size:0.85rem;"><strong>Prestador:</strong> ${o.prestador.nome_completo}<br><strong>Chave Pix:</strong> ${o.prestador.chave_pix || 'Não inf.'}</div>`;
+                    }
+                    
+                    let printBtn = '';
+                    if(o.products?.categoria === 'Comidas' || o.products?.categoria === 'Bebidas') {
+                        const oSafe = JSON.stringify(o).replace(/"/g, '&quot;');
+                        printBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:auto; float:right;" onclick='App.store.printOrder(${oSafe})'><i class="ri-printer-line"></i> Imprimir</button>`;
+                    }
+
+                    return `
+                    <div class="card" style="margin-bottom:1rem; border-left: 4px solid ${o.status==='pendente'?'var(--warning)':'var(--success)'};">
+                        <div style="display:flex; justify-content:space-between"><strong>${o.products?.nome}</strong><span class="badge status-${o.status}">${o.status}</span></div>
+                        <p class="text-sm">Cliente: ${o.profiles?.nome_completo}</p>
+                        ${printBtn}
+                        <div style="clear:both;"></div>
+                        ${o.status === 'pendente' ? `<button class="btn btn-primary btn-sm btn-full" onclick="App.store.dispatch('${o.id}')">Liberar para Entrega</button>` : ''}
+                        ${providerHtml}
+                    </div>`;
+                }).join('') || '<p class="text-sm">Nenhum pedido.</p>';
+            },
+            listenMessages: () => {
+                const myStoreId = App.state.storeId;
+                _sb.channel('store-notifications')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `store_id=eq.${myStoreId}` }, 
+                async (payload) => {
+                    if(payload.new.sender_id !== App.state.user.id) {
+                        const { data: sender } = await _sb.from('profiles').select('nome_completo').eq('id', payload.new.sender_id).single();
+                        App.utils.showChatNotification(sender.nome_completo, payload.new.content, payload.new.client_id);
+                    }
+                })
+                .subscribe();
+            },
+            calcMetrics: async (orders) => {
+                const now = new Date();
+                let dayTotal = 0, weekTotal = 0, monthTotal = 0;
+                
+                orders.forEach(o => {
+                    if(['aceito', 'concluido', 'em_rota', 'aguardando_prestador'].includes(o.status)) {
+                        const val = o.taxa_servico / 0.15; 
+                        const orderDate = new Date(o.created_at);
+                        if(orderDate.toDateString() === now.toDateString()) dayTotal += val;
+                        if(orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear()) monthTotal += val;
+                        const diffTime = Math.abs(now - orderDate);
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                        if(diffDays <= 7) weekTotal += val;
+                    }
+                });
+
+                const { data: comandas } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).eq('status', 'fechada');
+                
+                if(comandas) {
+                    comandas.forEach(c => {
+                        const val = c.total_pago || 0;
+                        const cDate = new Date(c.created_at);
+                        if(cDate.toDateString() === now.toDateString()) dayTotal += val;
+                        if(cDate.getMonth() === now.getMonth()) monthTotal += val;
+                    });
+                }
+                
+                document.getElementById('metric-day').innerText = `R$ ${dayTotal.toFixed(2)}`;
+                document.getElementById('metric-week').innerText = `R$ ${weekTotal.toFixed(2)}`;
+                document.getElementById('metric-month').innerText = `R$ ${monthTotal.toFixed(2)}`;
+            },
+            loadMyProducts: async () => {
+                const { data } = await _sb.from('products').select('*').eq('store_id', App.state.storeId);
+                document.getElementById('store-products-list').innerHTML = data?.map(p => {
+                    const pSafe = JSON.stringify(p).replace(/"/g, '&quot;');
+                    return `
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
+                        <div>
+                            <div style="font-weight:bold">${p.nome} ${p.promocao ? '<span style="color:red; font-size:0.7rem">(Promo)</span>' : ''}</div>
+                            <div class="text-xs text-muted">R$ ${p.preco.toFixed(2)}</div>
+                        </div>
+                        <div style="display:flex; gap:5px;">
+                            <button class="btn btn-sm btn-secondary" style="width:auto" onclick='App.store.openEditProduct(${pSafe})'>Editar</button>
+                            <button class="btn btn-sm btn-danger" style="width:auto; padding:5px 8px;" onclick="App.store.deleteProduct('${p.id}')"><i class="ri-delete-bin-line"></i></button>
+                        </div>
+                    </div>`;
+                }).join('');
+            },
+            deleteProduct: async (id) => {
+                if(confirm("Deseja realmente excluir este produto?")) {
+                    await _sb.from('products').delete().eq('id', id);
+                    App.utils.toast("Produto excluído!", "success");
+                    App.store.loadMyProducts();
+                    App.catalog.fetchPublic();
+                }
+            },
+            openProductModal: () => {
+                document.getElementById('prod-modal-title').innerText = "Adicionar Serviço/Produto";
+                document.getElementById('btn-save-prod').innerText = "Publicar Serviço";
+                document.getElementById('edit-prod-id').value = "";
+                document.getElementById('new-prod-name').value = "";
+                document.getElementById('new-prod-price').value = "";
+                document.getElementById('new-prod-promo').checked = false;
+                document.getElementById('gesso-price-m2').value = "";
+                document.getElementById('gesso-labor-val').value = "";
+                document.getElementById('delivery-fee-val').value = "";
+                document.getElementById('new-prod-file').value = ""; 
+                document.getElementById('new-prod-desc').value = "";
+                document.getElementById('clothing-sizes').value = "";
+                
+                document.getElementById('new-prod-cat').value = CONFIG.categories[0];
+                App.store.checkCategory(CONFIG.categories[0]);
+                document.getElementById('product-modal').style.display = 'flex';
+            },
+            openEditProduct: (p) => {
+                document.getElementById('prod-modal-title').innerText = "Editar Serviço/Produto";
+                document.getElementById('btn-save-prod').innerText = "Salvar Alterações";
+                document.getElementById('edit-prod-id').value = p.id;
+                document.getElementById('new-prod-cat').value = p.categoria;
+                document.getElementById('new-prod-name').value = p.nome;
+                document.getElementById('new-prod-price').value = p.preco;
+                document.getElementById('new-prod-promo').checked = p.promocao;
+                document.getElementById('new-prod-desc').value = p.descricao || "";
+                document.getElementById('clothing-sizes').value = p.sizes || "";
+
+                if(p.gesso_info) {
+                    try {
+                        const g = typeof p.gesso_info === 'string' ? JSON.parse(p.gesso_info) : p.gesso_info;
+                        document.getElementById('gesso-price-m2').value = g.price_m2 || "";
+                        document.getElementById('gesso-labor-val').value = g.labor_val || "";
+                        document.getElementById('gesso-labor-type').value = g.labor_type || "fixed";
+                    } catch(e) {}
+                }
+
+                if(p.delivery_info) {
+                    try {
+                        const d = typeof p.delivery_info === 'string' ? JSON.parse(p.delivery_info) : p.delivery_info;
+                        document.getElementById('delivery-fee-val').value = d.fee_val || "";
+                        document.getElementById('delivery-fee-type').value = d.fee_type || "fixed";
+                    } catch(e) {}
+                }
+                
+                App.store.checkCategory(p.categoria);
+                document.getElementById('product-modal').style.display = 'flex';
+            },
+            closeProductModal: () => document.getElementById('product-modal').style.display = 'none',
+            checkCategory: (cat) => {
+                document.getElementById('hotel-dates-area').style.display = 'none';
+                document.getElementById('gesso-options-area').style.display = 'none';
+                document.getElementById('delivery-options-area').style.display = 'none';
+                document.getElementById('clothing-options-area').style.display = 'none';
+
+                if(cat === 'Hoteis/Pousadas') {
+                    document.getElementById('hotel-dates-area').style.display = 'block';
+                } else if (cat === 'Serviços de Gesso') {
+                    document.getElementById('gesso-options-area').style.display = 'block';
+                } else if (cat === 'Comidas' || cat === 'Bebidas') {
+                    document.getElementById('delivery-options-area').style.display = 'block';
+                } else if (cat === 'Roupas') {
+                    document.getElementById('clothing-options-area').style.display = 'block';
+                }
+            },
+            submitProduct: async () => {
+                if(!App.state.storeId) {
+                    alert("Erro crítico: ID da Loja não encontrado.");
+                    return;
+                }
+
+                const id = document.getElementById('edit-prod-id').value;
+                const nome = document.getElementById('new-prod-name').value;
+                const preco = document.getElementById('new-prod-price').value;
+                const cat = document.getElementById('new-prod-cat').value;
+                const promo = document.getElementById('new-prod-promo').checked;
+                const descricao = document.getElementById('new-prod-desc').value;
+                const sizes = document.getElementById('clothing-sizes').value;
+
+                const fileInput = document.getElementById('new-prod-file');
+                const files = fileInput.files;
+
+                if (!nome || !preco) return App.utils.toast("Preencha nome e preço", "error");
+                
+                let galeriaUrls = [];
+                
+                if (files.length > 0) {
+                    App.utils.toast(`Enviando ${files.length} fotos... aguarde.`, "info");
+                    for (let i = 0; i < files.length; i++) {
+                        const file = files[i];
+                        const fileName = `${Date.now()}_${i}_${file.name.replace(/\s/g, '_')}`;
+                        const { error: upErr } = await _sb.storage.from('produtos').upload(fileName, file);
+                        
+                        if (!upErr) {
+                            const { data } = _sb.storage.from('produtos').getPublicUrl(fileName);
+                            galeriaUrls.push(data.publicUrl);
+                        }
+                    }
+                }
+
+                const dateStart = document.getElementById('hotel-start-date').value;
+                const dateEnd = document.getElementById('hotel-end-date').value;
+                let disp = null;
+                if(cat === 'Hoteis/Pousadas' && dateStart && dateEnd) disp = `${dateStart}|${dateEnd}`;
+
+                let gessoInfo = null;
+                if(cat === 'Serviços de Gesso') {
+                    gessoInfo = JSON.stringify({
+                        price_m2: document.getElementById('gesso-price-m2').value,
+                        labor_val: document.getElementById('gesso-labor-val').value,
+                        labor_type: document.getElementById('gesso-labor-type').value
+                    });
+                }
+
+                let deliveryInfo = null;
+                if(cat === 'Comidas' || cat === 'Bebidas') {
+                    deliveryInfo = JSON.stringify({
+                        fee_val: document.getElementById('delivery-fee-val').value,
+                        fee_type: document.getElementById('delivery-fee-type').value
+                    });
+                }
+                
+                const payload = { 
+                    store_id: App.state.storeId, 
+                    nome, 
+                    preco: parseFloat(preco), 
+                    categoria: cat, 
+                    promocao: promo, 
+                    disponibilidade: disp,
+                    gesso_info: gessoInfo,
+                    delivery_info: deliveryInfo, 
+                    descricao: descricao,
+                    sizes: sizes
+                };
+
+                if (galeriaUrls.length > 0) {
+                    payload.imagem_url = galeriaUrls[0]; 
+                    payload.galeria = galeriaUrls;       
+                }
+
+                let res;
+                if(id) {
+                    res = await _sb.from('products').update(payload).eq('id', id);
+                } else {
+                    if(galeriaUrls.length === 0 && !id) payload.imagem_url = 'https://placehold.co/400x300?text=NexLog';
+                    res = await _sb.from('products').insert(payload);
+                }
+
+                if(res.error) { 
+                    alert("Erro ao salvar: " + res.error.message); 
+                } else {
+                    alert("Produto salvo com sucesso!");
+                    App.store.closeProductModal(); 
+                    App.catalog.fetchPublic(); 
+                    App.store.init();
+                }
+            },
+            saveCredentials: async () => {
+                const acc = document.getElementById('store-access-token').value.trim();
+                const pub = document.getElementById('store-public-key').value.trim();
+                if(!acc || !pub) return App.utils.toast("Preencha ambas as chaves!", "error");
+                await _sb.from('stores').update({ mp_access_token: acc, mp_public_key: pub }).eq('id', App.state.storeId);
+                App.utils.toast("Chaves salvas e protegidas!", "success");
+                App.store.init();
+            },
+            resetKeys: async () => {
+                if(confirm("Isso pausará seus recebimentos. Continuar?")) {
+                    await _sb.from('stores').update({ mp_access_token: null, mp_public_key: null }).eq('id', App.state.storeId);
+                    App.store.init();
+                }
+            },
+            linkPartner: async () => {
+                const email = document.getElementById('partner-email-input').value.trim();
+                if(!email) return App.utils.toast("Digite o email do motorista", "error");
+                const { data: user } = await _sb.from('profiles').select('id').eq('email', email).single();
+                if(!user) return App.utils.toast("Motorista não encontrado no sistema.", "error");
+                await _sb.from('stores').update({ parceiro_exclusivo_id: user.id }).eq('id', App.state.storeId);
+                App.utils.toast("Parceiro vinculado com sucesso!", "success");
+                App.store.init();
+            },
+            dispatch: async (id) => {
+                await _sb.from('orders').update({ status: 'aguardando_prestador', data_agendada: new Date().toISOString() }).eq('id', id);
+                App.utils.toast('Despachado!', 'success'); App.store.init();
+            },
+            setupPrinter: () => {
+                window.print();
+            },
+            printOrder: (order) => {
+                const store = App.state.currentStore || {};
+                const content = `
+                    <div style="font-family: monospace; width: 300px; padding: 10px; text-align: center;">
+                        <h3>${store.nome_loja || 'NEXLOG PEDIDOS'}</h3>
+                        ${store.cnpj ? `<p style="font-size:0.8rem; margin:0;">CNPJ: ${store.cnpj}</p>` : ''}
+                        ${store.whatsapp ? `<p style="font-size:0.8rem; margin:0;">Tel: ${store.whatsapp}</p>` : ''}
+                        <p style="margin-top:5px; border-bottom: 1px dashed black; padding-bottom:5px;">${new Date().toLocaleString()}</p>
+                        <p><strong>Pedido #${order.id}</strong></p>
+                        <p>Cliente: ${order.profiles?.nome_completo}</p>
+                        <hr style="border-top: 1px dashed black;">
+                        <div style="text-align: left;">
+                            <p><strong>Item:</strong> ${order.products?.nome}</p>
+                            <p><strong>Valor:</strong> R$ ${(order.taxa_servico/0.15).toFixed(2)}</p>
+                        </div>
+                        <hr style="border-top: 1px dashed black;">
+                        <h3>TOTAL: R$ ${(order.taxa_servico/0.15).toFixed(2)}</h3>
+                        <p style="font-size: 0.8rem;">Obrigado pela preferência!</p>
+                    </div>
+                `;
+                const area = document.getElementById('printable-area');
+                area.innerHTML = content;
+                window.print(); 
+            },
+            createCoupon: async () => {
+                const code = document.getElementById('new-coupon-code').value.toUpperCase().trim();
+                const percent = parseInt(document.getElementById('new-coupon-percent').value);
+                
+                if(!code || !percent) return App.utils.toast("Preencha código e porcentagem", "error");
+
+                const { error } = await _sb.from('coupons').insert({
+                    store_id: App.state.storeId,
+                    code: code,
+                    percent: percent
+                });
+
+                if(error) App.utils.toast("Erro ao criar cupom", "error");
+                else {
+                    App.utils.toast("Cupom criado!", "success");
+                    App.store.loadCoupons();
+                    document.getElementById('new-coupon-code').value = "";
+                }
+            },
+            loadCoupons: async () => {
+                const { data } = await _sb.from('coupons').select('*').eq('store_id', App.state.storeId).eq('active', true);
+                const div = document.getElementById('coupon-list-display');
+                if(!data || data.length === 0) {
+                    div.innerHTML = '<span class="text-xs text-muted">Nenhum cupom ativo.</span>';
+                    return;
+                }
+                div.innerHTML = data.map(c => `
+                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:5px; font-size:0.8rem;">
+                        <strong>${c.code} (${c.percent}%)</strong>
+                        <span style="color:red; cursor:pointer;" onclick="App.store.deleteCoupon('${c.id}')">Excluir</span>
+                    </div>
+                `).join('');
+            },
+            deleteCoupon: async (id) => {
+                if(confirm("Excluir cupom?")) {
+                    await _sb.from('coupons').delete().eq('id', id);
+                    App.store.loadCoupons();
+                }
+            }
+        },
             filterHistory: async () => {
     const dateStr = document.getElementById('history-date').value;
     if(!dateStr) return alert("Selecione uma data");
