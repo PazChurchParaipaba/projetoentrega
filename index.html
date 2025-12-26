@@ -1994,147 +1994,135 @@
                 }
             },
             
-            catalog: {
-                currentCat: 'Todos',
-                filter: (cat, btn) => {
-                    document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
-                    if(btn) btn.classList.add('active');
-                    App.catalog.currentCat = cat;
-                    App.catalog.load();
-                },
-
-                selectSize: (element) => {
-                    const parent = element.parentElement;
-                    const boxes = parent.getElementsByClassName('size-box');
-                    for (let box of boxes) {
-                        box.classList.remove('selected');
-                    }
-                    element.classList.add('selected');
-                },
-
-                load: async () => {
-                    let query = _sb.from('products').select('*, stores(nome_loja)');
-                    if(App.catalog.currentCat !== 'Todos') query = query.eq('categoria', App.catalog.currentCat);
-                    const { data } = await query;
-                    const promos = data?.filter(p => p.promocao);
-                    const normal = data?.filter(p => !p.promocao);
-                    let html = '';
-                    if(promos && promos.length > 0) {
-                        html += `<div style="grid-column:1/-1; margin-bottom:10px;"><h3 style="color:var(--danger)">🔥 Ofertas em Destaque</h3></div>`;
-                        html += promos.map(p => App.catalog.renderCard(p)).join('');
-                        if(normal && normal.length > 0) html += `<div style="grid-column:1/-1; margin:20px 0 10px 0;"><h3 style="color:var(--primary)">Outros Serviços</h3></div>`;
-                    }
-                    html += normal?.map(p => App.catalog.renderCard(p)).join('');
-                    document.getElementById('public-catalog').innerHTML = html || '<p style="grid-column:1/-1; text-align:center">Nenhuma oferta nesta categoria.</p>';
-                },
-                
-                renderCard: (p) => {
-                    let dispInfo = '';
-                    let actionText = "Adicionar ao Carrinho"; 
-                    
-                    const pSafe = JSON.stringify(p).replace(/"/g, '&quot;').replace(/'/g, "&#39;").replace(/\n/g, " ");   
-                        
-                    let dSafe = 'null';
-                    if(p.delivery_info) {
-                        dSafe = `'${JSON.stringify(p.delivery_info).replace(/"/g, '&quot;').replace(/'/g, "&#39;")}'`;
-                    }
-                    
-                    const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Pedreiros', 'Jardinagem', 'Outros'];
-                    const foodCats = ['Comidas', 'Bebidas']; // Categorias que perguntam sobre bebida
-
-                    let onclick = '';
-                    
-                    // 1. Lógica para SERVIÇOS
-                    if (serviceCats.includes(p.categoria)) {
-                        actionText = "Contratar Serviço";
-                        onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${dSafe})`;
-                    } 
-                    // 2. Lógica para COMIDAS (Chama confirmOrder para perguntar da bebida e evita erro de sintaxe)
-                    else if (foodCats.includes(p.categoria)) {
-                        actionText = "Fazer Pedido";
-                        onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${dSafe})`;
-                    }
-                    // 3. Lógica para PRODUTOS COMUNS (Vai pro carrinho direto)
-                    else {
-                        actionText = "Comprar";
-                        onclick = `App.cart.add(${pSafe}, "${p.store_id}")`;
-                    }
-                    
-                    let sizeSelectorHtml = '';
-                    const containerId = `size-container-${p.id}`; 
-                    
-                    if(p.categoria === 'Roupas') {
-                        let chips = '';
-                        if (p.sizes && p.sizes.trim() !== '') {
-                            const sizesArr = p.sizes.split(',').map(s => s.trim());
-                            chips = sizesArr.map(s => `<div class="size-box" onclick="App.catalog.selectSize(this)">${s}</div>`).join('');
-                        } else {
-                            chips = `<div class="size-box selected" onclick="App.catalog.selectSize(this)">Único</div>`;
-                        }
-
-                        sizeSelectorHtml = `
-                            <div style="margin-top:10px;">
-                                <label class="text-xs" style="font-weight:bold; color:#555;">Escolha o Tamanho:</label>
-                                <div id="${containerId}" class="size-selector-container">
-                                    ${chips}
-                                </div>
-                            </div>
-                        `;
-                        // Roupas tem fluxo especial de carrinho
-                        onclick = `App.catalog.addToCartClothing('${p.id}', '${p.store_id}', '${containerId}')`;
-                    }
-                    
-                    if(p.categoria === 'Hoteis/Pousadas' && p.disponibilidade) {
-                         onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", null)`;
-                    } 
-                    else if (p.categoria === 'Serviços de Gesso' && p.gesso_info) {
-                        actionText = "Orçamento";
-                        onclick = `App.client.openBudget(${pSafe})`;
-                    }
-
-                    let imagesHtml = '';
-                    if (p.galeria && Array.isArray(p.galeria) && p.galeria.length > 0) {
-                        const imgs = p.galeria.map(url => `<img src="${url}" class="gallery-img" loading="lazy">`).join('');
-                        imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery">${imgs}</div><div class="gallery-badge"><i class="ri-image-line"></i> ${p.galeria.length} fotos</div></div>`;
-                    } else {
-                        const imgUrl = p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto';
-                        imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery"><img src="${imgUrl}" class="gallery-img"></div></div>`;
-                    }
-
-                    return `
-                        <div class="card">
-                            ${p.promocao ? '<div class="badge badge-promo">PROMOÇÃO</div>' : ''}
-                            ${imagesHtml}
-                            <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div>
-                            <h4>${p.nome}</h4>
-                            <p class="text-sm text-muted" style="margin-bottom:5px;">${p.descricao || ''}</p>
-                            <h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
-                            
-                            ${sizeSelectorHtml} 
-                            ${dispInfo}
-                            <button class="btn ${serviceCats.includes(p.categoria)?'btn-secondary':'btn-success'} btn-full" style="margin-top:10px" onclick="${onclick}">${actionText}</button>
-                            <button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>
-                        </div>`;
-                },
-                
-                fetchPublic: async () => { App.catalog.load(); },
-
-                addToCartClothing: async (pid, sid, containerId) => {
-                    const container = document.getElementById(containerId);
-                    const selected = container ? container.querySelector('.selected') : null;
-                    
-                    if (!selected) {
-                        alert("Por favor, selecione um tamanho clicando na opção desejada.");
-                        return;
-                    }
-                    const tamanho = selected.innerText;
-
-                    const { data: p } = await _sb.from('products').select('*').eq('id', pid).single();
-                    const prodToAdd = { ...p, nome: `${p.nome} (Tam: ${tamanho})` };
-                    App.cart.add(prodToAdd, sid);
-                }
+         catalog: {
+            currentCat: 'Todos',
+            
+            filter: (cat, btn) => {
+                document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+                if(btn) btn.classList.add('active');
+                App.catalog.currentCat = cat;
+                App.catalog.load();
+            },
+            
+            selectSize: (element) => {
+                const parent = element.parentElement;
+                const boxes = parent.getElementsByClassName('size-box');
+                for (let box of boxes) { box.classList.remove('selected'); }
+                element.classList.add('selected');
             },
 
+            // --- FUNÇÃO DE CLIQUE SEGURO (RESOLVE O ERRO DE SINTAXE) ---
+            safeClick: (pEncoded, dEncoded) => {
+                const p = JSON.parse(decodeURIComponent(pEncoded));
+                const d = dEncoded !== 'null' ? JSON.parse(decodeURIComponent(dEncoded)) : null;
+                const cat = p.categoria;
+                
+                const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Pedreiros', 'Jardinagem', 'Outros'];
+                const foodCats = ['Comidas', 'Bebidas']; // Comidas entra aqui para perguntar da bebida
+
+                // Se for Roupa, usa a lógica do tamanho
+                if (cat === 'Roupas') {
+                    const containerId = `size-container-${p.id}`;
+                    App.catalog.addToCartClothing(p.id, p.store_id, containerId);
+                    return;
+                }
+
+                // Se for Serviço, Comida ou Bebida -> Vai para confirmação (Endereço/Bebida)
+                if (serviceCats.includes(cat) || foodCats.includes(cat)) {
+                    App.client.confirmOrder(p.id, p.store_id, p.preco, cat, d ? JSON.stringify(d) : null);
+                } else {
+                    // Outros produtos -> Carrinho direto
+                    App.cart.add(p, p.store_id);
+                }
+            },
+            // -----------------------------------------------------------
+
+            load: async () => {
+                let query = _sb.from('products').select('*, stores(nome_loja)');
+                if(App.catalog.currentCat !== 'Todos') query = query.eq('categoria', App.catalog.currentCat);
+                const { data } = await query;
+                const promos = data?.filter(p => p.promocao);
+                const normal = data?.filter(p => !p.promocao);
+                let html = '';
+                if(promos && promos.length > 0) {
+                    html += `<div style="grid-column:1/-1; margin-bottom:10px;"><h3 style="color:var(--danger)">🔥 Ofertas em Destaque</h3></div>`;
+                    html += promos.map(p => App.catalog.renderCard(p)).join('');
+                    if(normal && normal.length > 0) html += `<div style="grid-column:1/-1; margin:20px 0 10px 0;"><h3 style="color:var(--primary)">Outros Serviços</h3></div>`;
+                }
+                html += normal?.map(p => App.catalog.renderCard(p)).join('');
+                document.getElementById('public-catalog').innerHTML = html || '<p style="grid-column:1/-1; text-align:center">Nenhuma oferta nesta categoria.</p>';
+            },
+
+            renderCard: (p) => {
+                let dispInfo = '';
+                let actionText = "Adicionar ao Carrinho"; 
+                
+                // CODIFICA O OBJETO PARA NÃO QUEBRAR O HTML
+                const pEncoded = encodeURIComponent(JSON.stringify(p));
+                const dEncoded = p.delivery_info ? encodeURIComponent(JSON.stringify(p.delivery_info)) : 'null';
+                
+                const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Pedreiros', 'Jardinagem', 'Outros'];
+                const foodCats = ['Comidas', 'Bebidas'];
+                
+                // Define o texto do botão
+                if (serviceCats.includes(p.categoria)) actionText = "Contratar Serviço";
+                else if (foodCats.includes(p.categoria)) actionText = "Fazer Pedido";
+                else actionText = "Comprar";
+                
+                // --- RENDERIZAÇÃO DOS QUADRADINHOS (ROUPAS) ---
+                let sizeSelectorHtml = '';
+                const containerId = `size-container-${p.id}`; 
+                
+                if(p.categoria === 'Roupas') {
+                    let chips = '';
+                    if (p.sizes && p.sizes.trim() !== '') {
+                        const sizesArr = p.sizes.split(',').map(s => s.trim());
+                        chips = sizesArr.map(s => `<div class="size-box" onclick="App.catalog.selectSize(this)">${s}</div>`).join('');
+                    } else {
+                        chips = `<div class="size-box selected" onclick="App.catalog.selectSize(this)">Único</div>`;
+                    }
+                    sizeSelectorHtml = `<div style="margin-top:10px;"><label class="text-xs" style="font-weight:bold; color:#555;">Escolha o Tamanho:</label><div id="${containerId}" class="size-selector-container">${chips}</div></div>`;
+                }
+                
+                // Lógica de Gesso/Hotel apenas visual
+                if(p.categoria === 'Hoteis/Pousadas' && p.disponibilidade) {
+                     const [start, end] = p.disponibilidade.split('|');
+                     const fmt = d => d.split('-').reverse().join('/');
+                     dispInfo = `<div class="text-xs" style="background:#f0f9ff; padding:5px; border-radius:4px; margin-top:5px; color:#0369a1;">📅 Disp: ${fmt(start)} até ${fmt(end)}</div>`;
+                } 
+                else if (p.categoria === 'Serviços de Gesso' && p.gesso_info) {
+                    actionText = "Orçamento";
+                    dispInfo = `<div class="text-xs" style="color:#854d0e; margin-top:5px;">Orçamento por m²</div>`;
+                }
+                
+                // AQUI ESTÁ O TRUQUE: Passamos a string codificada para a função safeClick
+                const onclick = `App.catalog.safeClick('${pEncoded}', '${dEncoded}')`;
+
+                // Verifica se tem Gesso para mudar a chamada para openBudget se necessário (exceção à regra)
+                let finalOnclick = onclick;
+                if(p.categoria === 'Serviços de Gesso') {
+                    // Para gesso, ainda usamos o openBudget direto pois precisa dos dados de gesso
+                     const pSafe = JSON.stringify(p).replace(/"/g, '&quot;').replace(/'/g, "&#39;").replace(/\n/g, " ");
+                     finalOnclick = `App.client.openBudget(${pSafe})`;
+                }
+
+                const imgUrl = (p.galeria && p.galeria.length > 0) ? p.galeria[0] : (p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto');
+                
+                return `<div class="card">${p.promocao ? '<div class="badge badge-promo">PROMOÇÃO</div>' : ''}<div class="product-gallery-wrapper"><div class="product-gallery"><img src="${imgUrl}" class="gallery-img"></div></div><div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div><h4>${p.nome}</h4><p class="text-sm text-muted" style="margin-bottom:5px;">${p.descricao || ''}</p><h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>${sizeSelectorHtml}${dispInfo}<button class="btn ${serviceCats.includes(p.categoria)?'btn-secondary':'btn-success'} btn-full" style="margin-top:10px" onclick="${finalOnclick}">${actionText}</button><button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button></div>`;
+            },
+            
+            fetchPublic: async () => { App.catalog.load(); },
+
+            addToCartClothing: async (pid, sid, containerId) => {
+                const container = document.getElementById(containerId);
+                const selected = container ? container.querySelector('.selected') : null;
+                if (!selected) { alert("Por favor, selecione um tamanho clicando na opção desejada."); return; }
+                const tamanho = selected.innerText;
+                const { data: p } = await _sb.from('products').select('*').eq('id', pid).single();
+                const prodToAdd = { ...p, nome: `${p.nome} (Tam: ${tamanho})` };
+                App.cart.add(prodToAdd, sid);
+            }
+        },
             payment: {
                 openSplitModal: (comandaId, items, numeroMesa) => {
                     App.state.currentComanda = comandaId;
@@ -2289,103 +2277,67 @@
                      } else { alert("Mesa não encontrada ou fechada."); }
                 },
                 confirmOrder: async (pid, sid, price, category, deliveryInfoRaw) => { 
-                    // 1. TRAVA DE LOGIN
                     if(!App.state.user) { App.utils.toast("Faça login!", "warning"); App.router.go('auth'); return; }
-                    
-                    // 2. ENDEREÇO / RESERVA
                     let address = "";
                     if (category === 'Hoteis/Pousadas') {
                         const { data: userProfile } = await _sb.from('profiles').select('*').eq('id', App.state.user.id).single();
                         if(userProfile) { address = `RESERVA: ${userProfile.nome_completo} | CPF: ${userProfile.cpf || 'Não inf.'} | Email: ${userProfile.email}`; alert("Dados capturados para reserva. Prossiga para o pagamento."); } 
                         else address = "Dados de reserva pendentes.";
                     } else {
-                        // Para Comidas/Bebidas/Serviços pede o endereço
                         address = prompt("Endereço de Entrega Completo:"); 
-                        if(!address) return; // Cancelou o prompt
+                        if(!address) return;
                     }
-
-                    // 3. LÓGICA DA BEBIDA (RESTAURADA E CORRIGIDA)
+                    
+                    // --- LÓGICA DA BEBIDA ---
                     if (category === 'Comidas') {
                         if (confirm("Você vai querer beber alguma coisa?")) {
                             App.utils.toast("Filtrando bebidas desta loja...", "info");
-                            // Busca apenas bebidas desta loja
                             let query = _sb.from('products').select('*, stores(nome_loja)').eq('store_id', sid).eq('categoria', 'Bebidas');
                             const { data } = await query;
                             
-                            // Mostra botão para finalizar o pedido original
-                            let html = `
-                                <div style="grid-column:1/-1; margin-bottom:10px; background:#f0fdf4; padding:15px; border-radius:8px; border:1px solid #bbf7d0;">
-                                    <h3 style="color:var(--success)">🥤 Bebidas da Loja</h3>
-                                    <p class="text-sm">Selecione sua bebida ou clique abaixo para finalizar o pedido da comida.</p>
-                                    <button class="btn btn-sm btn-primary" style="width:100%; margin-top:5px;" 
-                                        onclick="App.client.finalizeCart('${pid}', '${sid}', ${price}, '${address}')">
-                                        Pular Bebida e Pagar Comida (R$ ${price.toFixed(2)})
-                                    </button>
-                                </div>
-                            `;
+                            // Botão para pular a bebida
+                            let html = `<div style="grid-column:1/-1; margin-bottom:10px; padding:15px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px;"><h3 style="color:var(--success)">🥤 Bebidas da Loja</h3><p>Selecione a bebida ou clique abaixo para finalizar só a comida.</p><button class="btn btn-sm btn-primary" style="width:100%; margin-top:5px;" onclick="App.client.finalizeCart('${pid}', '${sid}', ${price}, '${address}')">Pular Bebida e Pagar Comida (R$ ${price.toFixed(2)})</button></div>`;
                             
                             if (data && data.length > 0) html += data.map(p => App.catalog.renderCard(p)).join('');
-                            else html += `<p style="grid-column:1/-1; text-align:center">Nenhuma bebida cadastrada nesta loja.</p>`;
+                            else html += `<p style="grid-column:1/-1; text-align:center">Nenhuma bebida cadastrada.</p>`;
                             
                             document.getElementById('public-catalog').innerHTML = html;
-                            return; // Interrompe aqui para o usuário escolher a bebida
+                            return; 
                         }
                     }
+                    // -----------------------
 
-                    // 4. TAXAS DE ENTREGA
                     let finalPrice = price;
                     let feeVal = 0;
                     if (deliveryInfoRaw && deliveryInfoRaw !== 'null') {
                         try {
-                            const cleanJson = deliveryInfoRaw.replace(/^'|'$/g, "");
+                            const cleanJson = deliveryInfoRaw.replace(/^'|'$/g, ""); // Remove aspas extras se houver
                             const d = JSON.parse(cleanJson);
                             const val = parseFloat(d.fee_val) || 0;
-                            
                             if(d.fee_type === 'percent') feeVal = price * (val / 100);
                             else feeVal = val;
-                            
                             if(feeVal > 0) alert(`Será adicionada uma taxa de entrega de R$ ${feeVal.toFixed(2)}`);
                         } catch(e) {}
                     }
-
+                    
                     const serviceCats = ['Fretes e Mudanças', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Manutenção Eletrodomésticos', 'Jardinagem', 'Serviços de Manutenção', 'Outros'];
                     if (serviceCats.includes(category)) {
                         if (feeVal === 0) { feeVal = 0; alert("Não cobramos taxa de deslocamento para este serviço."); }
                     }
-                    
                     finalPrice += feeVal;
-
-                    // 5. INICIA PAGAMENTO
+                    
                     const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', sid).single();
                     const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
                     mpInstance = new MercadoPago(publicKeyToUse);
                     const commission = finalPrice * 0.10;
-                    
-                    App.payment.open(finalPrice, { 
-                        product_id: pid, 
-                        store_id: sid, 
-                        basePrice: finalPrice, 
-                        address: address, 
-                        requer_montagem: false, 
-                        taxa: commission 
-                    });
+                    App.payment.open(finalPrice, { product_id: pid, store_id: sid, basePrice: finalPrice, address, requer_montagem: false, taxa: commission });
                 },
-                
                 finalizeCart: async (pid, sid, price, address) => {
                      const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', sid).single();
                      const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
                      mpInstance = new MercadoPago(publicKeyToUse);
-                     
                      const commission = price * 0.10;
-                     
-                     App.payment.open(price, { 
-                        product_id: pid, 
-                        store_id: sid, 
-                        basePrice: price, 
-                        address: address, 
-                        requer_montagem: false, 
-                        taxa: commission 
-                    });
+                     App.payment.open(price, { product_id: pid, store_id: sid, basePrice: price, address, requer_montagem: false, taxa: commission });
                 },
                 openBudget: (p) => {
                     if(!App.state.user) { App.router.go('auth'); return; }
