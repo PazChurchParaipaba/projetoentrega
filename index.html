@@ -973,31 +973,35 @@
                 <h3>Carrinho de Compras</h3>
                 <button class="btn btn-secondary btn-sm" onclick="document.getElementById('cart-modal').style.display='none'">Fechar</button>
             </div>
-            <div style="margin-bottom:15px; padding:10px; border:1px dashed #cbd5e1; border-radius:8px;">
-    <label style="font-weight:bold; font-size:0.9rem; display:block; margin-bottom:5px;">Forma de Entrega:</label>
-    
-    <div style="display:flex; gap:15px;">
-        <div style="display:flex; align-items:center; gap:5px;">
-            <input type="radio" name="delivery-method" id="method-delivery" value="entrega" checked onchange="App.cart.updateFloater()">
-            <label for="method-delivery" class="text-sm">Entrega (+<span id="label-delivery-fee">R$ 0,00</span>)</label>
-        </div>
-        
-        <div style="display:flex; align-items:center; gap:5px;">
-            <input type="radio" name="delivery-method" id="method-pickup" value="retirada" onchange="App.cart.updateFloater()">
-            <label for="method-pickup" class="text-sm">Retirada (Grátis)</label>
-        </div>
-    </div>
-    
-    <div id="pickup-info-display" style="display:none; margin-top:8px; font-size:0.8rem; color:#8b5cf6; background:#f3e8ff; padding:5px; border-radius:4px;">
-        <strong>Retirar em:</strong> <span id="txt-pickup-addr">...</span>
-    </div>
-</div>
-            <div id="delivery-address-container" style="margin-top:15px;">
-    <label class="text-sm font-bold">Endereço de Entrega:</label>
-    <textarea id="cart-delivery-address" class="input-field" rows="2" placeholder="Rua, Número, Bairro, Ponto de Referência..."></textarea>
-</div>
+            
             <div class="modal-body">
+                <div style="margin-bottom:15px; padding:10px; border:1px dashed #cbd5e1; border-radius:8px;">
+                    <label style="font-weight:bold; font-size:0.9rem; display:block; margin-bottom:5px;">Forma de Entrega:</label>
+                    
+                    <div style="display:flex; gap:15px;">
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <input type="radio" name="delivery-method" id="method-delivery" value="entrega" checked onchange="App.cart.toggleAddressField()">
+                            <label for="method-delivery" class="text-sm">Entrega (+<span id="label-delivery-fee">R$ 0,00</span>)</label>
+                        </div>
+                        
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <input type="radio" name="delivery-method" id="method-pickup" value="retirada" onchange="App.cart.toggleAddressField()">
+                            <label for="method-pickup" class="text-sm">Retirada (Grátis)</label>
+                        </div>
+                    </div>
+                    
+                    <div id="pickup-info-display" style="display:none; margin-top:8px; font-size:0.8rem; color:#8b5cf6; background:#f3e8ff; padding:5px; border-radius:4px;">
+                        <strong>Retirar em:</strong> <span id="txt-pickup-addr">...</span>
+                    </div>
+                </div>
+
+                <div id="delivery-address-container" style="margin-bottom:15px;">
+                    <label class="text-sm font-bold">Endereço de Entrega:</label>
+                    <textarea id="cart-delivery-address" class="input-field" rows="2" placeholder="Rua, Número, Bairro, Ponto de Referência..."></textarea>
+                </div>
+
                 <div id="cart-items-list" style="margin-bottom: 1rem;"></div>
+
                 <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; margin-top:10px; text-align:right;">
                     <div style="margin-top:10px; display:flex; gap:5px;">
                        <input type="text" id="cart-coupon-input" class="input-field" placeholder="Cupom de desconto" style="text-transform:uppercase;">
@@ -1007,6 +1011,7 @@
                     <strong>Total: <span id="cart-total-modal">R$ 0,00</span></strong>
                 </div>
             </div>
+
             <div class="modal-footer">
                 <button class="btn btn-success btn-full" onclick="App.cart.checkout()">Finalizar Compra</button>
             </div>
@@ -2209,6 +2214,7 @@
             activeCoupon: null,
             storeSettings: null,
 
+            // Ao abrir o carrinho
             open: async () => { 
                 document.getElementById('cart-modal').style.display = 'flex'; 
                 
@@ -2218,7 +2224,7 @@
                     const { data } = await _sb.from('stores').select('taxa_entrega_padrao, endereco_retirada').eq('id', sid).single();
                     App.cart.storeSettings = data;
                     
-                    // Atualiza textos visuais do modal
+                    // Atualiza textos visuais do modal (Valor da taxa e Endereço de retirada)
                     const fee = data?.taxa_entrega_padrao || 0;
                     const labelFee = document.getElementById('label-delivery-fee');
                     if(labelFee) labelFee.innerText = `R$ ${parseFloat(fee).toFixed(2)}`;
@@ -2227,8 +2233,31 @@
                     if(txtPickup) txtPickup.innerText = data?.endereco_retirada || "Endereço não configurado";
                 }
 
+                // Reseta a visualização para o padrão (Entrega selecionada)
+                const radioDelivery = document.getElementById('method-delivery');
+                if(radioDelivery) radioDelivery.checked = true;
+                
+                App.cart.toggleAddressField(); // Chama para garantir que o campo de endereço apareça
                 App.cart.render(); 
                 App.cart.updateFloater(); 
+            },
+
+            // NOVA FUNÇÃO: Controla a visibilidade do campo de endereço vs Info de retirada
+            toggleAddressField: () => {
+                const isDelivery = document.getElementById('method-delivery')?.checked;
+                const addrContainer = document.getElementById('delivery-address-container');
+                const pickupInfo = document.getElementById('pickup-info-display');
+                
+                if (isDelivery) {
+                    // Se for entrega: Mostra campo de endereço, esconde info da loja
+                    if(addrContainer) addrContainer.style.display = 'block';
+                    if(pickupInfo) pickupInfo.style.display = 'none';
+                } else {
+                    // Se for retirada: Esconde campo de endereço, mostra info da loja
+                    if(addrContainer) addrContainer.style.display = 'none';
+                    if(pickupInfo) pickupInfo.style.display = 'block';
+                }
+                App.cart.updateFloater(); // Recalcula o total (adiciona ou remove taxa)
             },
             
             add: (product, storeId) => {
@@ -2298,17 +2327,8 @@
                 const isDelivery = document.getElementById('method-delivery')?.checked;
                 let deliveryFee = 0;
                 
-                // Lógica de visibilidade dos campos
-                const pickupDisplay = document.getElementById('pickup-info-display');
-                const addressInputContainer = document.getElementById('delivery-address-container');
-
                 if(isDelivery && App.cart.storeSettings) {
                     deliveryFee = parseFloat(App.cart.storeSettings.taxa_entrega_padrao || 0);
-                    if(pickupDisplay) pickupDisplay.style.display = 'none';
-                    if(addressInputContainer) addressInputContainer.style.display = 'block'; // MOSTRA O CAMPO DE ENDEREÇO
-                } else if (!isDelivery) {
-                    if(pickupDisplay) pickupDisplay.style.display = 'block';
-                    if(addressInputContainer) addressInputContainer.style.display = 'none'; // ESCONDE O CAMPO DE ENDEREÇO
                 }
 
                 return { productsTotal, deliveryFee, finalTotal: productsTotal + deliveryFee };
@@ -2318,7 +2338,7 @@
                  const floater = document.getElementById('cart-floater');
                  if(App.state.cart.length > 0) {
                      floater.style.display = 'flex';
-                     const totals = App.cart.calculateTotal(); // Isso já chama a lógica de esconder/mostrar campos
+                     const totals = App.cart.calculateTotal();
                      
                      document.getElementById('cart-count').innerText = `${App.state.cart.length} itens`;
                      document.getElementById('cart-total').innerText = `R$ ${totals.finalTotal.toFixed(2)}`;
@@ -2338,10 +2358,13 @@
                  let address = "";
                  
                  if(isDelivery) {
-                     // PEGA O VALOR DO CAMPO HTML EM VEZ DO PROMPT
-                     const inputAddr = document.getElementById('cart-delivery-address').value.trim();
-                     if(!inputAddr) return alert("Por favor, preencha o campo 'Endereço de Entrega' acima.");
-                     address = `ENTREGA: ${inputAddr}`;
+                     // LÓGICA NOVA: Pega o valor do input HTML (textarea)
+                     const inputAddr = document.getElementById('cart-delivery-address');
+                     const val = inputAddr ? inputAddr.value.trim() : "";
+                     
+                     if(!val) return alert("Por favor, preencha o campo 'Endereço de Entrega' acima.");
+                     
+                     address = `ENTREGA: ${val}`;
                  } else {
                      const pickupAddr = App.cart.storeSettings?.endereco_retirada || "Loja";
                      address = `RETIRADA NA LOJA (${pickupAddr})`;
