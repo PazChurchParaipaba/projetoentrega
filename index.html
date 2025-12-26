@@ -1057,7 +1057,7 @@
         </div>
     </div>
 
-   <script>
+ <script>
         const CONFIG = {
             sbUrl: 'https://groezaseypdbpgymgpvo.supabase.co',
             sbKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdyb2V6YXNleXBkYnBneW1ncHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNjkxNjYsImV4cCI6MjA4MTY0NTE2Nn0.5U5QeoGmZn_i9Y8POoUCkatBUAdSW-cjHRyfxpm_pyM',
@@ -1065,7 +1065,6 @@
             mapboxToken: 'pk.eyJ1IjoiZXhhbXBsZXVzZXIiLCJhIjoiY2p5Y3Z6eG9jMDFlazNnbzQ4a3R4bWk4ZyJ9.ExampleTokenPlaceholder',
             categories: ['Comidas', 'Bebidas', 'Roupas', 'Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Manutenção', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Materiais de Construção', 'Eletrodomésticos', 'Fretes e Mudanças', 'Jardinagem', 'Outros']
         };
-        
         const _sb = supabase.createClient(CONFIG.sbUrl, CONFIG.sbKey);
         let mpInstance = null;
 
@@ -1085,10 +1084,10 @@
                 pixInterval: null, 
                 activeChatStore: null, 
                 activeChatClient: null,
-                chatSub: null, 
-                currentBudgetTotal: 0, 
-                mediaRecorder: null, 
-                audioChunks: [], 
+                chatSub: null,
+                currentBudgetTotal: 0,
+                mediaRecorder: null,
+                audioChunks: [],
                 cart: [], 
                 currentComanda: null, 
                 paymentSplits: [], 
@@ -1333,7 +1332,7 @@
                         taxa_entrega_padrao: fee 
                     }).eq('id', App.state.storeId);
                     
-                    App.utils.toast("Configurações de entrega salvas!", "success");
+                    App.utils.toast("Configurações salvas!", "success");
                 },
                 loadComandas: async () => {
                     const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', {ascending: true});
@@ -1341,11 +1340,9 @@
                     if (data) {
                         container.innerHTML = data.map(c => `
                             <div class="comanda-card bg-${c.status}" onclick="App.store.manageComanda('${c.id}', ${JSON.stringify(c.items || []).replace(/"/g, '&quot;')}, ${c.numero}, '${c.status}')">
-                                <div class="comanda-corner"></div>
-                                <div class="comanda-dot"></div>
+                                <div class="comanda-corner"></div><div class="comanda-dot"></div>
                                 <div style="position:absolute; top:5px; right:5px; font-size:0.8rem; background:rgba(0,0,0,0.2); padding:2px 6px; border-radius:4px; z-index:10;" onclick="event.stopPropagation(); App.store.deleteComanda('${c.id}')">✕</div>
-                                <div style="font-size:1.5rem;">${c.numero}</div>
-                                <div class="text-xs" style="text-transform:uppercase;">${c.status}</div>
+                                <div style="font-size:1.5rem;">${c.numero}</div><div class="text-xs" style="text-transform:uppercase;">${c.status}</div>
                             </div>
                         `).join('');
                         if(document.getElementById('comanda-list-container')) document.getElementById('comanda-list-container').innerHTML = container.innerHTML;
@@ -1780,13 +1777,11 @@
                 open: async () => { 
                     document.getElementById('cart-modal').style.display = 'flex'; 
                     
-                    // Busca configurações da loja (taxa e endereço) para exibir
                     if(App.state.cart.length > 0) {
                         const sid = App.state.cart[0].storeId;
                         const { data } = await _sb.from('stores').select('taxa_entrega_padrao, endereco_retirada').eq('id', sid).single();
                         App.cart.storeSettings = data;
                         
-                        // Atualiza textos visuais do modal (Valor da taxa e Endereço de retirada)
                         const fee = data?.taxa_entrega_padrao || 0;
                         const labelFee = document.getElementById('label-delivery-fee');
                         if(labelFee) labelFee.innerText = `R$ ${parseFloat(fee).toFixed(2)}`;
@@ -1795,31 +1790,27 @@
                         if(txtPickup) txtPickup.innerText = data?.endereco_retirada || "Endereço não configurado";
                     }
 
-                    // Reseta a visualização para o padrão (Entrega selecionada)
                     const radioDelivery = document.getElementById('method-delivery');
                     if(radioDelivery) radioDelivery.checked = true;
                     
-                    App.cart.toggleAddressField(); // Chama para garantir que o campo de endereço apareça
+                    App.cart.toggleAddressField(); 
                     App.cart.render(); 
                     App.cart.updateFloater(); 
                 },
 
-                // NOVA FUNÇÃO: Controla a visibilidade do campo de endereço vs Info de retirada
                 toggleAddressField: () => {
                     const isDelivery = document.getElementById('method-delivery')?.checked;
                     const addrContainer = document.getElementById('delivery-address-container');
                     const pickupInfo = document.getElementById('pickup-info-display');
                     
                     if (isDelivery) {
-                        // Se for entrega: Mostra campo de endereço, esconde info da loja
                         if(addrContainer) addrContainer.style.display = 'block';
                         if(pickupInfo) pickupInfo.style.display = 'none';
                     } else {
-                        // Se for retirada: Esconde campo de endereço, mostra info da loja
                         if(addrContainer) addrContainer.style.display = 'none';
                         if(pickupInfo) pickupInfo.style.display = 'block';
                     }
-                    App.cart.updateFloater(); // Recalcula o total (adiciona ou remove taxa)
+                    App.cart.updateFloater(); 
                 },
                 
                 add: (product, storeId) => {
@@ -1927,7 +1918,6 @@
                      let address = "";
                      
                      if(isDelivery) {
-                         // LÓGICA NOVA: Pega o valor do input HTML (textarea)
                          const inputAddr = document.getElementById('cart-delivery-address');
                          const val = inputAddr ? inputAddr.value.trim() : "";
                          
@@ -1962,7 +1952,6 @@
                      App.cart.activeCoupon = null;
                      App.cart.updateFloater();
                      
-                     // Limpa o campo de texto para a próxima vez
                      if(document.getElementById('cart-delivery-address')) {
                          document.getElementById('cart-delivery-address').value = "";
                      }
@@ -1980,14 +1969,13 @@
 
                 // --- FUNÇÃO PARA SELECIONAR TAMANHO VISUALMENTE ---
                 selectSize: (element) => {
-                    // Remove a classe 'selected' dos irmãos
                     const parent = element.parentElement;
-                    const siblings = parent.querySelectorAll('.size-box');
-                    siblings.forEach(el => el.classList.remove('selected'));
-                    // Adiciona no clicado
+                    const boxes = parent.getElementsByClassName('size-box');
+                    for (let box of boxes) {
+                        box.classList.remove('selected');
+                    }
                     element.classList.add('selected');
                 },
-                // --------------------------------------------------
 
                 load: async () => {
                     let query = _sb.from('products').select('*, stores(nome_loja)');
@@ -2004,12 +1992,11 @@
                     html += normal?.map(p => App.catalog.renderCard(p)).join('');
                     document.getElementById('public-catalog').innerHTML = html || '<p style="grid-column:1/-1; text-align:center">Nenhuma oferta nesta categoria.</p>';
                 },
-                
+
                 renderCard: (p) => {
                     let dispInfo = '';
                     let actionText = "Adicionar ao Carrinho"; 
                     
-                    // Tratamento seguro de texto
                     const pSafe = JSON.stringify(p).replace(/"/g, '&quot;').replace(/'/g, "&#39;").replace(/\n/g, " ");   
                         
                     let dSafe = 'null';
@@ -2017,36 +2004,33 @@
                         dSafe = `'${JSON.stringify(p.delivery_info).replace(/"/g, '&quot;').replace(/'/g, "&#39;")}'`;
                     }
                     
-                    const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Manutenção', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Fretes e Mudanças', 'Jardinagem', 'Outros'];
+                    const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Pedreiros', 'Jardinagem', 'Outros'];
 
                     let onclick = '';
                     
                     if (serviceCats.includes(p.categoria)) {
-                        // SERVIÇOS
                         actionText = "Contratar Serviço";
                         onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${dSafe})`;
                     } else {
-                        // PRODUTOS
                         actionText = (p.categoria === 'Comidas' || p.categoria === 'Bebidas') ? "Fazer Pedido" : "Comprar";
                         onclick = `App.cart.add(${pSafe}, "${p.store_id}")`;
                     }
                     
                     // --- RENDERIZAÇÃO DOS QUADRADINHOS (ROUPAS) ---
                     let sizeSelectorHtml = '';
-                    const containerId = `size-container-${p.id}`; // ID único
+                    const containerId = `size-container-${p.id}`; 
                     
                     if(p.categoria === 'Roupas') {
                         let chips = '';
                         if (p.sizes && p.sizes.trim() !== '') {
                             const sizesArr = p.sizes.split(',').map(s => s.trim());
-                            // Cria os quadradinhos clicáveis
                             chips = sizesArr.map(s => `<div class="size-box" onclick="App.catalog.selectSize(this)">${s}</div>`).join('');
                         } else {
                             chips = `<div class="size-box selected" onclick="App.catalog.selectSize(this)">Único</div>`;
                         }
 
                         sizeSelectorHtml = `
-                            <div style="margin-top:5px;">
+                            <div style="margin-top:10px;">
                                 <label class="text-xs" style="font-weight:bold; color:#555;">Escolha o Tamanho:</label>
                                 <div id="${containerId}" class="size-selector-container">
                                     ${chips}
@@ -2059,7 +2043,7 @@
                     // ----------------------------------------------
                     
                     if(p.categoria === 'Hoteis/Pousadas' && p.disponibilidade) {
-                        onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", null)`;
+                         onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", null)`;
                     } 
                     else if (p.categoria === 'Serviços de Gesso' && p.gesso_info) {
                         actionText = "Orçamento";
@@ -2081,7 +2065,7 @@
                             ${imagesHtml}
                             <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div>
                             <h4>${p.nome}</h4>
-                            <p class="text-sm text-muted" style="margin-bottom:5px; line-height:1.2;">${p.descricao || ''}</p>
+                            <p class="text-sm text-muted" style="margin-bottom:5px;">${p.descricao || ''}</p>
                             <h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
                             
                             ${sizeSelectorHtml} 
@@ -2111,7 +2095,6 @@
                     const prodToAdd = { ...p, nome: `${p.nome} (Tam: ${tamanho})` };
                     App.cart.add(prodToAdd, sid);
                 }
-
             },
 
             payment: {
@@ -2238,7 +2221,6 @@
                     const { orderPayload } = App.state.pendingPayment;
                     await _sb.from('orders').insert({ cliente_id: App.state.user.id, product_id: orderPayload.product_id, store_id: orderPayload.store_id, endereco_destino: orderPayload.address, requer_montagem: orderPayload.requer_montagem, taxa_servico: orderPayload.taxa, status: 'pendente' });
                     App.utils.toast('Pedido realizado!', 'success'); App.router.go('cliente'); App.client.init();
-                    
                     if (orderPayload.address.includes("(Itens:")) {
                         const content = `<div style="font-family: monospace; width: 300px; padding: 10px;"><h3 style="text-align:center;">PEDIDO COZINHA</h3><p>Cliente: ${App.state.profile.nome_completo}</p><p>Endereço: ${orderPayload.address.split('(Itens:')[0]}</p><hr><p><strong>Itens:</strong></p><p>${orderPayload.address.split('(Itens:')[1].replace(')', '')}</p></div>`;
                         const area = document.getElementById('printable-area'); area.innerHTML = content; window.print();
@@ -2267,9 +2249,7 @@
                      } else { alert("Mesa não encontrada ou fechada."); }
                 },
                 confirmOrder: async (pid, sid, price, category, deliveryInfoRaw) => { 
-                    // TRAVA DE LOGIN
                     if(!App.state.user) { App.utils.toast("Faça login!", "warning"); App.router.go('auth'); return; }
-                    
                     let address = "";
                     if (category === 'Hoteis/Pousadas') {
                         const { data: userProfile } = await _sb.from('profiles').select('*').eq('id', App.state.user.id).single();
@@ -2365,7 +2345,7 @@
                     alert(`O valor total é R$ ${total.toFixed(2)}. Você pagará 50% (R$ ${downPayment.toFixed(2)}) agora.`);
                 }
             },
-
+            
             waiter: {
                 init: async () => {
                     const { data: staffData } = await _sb.from('store_staff').select('store_id').eq('profile_id', App.state.user.id).single();
@@ -2459,20 +2439,15 @@
                 init: async () => {
                     const { data: job } = await _sb.from('orders').select('*, products(nome, categoria), profiles:cliente_id(nome_completo, whatsapp)').or(`status.eq.aguardando_prestador,status.eq.em_rota`).order('created_at', { ascending: false });
                     const myEmail = App.state.profile.email;
-                    // Filtra jobs: se a loja tem parceiro exclusivo, so mostra se for eu
-                    // Isso exigiria uma query mais complexa, faremos filtro no client side por simplicidade
                     const container = document.getElementById('provider-jobs-list');
-                    
-                    // Busca lojas onde sou parceiro
                     const { data: myStores } = await _sb.from('stores').select('id').eq('parceiro_exclusivo_id', App.state.user.id);
                     const myStoreIds = myStores ? myStores.map(s => s.id) : [];
 
                     let html = '';
                     if(job) {
                         for(let j of job) {
-                            // Verifica exclusividade
                             const { data: store } = await _sb.from('stores').select('parceiro_exclusivo_id').eq('id', j.store_id).single();
-                            if(store.parceiro_exclusivo_id && store.parceiro_exclusivo_id !== App.state.user.id) continue; // Pula se for exclusivo de outro
+                            if(store.parceiro_exclusivo_id && store.parceiro_exclusivo_id !== App.state.user.id) continue; 
 
                             let actionBtn = '';
                             if(j.status === 'aguardando_prestador') {
@@ -2493,7 +2468,6 @@
                         }
                     }
                     container.innerHTML = html || '<p>Nenhum serviço disponível.</p>';
-                    
                     document.getElementById('provider-role-label').innerText = App.state.profile.role.toUpperCase();
                     document.getElementById('provider-pix-display').innerText = App.state.profile.chave_pix || 'Não cadastrada';
                 },
@@ -2509,7 +2483,6 @@
                 acceptJob: async (id) => {
                     await _sb.from('orders').update({ status: 'em_rota', prestador_id: App.state.user.id }).eq('id', id);
                     App.utils.toast("Aceito! Iniciando navegação...", "success");
-                    // Pega endereço
                     const { data } = await _sb.from('orders').select('endereco_destino').eq('id', id).single();
                     App.map.open(id, true, data.endereco_destino);
                     App.provider.init();
