@@ -2423,38 +2423,43 @@
             },
             renderCard: (p) => {
                 let dispInfo = '';
-                let actionText = "Adicionar ao Carrinho"; // Texto padrão para produtos
+                let actionText = "Adicionar ao Carrinho"; 
                 
-                // CORREÇÃO DO ERRO DE SINTAXE:
-                // Removemos quebras de linha e escapamos aspas simples para não quebrar o HTML
+                // Tratamento de texto para evitar quebra de HTML
                 const pSafe = JSON.stringify(p)
                     .replace(/"/g, '&quot;')
-                    .replace(/'/g, "\\'")
-                    .replace(/\n/g, " "); 
+                    .replace(/'/g, "&#39;") 
+                    .replace(/\n/g, " ");   
                     
-                const dSafe = JSON.stringify(p.delivery_info || null).replace(/"/g, '&quot;');
+                let dSafe = 'null';
+                if(p.delivery_info) {
+                     dSafe = `'${JSON.stringify(p.delivery_info).replace(/"/g, '&quot;').replace(/'/g, "&#39;")}'`;
+                }
                 
-                // Lista de categorias que são SERVIÇOS (Usam Prompt/Dialogo)
-                const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Manutenção', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Fretes e Mudanças', 'Jardinagem'];
+                const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Manutenção', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Fretes e Mudanças', 'Jardinagem', 'Outros'];
 
-                // LÓGICA DE CLIQUE:
                 let onclick = '';
                 
                 if (serviceCats.includes(p.categoria)) {
-                    // SE FOR SERVIÇO: Usa a lógica antiga (Prompt)
                     actionText = "Contratar Serviço";
                     onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${dSafe})`;
                 } else {
-                    // SE FOR PRODUTO (Comida, Bebida, Eletronico, Material, Outros): Vai pro Carrinho (Novo Campo)
                     actionText = (p.categoria === 'Comidas' || p.categoria === 'Bebidas') ? "Fazer Pedido" : "Comprar";
                     onclick = `App.cart.add(${pSafe}, "${p.store_id}")`;
                 }
                 
-                // LÓGICA ESPECIAL PARA ROUPAS (Seletor de Tamanho)
+                // --- CORREÇÃO AQUI: Lógica de Tamanhos ---
                 let sizeSelectorHtml = '';
-                if(p.categoria === 'Roupas' && p.sizes) {
-                    const sizesArr = p.sizes.split(',').map(s => s.trim());
-                    const options = sizesArr.map(s => `<option value="${s}">${s}</option>`).join('');
+                if(p.categoria === 'Roupas') {
+                    // Padrão caso não tenha tamanhos cadastrados
+                    let options = '<option value="Único">Único</option>';
+                    
+                    // Se tiver tamanhos cadastrados, usa eles
+                    if (p.sizes && p.sizes.trim() !== '') {
+                        const sizesArr = p.sizes.split(',').map(s => s.trim());
+                        options = sizesArr.map(s => `<option value="${s}">${s}</option>`).join('');
+                    }
+
                     sizeSelectorHtml = `
                         <div style="margin-top:5px;">
                             <label class="text-xs">Tamanho:</label>
@@ -2463,11 +2468,11 @@
                             </select>
                         </div>
                     `;
-                    // Roupas usa função especial de carrinho
+                    // Força o onclick a usar a função de adicionar roupa com tamanho
                     onclick = `App.catalog.addToCartClothing('${p.id}', '${p.store_id}', this)`;
                 }
+                // ------------------------------------------
                 
-                // LÓGICA ESPECIAL PARA HOTEIS (Datas)
                 if(p.categoria === 'Hoteis/Pousadas') {
                     if(p.disponibilidade) {
                         const [start, end] = p.disponibilidade.split('|');
@@ -2476,7 +2481,6 @@
                         onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", null)`;
                     }
                 } 
-                // LÓGICA ESPECIAL PARA GESSO (Orçamento)
                 else if (p.categoria === 'Serviços de Gesso' && p.gesso_info) {
                     actionText = "Orçamento";
                     onclick = `App.client.openBudget(${pSafe})`;
@@ -2486,13 +2490,13 @@
                 let actionBtn = `<button class="btn ${serviceCats.includes(p.categoria)?'btn-secondary':'btn-success'} btn-full" style="margin-top:10px" onclick='${onclick}'>${actionText}</button>`;
                 let chatBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>`;
 
-                // Monta a galeria de imagens
                 let imagesHtml = '';
                 if (p.galeria && Array.isArray(p.galeria) && p.galeria.length > 0) {
                     const imgs = p.galeria.map(url => `<img src="${url}" class="gallery-img" loading="lazy">`).join('');
-                    imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery">${imgs}</div>${p.galeria.length > 1 ? '<div class="gallery-badge"><i class="ri-image-line"></i> ' + p.galeria.length + ' fotos</div>' : ''}</div>`;
+                    imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery">${imgs}</div><div class="gallery-badge"><i class="ri-image-line"></i> ${p.galeria.length} fotos</div></div>`;
                 } else {
-                    imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery"><img src="${p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto'}" class="gallery-img"></div></div>`;
+                    const imgUrl = (p.galeria && p.galeria.length > 0) ? p.galeria[0] : (p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto');
+                    imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery"><img src="${imgUrl}" class="gallery-img"></div></div>`;
                 }
 
                 return `
