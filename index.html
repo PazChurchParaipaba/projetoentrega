@@ -1057,7 +1057,7 @@
         </div>
     </div>
 
- <script>
+<script>
         const CONFIG = {
             sbUrl: 'https://groezaseypdbpgymgpvo.supabase.co',
             sbKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdyb2V6YXNleXBkYnBneW1ncHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNjkxNjYsImV4cCI6MjA4MTY0NTE2Nn0.5U5QeoGmZn_i9Y8POoUCkatBUAdSW-cjHRyfxpm_pyM',
@@ -1070,33 +1070,16 @@
 
         const App = {
             state: { 
-                user: null, 
-                profile: null, 
-                tempRole: null, 
-                deferredPrompt: null, 
-                mapInstance: null, 
-                marker: null, 
-                watchId: null, 
-                activeOrder: null, 
-                storeId: null, 
-                pendingPayment: null, 
-                brickController: null, 
-                pixInterval: null, 
-                activeChatStore: null, 
-                activeChatClient: null,
-                chatSub: null,
-                currentBudgetTotal: 0,
-                mediaRecorder: null,
-                audioChunks: [],
-                cart: [], 
-                currentComanda: null, 
-                paymentSplits: [], 
-                comandaTotal: 0, 
-                currentComandaItems: [], 
+                user: null, profile: null, tempRole: null, deferredPrompt: null, 
+                mapInstance: null, marker: null, watchId: null, activeOrder: null, 
+                storeId: null, pendingPayment: null, brickController: null, 
+                pixInterval: null, activeChatStore: null, activeChatClient: null,
+                chatSub: null, currentBudgetTotal: 0, mediaRecorder: null,
+                audioChunks: [], cart: [], currentComanda: null, 
+                paymentSplits: [], comandaTotal: 0, currentComandaItems: [],
                 currentMesaNum: null
             },
             
-            // UTILS NO TOPO PARA EVITAR ERRO DE INICIALIZAÇÃO
             utils: {
                 toast: (msg, type='success') => { 
                     const c = document.getElementById('toast-container'); 
@@ -1106,33 +1089,20 @@
                     c.appendChild(e); 
                     setTimeout(()=>e.remove(), 4000); 
                 },
-                
                 showChatNotification: (name, msg, clientId) => {
                     const c = document.getElementById('store-notifications');
                     const e = document.createElement('div');
                     e.className = 'chat-alert-card';
-                    e.innerHTML = `
-                        <div>
-                            <div style="font-weight:bold; color:var(--primary)">Nova mensagem de ${name}</div>
-                            <div style="font-size:0.9rem; color:var(--text-muted); margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">"${msg}"</div>
-                        </div>
-                        <button class="btn btn-sm btn-info" onclick="App.chat.open('${App.state.storeId}', '${clientId}'); this.parentElement.remove()">Responder</button>
-                    `;
+                    e.innerHTML = `<div><div style="font-weight:bold; color:var(--primary)">Nova mensagem de ${name}</div><div style="font-size:0.9rem; color:var(--text-muted); margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">"${msg}"</div></div><button class="btn btn-sm btn-info" onclick="App.chat.open('${App.state.storeId}', '${clientId}'); this.parentElement.remove()">Responder</button>`;
                     c.appendChild(e);
                     setTimeout(() => e.remove(), 10000);
                 },
-
                 setupPWA: () => { 
                     const manifest = { "name": "NexLog", "short_name": "NexLog", "start_url": window.location.href, "display": "standalone", "background_color": "#ffffff", "theme_color": "#2563eb", "icons": [{ "src": "https://raw.githubusercontent.com/PazChurchParaipaba/projetoentrega/refs/heads/main/logo.png", "sizes": "192x192", "type": "image/png" }] }; 
                     const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'}); 
                     document.querySelector('#dynamic-manifest').setAttribute('href', URL.createObjectURL(blob)); 
-                    window.addEventListener('beforeinstallprompt', (e) => { 
-                        e.preventDefault(); 
-                        App.state.deferredPrompt = e; 
-                        document.getElementById('pwa-banner').style.display = 'flex'; 
-                    }); 
+                    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); App.state.deferredPrompt = e; document.getElementById('pwa-banner').style.display = 'flex'; }); 
                 },
-                
                 setupCategories: () => {
                     const catList = document.getElementById('category-list');
                     const catSelect = document.getElementById('new-prod-cat');
@@ -1305,7 +1275,6 @@
                     App.state.storeId = store.id;
                     App.state.currentStore = store;
 
-                    // Carrega configurações de Logística
                     document.getElementById('store-pickup-address').value = store.endereco_retirada || '';
                     document.getElementById('store-delivery-fee').value = store.taxa_entrega_padrao || '';
 
@@ -1329,7 +1298,6 @@
                     }
 
                     App.store.loadComandas();
-                    // Carrega Cupons
                     App.store.loadCoupons();
 
                     const { data: orders } = await _sb.from('orders').select('*, products(nome, categoria, delivery_info), profiles!orders_cliente_id_fkey(nome_completo, email, cpf), prestador:profiles!orders_prestador_id_fkey(nome_completo, chave_pix)').eq('store_id', store.id).order('created_at', { ascending: false });
@@ -1341,7 +1309,6 @@
                     App.chat.loadHistory('loja');
                 },
 
-                // --- FUNÇÕES DOS QUADRADINHOS (ADMIN) ---
                 renderAdminSizes: (existingSizesStr = "") => {
                     const sizes = ['PP', 'P', 'M', 'G', 'GG', 'XG', '34', '36', '38', '40', '42', '44', '46', '48', '50', 'Único'];
                     const container = document.getElementById('admin-size-list');
@@ -1362,22 +1329,15 @@
                         document.getElementById('clothing-sizes').value = existingSizesStr;
                     }
                 },
-
                 updateHiddenSizeInput: () => {
                     const selected = Array.from(document.querySelectorAll('.size-box.admin-selected')).map(el => el.innerText);
                     document.getElementById('clothing-sizes').value = selected.join(',');
                 },
-                // ----------------------------------------
                 
                 saveLogistics: async () => {
                     const addr = document.getElementById('store-pickup-address').value;
                     const fee = document.getElementById('store-delivery-fee').value;
-                    
-                    await _sb.from('stores').update({ 
-                        endereco_retirada: addr, 
-                        taxa_entrega_padrao: fee 
-                    }).eq('id', App.state.storeId);
-                    
+                    await _sb.from('stores').update({ endereco_retirada: addr, taxa_entrega_padrao: fee }).eq('id', App.state.storeId);
                     App.utils.toast("Configurações salvas!", "success");
                 },
                 loadComandas: async () => {
@@ -1386,11 +1346,9 @@
                     if (data) {
                         container.innerHTML = data.map(c => `
                             <div class="comanda-card bg-${c.status}" onclick="App.store.manageComanda('${c.id}', ${JSON.stringify(c.items || []).replace(/"/g, '&quot;')}, ${c.numero}, '${c.status}')">
-                                <div class="comanda-corner"></div>
-                                <div class="comanda-dot"></div>
+                                <div class="comanda-corner"></div><div class="comanda-dot"></div>
                                 <div style="position:absolute; top:5px; right:5px; font-size:0.8rem; background:rgba(0,0,0,0.2); padding:2px 6px; border-radius:4px; z-index:10;" onclick="event.stopPropagation(); App.store.deleteComanda('${c.id}')">✕</div>
-                                <div style="font-size:1.5rem;">${c.numero}</div>
-                                <div class="text-xs" style="text-transform:uppercase;">${c.status}</div>
+                                <div style="font-size:1.5rem;">${c.numero}</div><div class="text-xs" style="text-transform:uppercase;">${c.status}</div>
                             </div>
                         `).join('');
                         if(document.getElementById('comanda-list-container')) document.getElementById('comanda-list-container').innerHTML = container.innerHTML;
@@ -1575,8 +1533,9 @@
                     document.getElementById('new-prod-file').value = ""; 
                     document.getElementById('new-prod-desc').value = "";
                     
-                    App.store.renderAdminSizes(""); // Inicializa quadradinhos vazios
-
+                    App.store.renderAdminSizes(""); 
+                    document.getElementById('clothing-sizes').value = "";
+                    
                     document.getElementById('new-prod-cat').value = CONFIG.categories[0];
                     App.store.checkCategory(CONFIG.categories[0]);
                     document.getElementById('product-modal').style.display = 'flex';
@@ -1591,7 +1550,6 @@
                     document.getElementById('new-prod-promo').checked = p.promocao;
                     document.getElementById('new-prod-desc').value = p.descricao || "";
                     
-                    // Inicializa quadradinhos com valores
                     App.store.renderAdminSizes(p.sizes || "");
 
                     if(p.gesso_info) {
@@ -1643,8 +1601,6 @@
                     const cat = document.getElementById('new-prod-cat').value;
                     const promo = document.getElementById('new-prod-promo').checked;
                     const descricao = document.getElementById('new-prod-desc').value;
-                    
-                    // CAPTURA OS TAMANHOS DO CAMPO HIDDEN
                     const sizes = document.getElementById('clothing-sizes').value;
 
                     const fileInput = document.getElementById('new-prod-file');
@@ -1819,8 +1775,7 @@
                     }
                 }
             },
-            
-            // --- O BLOCO ADMIN FOI REINSERIDO AQUI ---
+
             admin: {
                 createComandas: async () => {
                     const start = parseInt(document.getElementById('comanda-start').value);
@@ -1840,19 +1795,16 @@
                     const rate = document.getElementById('staff-rate').value;
                     if(!name || !email || !pass) return alert("Preencha todos os campos");
                     
-                    // 1. Cria o perfil de usuário
                     const { data: newUser, error } = await _sb.from('profiles').insert({
                         nome_completo: name, email: email, password: pass, role: role, is_verified: true
                     }).select().single();
                     
                     if(error) return alert("Erro no perfil: " + error.message);
                     
-                    // 2. Vincula à loja
                     await _sb.from('store_staff').insert({ store_id: App.state.storeId, profile_id: newUser.id, cargo: role, taxa_servico: rate });
                     alert("Funcionário cadastrado!");
                 }
             },
-            // ------------------------------------------
 
             cart: {
                 activeCoupon: null,
@@ -2042,136 +1994,146 @@
                 }
             },
             
-           catalog: {
-            currentCat: 'Todos',
-            filter: (cat, btn) => {
-                document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
-                if(btn) btn.classList.add('active');
-                App.catalog.currentCat = cat;
-                App.catalog.load();
-            },
-            
-            selectSize: (element) => {
-                const parent = element.parentElement;
-                const boxes = parent.getElementsByClassName('size-box');
-                for (let box of boxes) { box.classList.remove('selected'); }
-                element.classList.add('selected');
-            },
+            catalog: {
+                currentCat: 'Todos',
+                filter: (cat, btn) => {
+                    document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+                    if(btn) btn.classList.add('active');
+                    App.catalog.currentCat = cat;
+                    App.catalog.load();
+                },
 
-            load: async () => {
-                let query = _sb.from('products').select('*, stores(nome_loja)');
-                if(App.catalog.currentCat !== 'Todos') query = query.eq('categoria', App.catalog.currentCat);
-                const { data } = await query;
-                const promos = data?.filter(p => p.promocao);
-                const normal = data?.filter(p => !p.promocao);
-                let html = '';
-                if(promos && promos.length > 0) {
-                    html += `<div style="grid-column:1/-1; margin-bottom:10px;"><h3 style="color:var(--danger)">🔥 Ofertas em Destaque</h3></div>`;
-                    html += promos.map(p => App.catalog.renderCard(p)).join('');
-                    if(normal && normal.length > 0) html += `<div style="grid-column:1/-1; margin:20px 0 10px 0;"><h3 style="color:var(--primary)">Outros Serviços</h3></div>`;
-                }
-                html += normal?.map(p => App.catalog.renderCard(p)).join('');
-                document.getElementById('public-catalog').innerHTML = html || '<p style="grid-column:1/-1; text-align:center">Nenhuma oferta nesta categoria.</p>';
-            },
-
-            renderCard: (p) => {
-                let dispInfo = '';
-                let actionText = "Adicionar ao Carrinho"; 
-                
-                // Tratamento seguro de texto para evitar erros de sintaxe
-                const pSafe = JSON.stringify(p).replace(/"/g, '&quot;').replace(/'/g, "&#39;").replace(/\n/g, " ");   
-                    
-                let dSafe = 'null';
-                if(p.delivery_info) {
-                    dSafe = `'${JSON.stringify(p.delivery_info).replace(/"/g, '&quot;').replace(/'/g, "&#39;")}'`;
-                }
-                
-                const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Pedreiros', 'Jardinagem', 'Outros'];
-                // Categorias que devem perguntar sobre bebida ou ir para fluxo de delivery direto
-                const foodCats = ['Comidas', 'Bebidas'];
-
-                let onclick = '';
-                
-                // 1. Lógica para SERVIÇOS
-                if (serviceCats.includes(p.categoria)) {
-                    actionText = "Contratar Serviço";
-                    onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${dSafe})`;
-                } 
-                // 2. Lógica para COMIDAS (Chama confirmOrder para perguntar da bebida e evita erro de sintaxe)
-                else if (foodCats.includes(p.categoria)) {
-                    actionText = "Fazer Pedido";
-                    onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${dSafe})`;
-                }
-                // 3. Lógica para PRODUTOS COMUNS (Vai pro carrinho direto)
-                else {
-                    actionText = "Comprar";
-                    onclick = `App.cart.add(${pSafe}, "${p.store_id}")`;
-                }
-                
-                // --- RENDERIZAÇÃO DOS QUADRADINHOS (ROUPAS) ---
-                let sizeSelectorHtml = '';
-                const containerId = `size-container-${p.id}`; 
-                
-                if(p.categoria === 'Roupas') {
-                    let chips = '';
-                    if (p.sizes && p.sizes.trim() !== '') {
-                        const sizesArr = p.sizes.split(',').map(s => s.trim());
-                        chips = sizesArr.map(s => `<div class="size-box" onclick="App.catalog.selectSize(this)">${s}</div>`).join('');
-                    } else {
-                        chips = `<div class="size-box selected" onclick="App.catalog.selectSize(this)">Único</div>`;
+                selectSize: (element) => {
+                    const parent = element.parentElement;
+                    const boxes = parent.getElementsByClassName('size-box');
+                    for (let box of boxes) {
+                        box.classList.remove('selected');
                     }
-                    sizeSelectorHtml = `<div style="margin-top:10px;"><label class="text-xs" style="font-weight:bold; color:#555;">Escolha o Tamanho:</label><div id="${containerId}" class="size-selector-container">${chips}</div></div>`;
-                    
-                    // Roupas tem fluxo especial de carrinho
-                    onclick = `App.catalog.addToCartClothing('${p.id}', '${p.store_id}', '${containerId}')`;
-                }
+                    element.classList.add('selected');
+                },
+
+                load: async () => {
+                    let query = _sb.from('products').select('*, stores(nome_loja)');
+                    if(App.catalog.currentCat !== 'Todos') query = query.eq('categoria', App.catalog.currentCat);
+                    const { data } = await query;
+                    const promos = data?.filter(p => p.promocao);
+                    const normal = data?.filter(p => !p.promocao);
+                    let html = '';
+                    if(promos && promos.length > 0) {
+                        html += `<div style="grid-column:1/-1; margin-bottom:10px;"><h3 style="color:var(--danger)">🔥 Ofertas em Destaque</h3></div>`;
+                        html += promos.map(p => App.catalog.renderCard(p)).join('');
+                        if(normal && normal.length > 0) html += `<div style="grid-column:1/-1; margin:20px 0 10px 0;"><h3 style="color:var(--primary)">Outros Serviços</h3></div>`;
+                    }
+                    html += normal?.map(p => App.catalog.renderCard(p)).join('');
+                    document.getElementById('public-catalog').innerHTML = html || '<p style="grid-column:1/-1; text-align:center">Nenhuma oferta nesta categoria.</p>';
+                },
                 
-                // Detalhes extras
-                if(p.categoria === 'Hoteis/Pousadas' && p.disponibilidade) {
-                     onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", null)`;
-                } 
-                else if (p.categoria === 'Serviços de Gesso' && p.gesso_info) {
-                    actionText = "Orçamento";
-                    onclick = `App.client.openBudget(${pSafe})`;
-                }
-
-                let imagesHtml = '';
-                if (p.galeria && Array.isArray(p.galeria) && p.galeria.length > 0) {
-                    const imgs = p.galeria.map(url => `<img src="${url}" class="gallery-img" loading="lazy">`).join('');
-                    imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery">${imgs}</div><div class="gallery-badge"><i class="ri-image-line"></i> ${p.galeria.length} fotos</div></div>`;
-                } else {
-                    const imgUrl = p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto';
-                    imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery"><img src="${imgUrl}" class="gallery-img"></div></div>`;
-                }
-
-                return `
-                    <div class="card">
-                        ${p.promocao ? '<div class="badge badge-promo">PROMOÇÃO</div>' : ''}
-                        ${imagesHtml}
-                        <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div>
-                        <h4>${p.nome}</h4>
-                        <p class="text-sm text-muted" style="margin-bottom:5px;">${p.descricao || ''}</p>
-                        <h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
+                renderCard: (p) => {
+                    let dispInfo = '';
+                    let actionText = "Adicionar ao Carrinho"; 
+                    
+                    const pSafe = JSON.stringify(p).replace(/"/g, '&quot;').replace(/'/g, "&#39;").replace(/\n/g, " ");   
                         
-                        ${sizeSelectorHtml} 
-                        ${dispInfo}
-                        <button class="btn ${serviceCats.includes(p.categoria)?'btn-secondary':'btn-success'} btn-full" style="margin-top:10px" onclick="${onclick}">${actionText}</button>
-                        <button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>
-                    </div>`;
-            },
-            
-            fetchPublic: async () => { App.catalog.load(); },
+                    let dSafe = 'null';
+                    if(p.delivery_info) {
+                        dSafe = `'${JSON.stringify(p.delivery_info).replace(/"/g, '&quot;').replace(/'/g, "&#39;")}'`;
+                    }
+                    
+                    const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Pedreiros', 'Jardinagem', 'Outros'];
+                    const foodCats = ['Comidas', 'Bebidas']; // Categorias que perguntam sobre bebida
 
-            addToCartClothing: async (pid, sid, containerId) => {
-                const container = document.getElementById(containerId);
-                const selected = container ? container.querySelector('.selected') : null;
-                if (!selected) { alert("Por favor, selecione um tamanho clicando na opção desejada."); return; }
-                const tamanho = selected.innerText;
-                const { data: p } = await _sb.from('products').select('*').eq('id', pid).single();
-                const prodToAdd = { ...p, nome: `${p.nome} (Tam: ${tamanho})` };
-                App.cart.add(prodToAdd, sid);
-            }
-        },
+                    let onclick = '';
+                    
+                    // 1. Lógica para SERVIÇOS
+                    if (serviceCats.includes(p.categoria)) {
+                        actionText = "Contratar Serviço";
+                        onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${dSafe})`;
+                    } 
+                    // 2. Lógica para COMIDAS (Chama confirmOrder para perguntar da bebida e evita erro de sintaxe)
+                    else if (foodCats.includes(p.categoria)) {
+                        actionText = "Fazer Pedido";
+                        onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${dSafe})`;
+                    }
+                    // 3. Lógica para PRODUTOS COMUNS (Vai pro carrinho direto)
+                    else {
+                        actionText = "Comprar";
+                        onclick = `App.cart.add(${pSafe}, "${p.store_id}")`;
+                    }
+                    
+                    let sizeSelectorHtml = '';
+                    const containerId = `size-container-${p.id}`; 
+                    
+                    if(p.categoria === 'Roupas') {
+                        let chips = '';
+                        if (p.sizes && p.sizes.trim() !== '') {
+                            const sizesArr = p.sizes.split(',').map(s => s.trim());
+                            chips = sizesArr.map(s => `<div class="size-box" onclick="App.catalog.selectSize(this)">${s}</div>`).join('');
+                        } else {
+                            chips = `<div class="size-box selected" onclick="App.catalog.selectSize(this)">Único</div>`;
+                        }
+
+                        sizeSelectorHtml = `
+                            <div style="margin-top:10px;">
+                                <label class="text-xs" style="font-weight:bold; color:#555;">Escolha o Tamanho:</label>
+                                <div id="${containerId}" class="size-selector-container">
+                                    ${chips}
+                                </div>
+                            </div>
+                        `;
+                        // Roupas tem fluxo especial de carrinho
+                        onclick = `App.catalog.addToCartClothing('${p.id}', '${p.store_id}', '${containerId}')`;
+                    }
+                    
+                    if(p.categoria === 'Hoteis/Pousadas' && p.disponibilidade) {
+                         onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", null)`;
+                    } 
+                    else if (p.categoria === 'Serviços de Gesso' && p.gesso_info) {
+                        actionText = "Orçamento";
+                        onclick = `App.client.openBudget(${pSafe})`;
+                    }
+
+                    let imagesHtml = '';
+                    if (p.galeria && Array.isArray(p.galeria) && p.galeria.length > 0) {
+                        const imgs = p.galeria.map(url => `<img src="${url}" class="gallery-img" loading="lazy">`).join('');
+                        imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery">${imgs}</div><div class="gallery-badge"><i class="ri-image-line"></i> ${p.galeria.length} fotos</div></div>`;
+                    } else {
+                        const imgUrl = p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto';
+                        imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery"><img src="${imgUrl}" class="gallery-img"></div></div>`;
+                    }
+
+                    return `
+                        <div class="card">
+                            ${p.promocao ? '<div class="badge badge-promo">PROMOÇÃO</div>' : ''}
+                            ${imagesHtml}
+                            <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div>
+                            <h4>${p.nome}</h4>
+                            <p class="text-sm text-muted" style="margin-bottom:5px;">${p.descricao || ''}</p>
+                            <h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
+                            
+                            ${sizeSelectorHtml} 
+                            ${dispInfo}
+                            <button class="btn ${serviceCats.includes(p.categoria)?'btn-secondary':'btn-success'} btn-full" style="margin-top:10px" onclick="${onclick}">${actionText}</button>
+                            <button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>
+                        </div>`;
+                },
+                
+                fetchPublic: async () => { App.catalog.load(); },
+
+                addToCartClothing: async (pid, sid, containerId) => {
+                    const container = document.getElementById(containerId);
+                    const selected = container ? container.querySelector('.selected') : null;
+                    
+                    if (!selected) {
+                        alert("Por favor, selecione um tamanho clicando na opção desejada.");
+                        return;
+                    }
+                    const tamanho = selected.innerText;
+
+                    const { data: p } = await _sb.from('products').select('*').eq('id', pid).single();
+                    const prodToAdd = { ...p, nome: `${p.nome} (Tam: ${tamanho})` };
+                    App.cart.add(prodToAdd, sid);
+                }
+            },
 
             payment: {
                 openSplitModal: (comandaId, items, numeroMesa) => {
@@ -2233,6 +2195,7 @@
                     else if(App.waiter && App.waiter.loadTables) App.waiter.loadTables();
                 },
                 open: async (total, orderPayload) => {
+                    // TRAVA DE LOGIN
                     if(!App.state.user) {
                          App.utils.toast("Faça login!", "warning");
                          App.router.go('auth');
@@ -2255,6 +2218,7 @@
                 },
                 renderBrick: async (amount) => {
                     const builder = mpInstance.bricks();
+                    // CORREÇÃO ERRO EMAIL NULL
                     const userEmail = App.state.profile?.email || 'guest@nexlog.com';
                     
                     App.state.brickController = await builder.create("payment", "payment-brick_container", {
@@ -2340,7 +2304,7 @@
                         if(!address) return; // Cancelou o prompt
                     }
 
-                    // 3. LÓGICA DA BEBIDA (RESTAURADA)
+                    // 3. LÓGICA DA BEBIDA (RESTAURADA E CORRIGIDA)
                     if (category === 'Comidas') {
                         if (confirm("Você vai querer beber alguma coisa?")) {
                             App.utils.toast("Filtrando bebidas desta loja...", "info");
@@ -2349,7 +2313,6 @@
                             const { data } = await query;
                             
                             // Mostra botão para finalizar o pedido original
-                            // (Aqui usamos finalizeCart para recuperar o pedido da comida que ficou pendente)
                             let html = `
                                 <div style="grid-column:1/-1; margin-bottom:10px; background:#f0fdf4; padding:15px; border-radius:8px; border:1px solid #bbf7d0;">
                                     <h3 style="color:var(--success)">🥤 Bebidas da Loja</h3>
@@ -2374,7 +2337,6 @@
                     let feeVal = 0;
                     if (deliveryInfoRaw && deliveryInfoRaw !== 'null') {
                         try {
-                            // Limpa aspas extras se houver (o replace do renderCard pode ter adicionado aspas simples)
                             const cleanJson = deliveryInfoRaw.replace(/^'|'$/g, "");
                             const d = JSON.parse(cleanJson);
                             const val = parseFloat(d.fee_val) || 0;
@@ -2383,7 +2345,7 @@
                             else feeVal = val;
                             
                             if(feeVal > 0) alert(`Será adicionada uma taxa de entrega de R$ ${feeVal.toFixed(2)}`);
-                        } catch(e) { console.log("Erro taxa:", e); }
+                        } catch(e) {}
                     }
 
                     const serviceCats = ['Fretes e Mudanças', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Manutenção Eletrodomésticos', 'Jardinagem', 'Serviços de Manutenção', 'Outros'];
@@ -2409,13 +2371,11 @@
                     });
                 },
                 
-                // Função auxiliar para quando o usuário desiste da bebida ou já está na tela de bebidas
                 finalizeCart: async (pid, sid, price, address) => {
                      const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', sid).single();
                      const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
                      mpInstance = new MercadoPago(publicKeyToUse);
                      
-                     // Recalcula taxa (simplificado aqui, assume taxa fixa ou zero se não processada antes)
                      const commission = price * 0.10;
                      
                      App.payment.open(price, { 
