@@ -992,6 +992,10 @@
         <strong>Retirar em:</strong> <span id="txt-pickup-addr">...</span>
     </div>
 </div>
+            <div id="delivery-address-container" style="margin-top:15px;">
+    <label class="text-sm font-bold">Endereço de Entrega:</label>
+    <textarea id="cart-delivery-address" class="input-field" rows="2" placeholder="Rua, Número, Bairro, Ponto de Referência..."></textarea>
+</div>
             <div class="modal-body">
                 <div id="cart-items-list" style="margin-bottom: 1rem;"></div>
                 <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; margin-top:10px; text-align:right;">
@@ -2202,19 +2206,39 @@
                 }
             },
            cart: {
-            activeCoupon: null, // Estado para guardar cupom
+            activeCoupon: null,
+            storeSettings: null,
 
-            open: () => { document.getElementById('cart-modal').style.display = 'flex'; App.cart.render(); },
+            open: async () => { 
+                document.getElementById('cart-modal').style.display = 'flex'; 
+                
+                // Busca configurações da loja (taxa e endereço) para exibir
+                if(App.state.cart.length > 0) {
+                    const sid = App.state.cart[0].storeId;
+                    const { data } = await _sb.from('stores').select('taxa_entrega_padrao, endereco_retirada').eq('id', sid).single();
+                    App.cart.storeSettings = data;
+                    
+                    // Atualiza textos visuais do modal
+                    const fee = data?.taxa_entrega_padrao || 0;
+                    const labelFee = document.getElementById('label-delivery-fee');
+                    if(labelFee) labelFee.innerText = `R$ ${parseFloat(fee).toFixed(2)}`;
+                    
+                    const txtPickup = document.getElementById('txt-pickup-addr');
+                    if(txtPickup) txtPickup.innerText = data?.endereco_retirada || "Endereço não configurado";
+                }
+
+                App.cart.render(); 
+                App.cart.updateFloater(); 
+            },
             
             add: (product, storeId) => {
-                 // Se tentar adicionar item de outra loja, pede pra limpar
                  if (App.state.cart.length > 0 && App.state.cart[0].storeId !== storeId) {
-                     if(!confirm("Você tem itens de outra loja no carrinho. Deseja limpar o carrinho e iniciar um novo pedido?")) return;
+                     if(!confirm("Você tem itens de outra loja. Limpar carrinho?")) return;
                      App.state.cart = [];
-                     App.cart.activeCoupon = null; // Reseta cupom se trocar de loja
+                     App.cart.activeCoupon = null;
                  }
                  App.state.cart.push({ ...product, storeId });
-                 App.utils.toast("Adicionado ao carrinho!", "success");
+                 App.utils.toast("Adicionado!", "success");
                  App.cart.updateFloater();
             },
 
@@ -2222,133 +2246,134 @@
 
             applyCoupon: async () => {
                 const code = document.getElementById('cart-coupon-input').value.toUpperCase().trim();
-                if(!code) return;
-                
-                if(App.state.cart.length === 0) return App.utils.toast("Carrinho vazio", "error");
-
+                if(!code || App.state.cart.length === 0) return;
                 const storeId = App.state.cart[0].storeId;
                 
-                // Verifica no banco se o cupom existe, é da loja certa e está ativo
-                const { data, error } = await _sb.from('coupons').select('*')
-                    .eq('code', code)
-                    .eq('store_id', storeId)
-                    .eq('active', true)
-                    .single();
-                    
+                const { data, error } = await _sb.from('coupons').select('*').eq('code', code).eq('store_id', storeId).eq('active', true).single();
                 const msg = document.getElementById('coupon-msg');
                 
                 if(error || !data) {
-                    msg.innerHTML = '<span style="color:red">Cupom inválido ou expirado.</span>';
+                    msg.innerHTML = '<span style="color:red">Inválido.</span>';
                     App.cart.activeCoupon = null;
                 } else {
-                    msg.innerHTML = `<span style="color:green">Cupom de ${data.percent}% aplicado em itens de ROUPAS!</span>`;
-                    App.cart.activeCoupon = data; // Salva o cupom na memória
-                    App.cart.render(); // Re-renderiza para atualizar totais visuais
-                    App.cart.updateFloater(); // Atualiza o total flutuante
+                    msg.innerHTML = `<span style="color:green">-${data.percent}% OFF em Roupas!</span>`;
+                    App.cart.activeCoupon = data;
+                    App.cart.updateFloater(); 
+                    App.cart.render();
                 }
             },
 
             render: () => {
                  const container = document.getElementById('cart-items-list');
-                 
-                 // Se vazio
                  if(App.state.cart.length === 0) {
-                     container.innerHTML = '<p class="text-center text-muted">Carrinho vazio.</p>';
+                     container.innerHTML = '<p class="text-center text-muted">Vazio.</p>';
                      document.getElementById('cart-total-modal').innerText = "R$ 0,00";
-                     if(document.getElementById('coupon-msg')) document.getElementById('coupon-msg').innerHTML = '';
-                     App.cart.activeCoupon = null;
                      return;
                  }
-
-                 let total = 0;
                  
-                 // Gera lista de itens
                  container.innerHTML = App.state.cart.map((item, idx) => {
                      let price = item.preco;
                      let discountHtml = '';
-                     
-                     // Lógica do desconto: SÓ APLICA SE FOR ROUPA
                      if(App.cart.activeCoupon && item.categoria === 'Roupas') {
                          const discount = price * (App.cart.activeCoupon.percent / 100);
-                         price = price - discount;
-                         discountHtml = `<span class="text-xs" style="color:green; display:block;">-${App.cart.activeCoupon.percent}% OFF (Cupom)</span>`;
+                         price -= discount;
+                         discountHtml = `<span class="text-xs" style="color:green;">-${App.cart.activeCoupon.percent}%</span>`;
                      }
-                     
-                     total += price;
-                     
-                     return `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding:10px;">
-                         <div>
-                            <div style="font-weight:bold">${item.nome}</div>
-                            <div class="text-xs text-muted">R$ ${item.preco.toFixed(2)}</div>
-                            ${discountHtml}
-                            ${discountHtml ? `<div class="text-xs font-bold">Final: R$ ${price.toFixed(2)}</div>` : ''}
-                         </div>
-                         <button class="btn btn-sm btn-danger" style="width:auto;" onclick="App.cart.remove(${idx})"><i class="ri-delete-bin-line"></i></button></div>`;
+                     return `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;"><div><b>${item.nome}</b><br><span class="text-xs">R$ ${item.preco.toFixed(2)} ${discountHtml}</span></div><button class="btn btn-sm btn-danger" onclick="App.cart.remove(${idx})">X</button></div>`;
                  }).join('');
                  
-                 document.getElementById('cart-total-modal').innerText = `R$ ${total.toFixed(2)}`;
+                 App.cart.updateFloater(); 
+            },
+
+            calculateTotal: () => {
+                let productsTotal = 0;
+                App.state.cart.forEach(item => {
+                    let p = item.preco;
+                    if(App.cart.activeCoupon && item.categoria === 'Roupas') {
+                         p = p - (p * (App.cart.activeCoupon.percent / 100));
+                    }
+                    productsTotal += p;
+                });
+
+                const isDelivery = document.getElementById('method-delivery')?.checked;
+                let deliveryFee = 0;
+                
+                // Lógica de visibilidade dos campos
+                const pickupDisplay = document.getElementById('pickup-info-display');
+                const addressInputContainer = document.getElementById('delivery-address-container');
+
+                if(isDelivery && App.cart.storeSettings) {
+                    deliveryFee = parseFloat(App.cart.storeSettings.taxa_entrega_padrao || 0);
+                    if(pickupDisplay) pickupDisplay.style.display = 'none';
+                    if(addressInputContainer) addressInputContainer.style.display = 'block'; // MOSTRA O CAMPO DE ENDEREÇO
+                } else if (!isDelivery) {
+                    if(pickupDisplay) pickupDisplay.style.display = 'block';
+                    if(addressInputContainer) addressInputContainer.style.display = 'none'; // ESCONDE O CAMPO DE ENDEREÇO
+                }
+
+                return { productsTotal, deliveryFee, finalTotal: productsTotal + deliveryFee };
             },
 
             updateFloater: () => {
                  const floater = document.getElementById('cart-floater');
                  if(App.state.cart.length > 0) {
                      floater.style.display = 'flex';
-                     // Recalcula total para o botão flutuante considerando desconto
-                     let total = 0;
-                     App.state.cart.forEach(item => {
-                        let p = item.preco;
-                        if(App.cart.activeCoupon && item.categoria === 'Roupas') {
-                             p = p - (p * (App.cart.activeCoupon.percent / 100));
-                        }
-                        total += p;
-                     });
+                     const totals = App.cart.calculateTotal(); // Isso já chama a lógica de esconder/mostrar campos
                      
                      document.getElementById('cart-count').innerText = `${App.state.cart.length} itens`;
-                     document.getElementById('cart-total').innerText = `R$ ${total.toFixed(2)}`;
+                     document.getElementById('cart-total').innerText = `R$ ${totals.finalTotal.toFixed(2)}`;
+                     
+                     const modalTotal = document.getElementById('cart-total-modal');
+                     if(modalTotal) modalTotal.innerText = `R$ ${totals.finalTotal.toFixed(2)}` + (totals.deliveryFee > 0 ? ` (Frete: R$ ${totals.deliveryFee})` : '');
                  } else floater.style.display = 'none';
             },
 
             checkout: async () => {
                  if(App.state.cart.length === 0) return;
                  
-                 // Recalcula total com desconto para cobrança final
-                 let total = 0;
-                 App.state.cart.forEach(item => {
-                    let p = item.preco;
-                    if(App.cart.activeCoupon && item.categoria === 'Roupas') {
-                         p = p - (p * (App.cart.activeCoupon.percent / 100));
-                    }
-                    total += p;
-                 });
-
+                 const totals = App.cart.calculateTotal();
+                 const isDelivery = document.getElementById('method-delivery').checked;
                  const storeId = App.state.cart[0].storeId;
-                 const itemsDesc = App.state.cart.map(i => i.nome).join(', ');
+                 
+                 let address = "";
+                 
+                 if(isDelivery) {
+                     // PEGA O VALOR DO CAMPO HTML EM VEZ DO PROMPT
+                     const inputAddr = document.getElementById('cart-delivery-address').value.trim();
+                     if(!inputAddr) return alert("Por favor, preencha o campo 'Endereço de Entrega' acima.");
+                     address = `ENTREGA: ${inputAddr}`;
+                 } else {
+                     const pickupAddr = App.cart.storeSettings?.endereco_retirada || "Loja";
+                     address = `RETIRADA NA LOJA (${pickupAddr})`;
+                     if(!confirm(`Confirma a RETIRADA em:\n${pickupAddr}\n\nTotal: R$ ${totals.finalTotal.toFixed(2)}`)) return;
+                 }
+
                  document.getElementById('cart-modal').style.display = 'none';
-                 
-                 const address = prompt("Endereço de Entrega (ou Mesa):");
-                 if(!address) return;
-                 
                  App.utils.toast("Iniciando pagamento...", "info");
                  
-                 // Busca chave pix da loja
                  const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', storeId).single();
                  const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
                  mpInstance = new MercadoPago(publicKeyToUse);
                  
-                 // Abre modal de pagamento com o TOTAL JÁ COM DESCONTO
-                 App.payment.open(total, { 
+                 const itemsDesc = App.state.cart.map(i => i.nome).join(', ');
+                 
+                 App.payment.open(totals.finalTotal, { 
                      product_id: App.state.cart[0].id, 
                      store_id: storeId, 
-                     basePrice: total, 
-                     address: address + " (Itens: " + itemsDesc + ")", 
+                     basePrice: totals.finalTotal, 
+                     address: `${address} (Itens: ${itemsDesc})`, 
                      requer_montagem: false, 
-                     taxa: total * 0.15 
+                     taxa: totals.finalTotal * 0.15 
                  });
                  
-                 // Limpa o carrinho após iniciar o checkout
                  App.state.cart = [];
                  App.cart.activeCoupon = null;
                  App.cart.updateFloater();
+                 
+                 // Limpa o campo de texto para a próxima vez
+                 if(document.getElementById('cart-delivery-address')) {
+                     document.getElementById('cart-delivery-address').value = "";
+                 }
             }
         },
             catalog: {
