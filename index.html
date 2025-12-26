@@ -2426,30 +2426,28 @@
                 let dispInfo = '';
                 let actionText = "Adicionar ao Carrinho"; 
                 
-                // CORREÇÃO CRÍTICA AQUI:
-                // Tratamento robusto para aspas e quebras de linha que estavam quebrando o HTML
+                // CORREÇÃO DO ERRO DE SINTAXE:
+                // Tratamento para impedir que aspas ou enter quebrem o site
                 const pSafe = JSON.stringify(p)
                     .replace(/"/g, '&quot;')
                     .replace(/'/g, "&#39;") // Corrige erro da aspa simples
-                    .replace(/\n/g, " ");   // Remove quebras de linha que quebram o JS
+                    .replace(/\n/g, " ");   // Remove quebras de linha
                     
-                // Para o delivery info, passamos como string escapada para evitar erro no JSON.parse do client
-                let dSafe = 'null';
-                if(p.delivery_info) {
-                     dSafe = `'${JSON.stringify(p.delivery_info).replace(/"/g, '&quot;').replace(/'/g, "&#39;")}'`;
-                }
+                const dSafe = JSON.stringify(p.delivery_info || null)
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, "&#39;");
                 
-                // Lista de categorias que são SERVIÇOS (Usam Prompt/Dialogo)
-                const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Manutenção', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Fretes e Mudanças', 'Jardinagem', 'Outros'];
+                // LISTA DE O QUE É SERVIÇO (Usa a caixa de diálogo antiga)
+                const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Manutenção', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Fretes e Mudanças', 'Jardinagem'];
 
                 let onclick = '';
                 
                 if (serviceCats.includes(p.categoria)) {
                     // SE FOR SERVIÇO: Usa a lógica antiga (Prompt)
                     actionText = "Contratar Serviço";
-                    onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${dSafe})`;
+                    onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", '${dSafe}')`;
                 } else {
-                    // SE FOR PRODUTO: Vai pro Carrinho
+                    // SE FOR PRODUTO (Qualquer outro): Vai pro Carrinho (Novo Campo)
                     actionText = (p.categoria === 'Comidas' || p.categoria === 'Bebidas') ? "Fazer Pedido" : "Comprar";
                     onclick = `App.cart.add(${pSafe}, "${p.store_id}")`;
                 }
@@ -2467,7 +2465,7 @@
                             </select>
                         </div>
                     `;
-                    // Roupas usa função especial que busca o produto limpo do banco
+                    // Roupas usa função especial
                     onclick = `App.catalog.addToCartClothing('${p.id}', '${p.store_id}', this)`;
                 }
                 
@@ -2491,11 +2489,12 @@
                 let chatBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>`;
 
                 let imagesHtml = '';
-                if (p.galeria && Array.isArray(p.galeria) && p.galeria.length > 0) {
+                if (p.galeria && Array.isArray(p.galeria) && p.galeria.length > 1) {
                     const imgs = p.galeria.map(url => `<img src="${url}" class="gallery-img" loading="lazy">`).join('');
-                    imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery">${imgs}</div>${p.galeria.length > 1 ? '<div class="gallery-badge"><i class="ri-image-line"></i> ' + p.galeria.length + ' fotos</div>' : ''}</div>`;
+                    imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery">${imgs}</div><div class="gallery-badge"><i class="ri-image-line"></i> ${p.galeria.length} fotos</div></div>`;
                 } else {
-                    imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery"><img src="${p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto'}" class="gallery-img"></div></div>`;
+                    const imgUrl = (p.galeria && p.galeria.length > 0) ? p.galeria[0] : (p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto');
+                    imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery"><img src="${imgUrl}" class="gallery-img"></div></div>`;
                 }
 
                 return `
