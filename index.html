@@ -1057,7 +1057,7 @@
         </div>
     </div>
 
-    <script>
+   <script>
         const CONFIG = {
             sbUrl: 'https://groezaseypdbpgymgpvo.supabase.co',
             sbKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdyb2V6YXNleXBkYnBneW1ncHZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYwNjkxNjYsImV4cCI6MjA4MTY0NTE2Nn0.5U5QeoGmZn_i9Y8POoUCkatBUAdSW-cjHRyfxpm_pyM',
@@ -1065,6 +1065,7 @@
             mapboxToken: 'pk.eyJ1IjoiZXhhbXBsZXVzZXIiLCJhIjoiY2p5Y3Z6eG9jMDFlazNnbzQ4a3R4bWk4ZyJ9.ExampleTokenPlaceholder',
             categories: ['Comidas', 'Bebidas', 'Roupas', 'Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Manutenção', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Materiais de Construção', 'Eletrodomésticos', 'Fretes e Mudanças', 'Jardinagem', 'Outros']
         };
+        
         const _sb = supabase.createClient(CONFIG.sbUrl, CONFIG.sbKey);
         let mpInstance = null;
 
@@ -1084,15 +1085,15 @@
                 pixInterval: null, 
                 activeChatStore: null, 
                 activeChatClient: null,
-                chatSub: null,
-                currentBudgetTotal: 0,
-                mediaRecorder: null,
-                audioChunks: [],
+                chatSub: null, 
+                currentBudgetTotal: 0, 
+                mediaRecorder: null, 
+                audioChunks: [], 
                 cart: [], 
                 currentComanda: null, 
                 paymentSplits: [], 
-                comandaTotal: 0,
-                currentComandaItems: [],
+                comandaTotal: 0, 
+                currentComandaItems: [], 
                 currentMesaNum: null
             },
             
@@ -1111,6 +1112,7 @@
                     App.catalog.fetchPublic();
                 }
             },
+
             pwa: {
                 install: () => {
                     if (App.state.deferredPrompt) {
@@ -1122,6 +1124,7 @@
                     }
                 }
             },
+
             router: {
                 go: (viewId) => {
                     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
@@ -1149,6 +1152,7 @@
                     else { App.provider.init(); App.router.go('provider'); }
                 }
             },
+
             auth: {
                 switchView: (view) => {
                     ['login', 'roles', 'register', 'recover'].forEach(v => document.getElementById(`auth-state-${v}`).style.display = 'none');
@@ -1243,540 +1247,1005 @@
                 },
                 logout: () => { localStorage.removeItem('logimoveis_session'); location.reload(); }
             },
+
             store: {
-            init: async () => {
-                if (!App.state.user) return;
-                let { data: store } = await _sb.from('stores').select('*').eq('admin_id', App.state.user.id).maybeSingle();
-                if (!store) {
-                    const { data: newStore } = await _sb.from('stores').insert({ admin_id: App.state.user.id, nome_loja: 'Loja (Complete o Cadastro)' }).select().single();
-                    store = newStore;
-                }
-                App.state.storeId = store.id;
-                App.state.currentStore = store;
-
-                document.getElementById('store-pickup-address').value = store.endereco_retirada || '';
-                document.getElementById('store-delivery-fee').value = store.taxa_entrega_padrao || '';
-
-                if (store.tipo_loja === 'Restaurante') document.getElementById('admin-restaurant-panel').style.display = 'block';
-                else document.getElementById('admin-restaurant-panel').style.display = 'none';
-
-                if(store.mp_access_token) {
-                    document.getElementById('store-keys-area').style.display = 'none';
-                    document.getElementById('store-keys-locked').style.display = 'block';
-                } else {
-                    document.getElementById('store-keys-area').style.display = 'block';
-                    document.getElementById('store-keys-locked').style.display = 'none';
-                }
-
-                if(store.parceiro_exclusivo_id) {
-                    const {data: p} = await _sb.from('profiles').select('nome_completo, email').eq('id', store.parceiro_exclusivo_id).single();
-                    if(p) document.getElementById('active-partner-display').innerText = `Parceiro Vinculado: ${p.nome_completo} (${p.email})`;
-                }
-
-                App.store.loadComandas();
-                App.store.loadCoupons();
-                const { data: orders } = await _sb.from('orders').select('*, products(nome, categoria, delivery_info), profiles!orders_cliente_id_fkey(nome_completo, email, cpf), prestador:profiles!orders_prestador_id_fkey(nome_completo, chave_pix)').eq('store_id', store.id).order('created_at', { ascending: false });
-                App.store.calcMetrics(orders || []);
-                App.store.renderOrders(orders);
-                App.store.loadMyProducts();
-                App.store.listenMessages();
-                App.chat.loadHistory('loja');
-            },
-
-            // --- FUNÇÕES DOS QUADRADINHOS (ADMIN) ---
-            renderAdminSizes: (existingSizesStr = "") => {
-                const sizes = ['PP', 'P', 'M', 'G', 'GG', 'XG', '34', '36', '38', '40', '42', '44', '46', '48', '50', 'Único'];
-                const container = document.getElementById('admin-size-list');
-                if(container) {
-                    container.innerHTML = '';
-                    const existing = existingSizesStr ? existingSizesStr.split(',').map(s => s.trim()) : [];
+                init: async () => {
+                    if (!App.state.user) return;
+                    let { data: store } = await _sb.from('stores').select('*').eq('admin_id', App.state.user.id).maybeSingle();
                     
-                    sizes.forEach(s => {
-                        const div = document.createElement('div');
-                        div.className = `size-box ${existing.includes(s) ? 'admin-selected' : ''}`;
-                        div.innerText = s;
-                        div.onclick = () => {
-                            div.classList.toggle('admin-selected');
-                            App.store.updateHiddenSizeInput();
-                        };
-                        container.appendChild(div);
-                    });
-                    document.getElementById('clothing-sizes').value = existingSizesStr;
-                }
-            },
-            updateHiddenSizeInput: () => {
-                const selected = Array.from(document.querySelectorAll('.size-box.admin-selected')).map(el => el.innerText);
-                document.getElementById('clothing-sizes').value = selected.join(',');
-            },
-            // ----------------------------------------
+                    if (!store) {
+                        const { data: newStore } = await _sb.from('stores').insert({ admin_id: App.state.user.id, nome_loja: 'Loja (Complete o Cadastro)' }).select().single();
+                        store = newStore;
+                    }
+                    
+                    App.state.storeId = store.id;
+                    App.state.currentStore = store;
 
-            saveLogistics: async () => {
-                const addr = document.getElementById('store-pickup-address').value;
-                const fee = document.getElementById('store-delivery-fee').value;
-                await _sb.from('stores').update({ endereco_retirada: addr, taxa_entrega_padrao: fee }).eq('id', App.state.storeId);
-                App.utils.toast("Configurações salvas!", "success");
-            },
-            loadComandas: async () => {
-                const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', {ascending: true});
-                const container = document.getElementById('admin-comanda-grid');
-                if (data && container) {
-                    container.innerHTML = data.map(c => `
-                        <div class="comanda-card bg-${c.status}" onclick="App.store.manageComanda('${c.id}', ${JSON.stringify(c.items || []).replace(/"/g, '&quot;')}, ${c.numero}, '${c.status}')">
-                            <div class="comanda-corner"></div><div class="comanda-dot"></div>
-                            <div style="position:absolute; top:5px; right:5px; font-size:0.8rem; background:rgba(0,0,0,0.2); padding:2px 6px; border-radius:4px; z-index:10;" onclick="event.stopPropagation(); App.store.deleteComanda('${c.id}')">✕</div>
-                            <div style="font-size:1.5rem;">${c.numero}</div><div class="text-xs" style="text-transform:uppercase;">${c.status}</div>
-                        </div>`).join('');
-                    if(document.getElementById('comanda-list-container')) document.getElementById('comanda-list-container').innerHTML = container.innerHTML;
-                }
-            },
-            deleteComanda: async (id) => {
-                if(confirm("Excluir esta comanda permanentemente?")) {
-                    await _sb.from('comandas').delete().eq('id', id);
+                    // Carrega configurações de Logística
+                    document.getElementById('store-pickup-address').value = store.endereco_retirada || '';
+                    document.getElementById('store-delivery-fee').value = store.taxa_entrega_padrao || '';
+
+                    if (store.tipo_loja === 'Restaurante') {
+                        document.getElementById('admin-restaurant-panel').style.display = 'block';
+                    } else {
+                        document.getElementById('admin-restaurant-panel').style.display = 'none';
+                    }
+
+                    if(store.mp_access_token) {
+                        document.getElementById('store-keys-area').style.display = 'none';
+                        document.getElementById('store-keys-locked').style.display = 'block';
+                    } else {
+                        document.getElementById('store-keys-area').style.display = 'block';
+                        document.getElementById('store-keys-locked').style.display = 'none';
+                    }
+
+                    if(store.parceiro_exclusivo_id) {
+                        const {data: p} = await _sb.from('profiles').select('nome_completo, email').eq('id', store.parceiro_exclusivo_id).single();
+                        if(p) document.getElementById('active-partner-display').innerText = `Parceiro Vinculado: ${p.nome_completo} (${p.email})`;
+                    }
+
                     App.store.loadComandas();
-                }
-            },
-            manageComanda: (id, items, num, status) => {
-                if (status === 'livre') return alert("Comanda livre. Garçom deve abrir lançando pedidos.");
-                App.state.currentComanda = id;
-                App.state.currentComandaItems = items;
-                App.state.currentMesaNum = num;
-                App.state.comandaTotal = items.reduce((acc, i) => acc + (i.price * i.qtd), 0);
-                const itemsHtml = items.map((item, idx) => `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding:8px;"><div><span style="font-weight:bold;">${item.qtd}x ${item.nome}</span><span class="text-xs text-muted">Garçom: ${item.garcom || 'N/A'}</span></div><div style="display:flex; align-items:center; gap:10px;"><span>R$ ${(item.price * item.qtd).toFixed(2)}</span><button class="btn btn-danger btn-sm" style="padding:2px 8px;" onclick="App.store.removeItemFromComanda(${idx})"><i class="ri-delete-bin-line"></i></button></div></div>`).join('');
-                App.payment.openSplitModal(id, items, num);
-                const modalBody = document.querySelector('#split-pay-modal .modal-body');
-                const editDiv = document.createElement('div'); editDiv.id = 'admin-comanda-edit-list';
-                editDiv.innerHTML = `<h5>Itens da Mesa ${num}</h5><div style="max-height:150px; overflow-y:auto; margin-bottom:15px; border:1px solid #eee;">${itemsHtml}</div>`;
-                const old = document.getElementById('admin-comanda-edit-list'); if(old) old.remove();
-                modalBody.insertBefore(editDiv, modalBody.firstChild);
-            },
-            removeItemFromComanda: async (index) => {
-                if(!confirm("Remover este item?")) return;
-                const items = App.state.currentComandaItems;
-                items.splice(index, 1); 
-                await _sb.from('comandas').update({ items: items }).eq('id', App.state.currentComanda);
-                App.store.manageComanda(App.state.currentComanda, items, App.state.currentMesaNum, 'aberta');
-                App.store.loadComandas();
-            },
-            filterHistory: async () => {
-                const dateStr = document.getElementById('history-date').value;
-                if(!dateStr) return alert("Selecione uma data");
-                const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).eq('status', 'fechada').gte('created_at', `${dateStr}T00:00:00`).lte('created_at', `${dateStr}T23:59:59`);
-                const container = document.getElementById('history-results');
-                if(!data || data.length === 0) { container.innerHTML = '<p class="text-sm text-muted">Nenhuma venda.</p>'; return; }
-                let totalDay = 0;
-                const list = data.map(c => { const val = c.total_pago || 0; totalDay += val; return `<div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px 0; font-size:0.9rem;"><span>Mesa ${c.numero}</span><strong>R$ ${val.toFixed(2)}</strong></div>`; }).join('');
-                container.innerHTML = `<div style="background:var(--success-bg); color:var(--success-dark); padding:10px; border-radius:8px; margin-bottom:10px; font-weight:bold; text-align:center;">Total: R$ ${totalDay.toFixed(2)}</div>${list}`;
-            },
-            renderOrders: (orders) => {
-                document.getElementById('store-orders-list').innerHTML = orders?.map(o => {
-                    let providerHtml = o.prestador ? `<div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:8px; margin-top:10px; font-size:0.85rem;"><strong>Prestador:</strong> ${o.prestador.nome_completo}<br><strong>Pix:</strong> ${o.prestador.chave_pix || 'N/A'}</div>` : '';
-                    let printBtn = (o.products?.categoria === 'Comidas' || o.products?.categoria === 'Bebidas') ? `<button class="btn btn-sm btn-info" style="margin-top:5px; width:auto; float:right;" onclick='App.store.printOrder(${JSON.stringify(o).replace(/"/g, '&quot;')})'><i class="ri-printer-line"></i> Imprimir</button>` : '';
-                    return `<div class="card" style="margin-bottom:1rem; border-left: 4px solid ${o.status==='pendente'?'var(--warning)':'var(--success)'};"><div style="display:flex; justify-content:space-between"><strong>${o.products?.nome}</strong><span class="badge status-${o.status}">${o.status}</span></div><p class="text-sm">Cliente: ${o.profiles?.nome_completo}</p>${printBtn}<div style="clear:both;"></div>${o.status === 'pendente' ? `<button class="btn btn-primary btn-sm btn-full" onclick="App.store.dispatch('${o.id}')">Liberar para Entrega</button>` : ''}${providerHtml}</div>`;
-                }).join('') || '<p class="text-sm">Nenhum pedido.</p>';
-            },
-            listenMessages: () => {
-                _sb.channel('store-notifications').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `store_id=eq.${App.state.storeId}` }, async (payload) => {
-                    if(payload.new.sender_id !== App.state.user.id) {
-                        const { data: sender } = await _sb.from('profiles').select('nome_completo').eq('id', payload.new.sender_id).single();
-                        App.utils.showChatNotification(sender.nome_completo, payload.new.content, payload.new.client_id);
+                    // Carrega Cupons
+                    App.store.loadCoupons();
+
+                    const { data: orders } = await _sb.from('orders').select('*, products(nome, categoria, delivery_info), profiles!orders_cliente_id_fkey(nome_completo, email, cpf), prestador:profiles!orders_prestador_id_fkey(nome_completo, chave_pix)').eq('store_id', store.id).order('created_at', { ascending: false });
+                    App.store.calcMetrics(orders || []);
+                    App.store.renderOrders(orders);
+                    
+                    App.store.loadMyProducts();
+                    App.store.listenMessages();
+                    App.chat.loadHistory('loja');
+                },
+
+                // --- FUNÇÕES DOS QUADRADINHOS (ADMIN) ---
+                renderAdminSizes: (existingSizesStr = "") => {
+                    const sizes = ['PP', 'P', 'M', 'G', 'GG', 'XG', '34', '36', '38', '40', '42', '44', '46', '48', '50', 'Único'];
+                    const container = document.getElementById('admin-size-list');
+                    if(container) {
+                        container.innerHTML = '';
+                        const existing = existingSizesStr ? existingSizesStr.split(',').map(s => s.trim()) : [];
+                        
+                        sizes.forEach(s => {
+                            const div = document.createElement('div');
+                            div.className = `size-box ${existing.includes(s) ? 'admin-selected' : ''}`;
+                            div.innerText = s;
+                            div.onclick = () => {
+                                div.classList.toggle('admin-selected');
+                                App.store.updateHiddenSizeInput();
+                            };
+                            container.appendChild(div);
+                        });
+                        document.getElementById('clothing-sizes').value = existingSizesStr;
                     }
-                }).subscribe();
-            },
-            calcMetrics: async (orders) => { 
-                 const now = new Date(); let day=0, week=0, month=0;
-                 orders.forEach(o => { if(['aceito','concluido','em_rota'].includes(o.status)){ const v = o.taxa_servico/0.15; const d=new Date(o.created_at); if(d.toDateString()===now.toDateString()) day+=v; if(d.getMonth()===now.getMonth()) month+=v; } });
-                 const {data:c}=await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).eq('status','fechada');
-                 if(c) c.forEach(x=>{ const v=x.total_pago||0; const d=new Date(x.created_at); if(d.toDateString()===now.toDateString()) day+=v; if(d.getMonth()===now.getMonth()) month+=v; });
-                 document.getElementById('metric-day').innerText=`R$ ${day.toFixed(2)}`; document.getElementById('metric-week').innerText=`R$ ${week.toFixed(2)}`; document.getElementById('metric-month').innerText=`R$ ${month.toFixed(2)}`;
-            },
-            loadMyProducts: async () => {
-                const { data } = await _sb.from('products').select('*').eq('store_id', App.state.storeId);
-                document.getElementById('store-products-list').innerHTML = data?.map(p => {
-                    // Proteção de string
-                    const pSafe = JSON.stringify(p).replace(/"/g, '&quot;').replace(/'/g, "&#39;").replace(/\n/g, " ");
-                    return `<div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;"><div><div style="font-weight:bold">${p.nome} ${p.promocao?'(Promo)':''}</div><div class="text-xs text-muted">R$ ${p.preco.toFixed(2)}</div></div><div style="display:flex; gap:5px;"><button class="btn btn-sm btn-secondary" style="width:auto" onclick='App.store.openEditProduct(${pSafe})'>Editar</button><button class="btn btn-sm btn-danger" style="width:auto; padding:5px 8px;" onclick="App.store.deleteProduct('${p.id}')"><i class="ri-delete-bin-line"></i></button></div></div>`;
-                }).join('');
-            },
-            deleteProduct: async (id) => { if(confirm("Excluir?")) { await _sb.from('products').delete().eq('id', id); App.store.loadMyProducts(); App.catalog.fetchPublic(); } },
-            openProductModal: () => {
-                document.getElementById('prod-modal-title').innerText = "Adicionar Serviço/Produto";
-                document.getElementById('btn-save-prod').innerText = "Publicar";
-                document.getElementById('edit-prod-id').value = "";
-                document.getElementById('new-prod-name').value = "";
-                document.getElementById('new-prod-price').value = "";
-                document.getElementById('new-prod-promo').checked = false;
-                document.getElementById('new-prod-desc').value = "";
+                },
+                updateHiddenSizeInput: () => {
+                    const selected = Array.from(document.querySelectorAll('.size-box.admin-selected')).map(el => el.innerText);
+                    document.getElementById('clothing-sizes').value = selected.join(',');
+                },
+                // ----------------------------------------
                 
-                // Gera os quadradinhos vazios para nova inserção
-                App.store.renderAdminSizes("");
-                
-                document.getElementById('new-prod-file').value = ""; 
-                document.getElementById('new-prod-cat').value = CONFIG.categories[0];
-                App.store.checkCategory(CONFIG.categories[0]);
-                document.getElementById('product-modal').style.display = 'flex';
-            },
-            openEditProduct: (p) => {
-                document.getElementById('prod-modal-title').innerText = "Editar";
-                document.getElementById('btn-save-prod').innerText = "Salvar";
-                document.getElementById('edit-prod-id').value = p.id;
-                document.getElementById('new-prod-cat').value = p.categoria;
-                document.getElementById('new-prod-name').value = p.nome;
-                document.getElementById('new-prod-price').value = p.preco;
-                document.getElementById('new-prod-promo').checked = p.promocao;
-                document.getElementById('new-prod-desc').value = p.descricao || "";
-                
-                // Carrega os quadradinhos com os tamanhos do produto
-                App.store.renderAdminSizes(p.sizes || "");
-                
-                if(p.delivery_info) { try{ const d=JSON.parse(p.delivery_info); document.getElementById('delivery-fee-val').value=d.fee_val; }catch(e){} }
-                
-                App.store.checkCategory(p.categoria);
-                document.getElementById('product-modal').style.display = 'flex';
-            },
-            closeProductModal: () => document.getElementById('product-modal').style.display = 'none',
-            checkCategory: (cat) => {
-                ['hotel-dates-area','gesso-options-area','delivery-options-area','clothing-options-area'].forEach(id=>document.getElementById(id).style.display='none');
-                if(cat==='Hoteis/Pousadas') document.getElementById('hotel-dates-area').style.display='block';
-                if(cat==='Serviços de Gesso') document.getElementById('gesso-options-area').style.display='block';
-                if(cat==='Comidas'||cat==='Bebidas') document.getElementById('delivery-options-area').style.display='block';
-                if(cat==='Roupas') document.getElementById('clothing-options-area').style.display='block';
-            },
-            submitProduct: async () => {
-                const id = document.getElementById('edit-prod-id').value;
-                const nome = document.getElementById('new-prod-name').value;
-                const preco = document.getElementById('new-prod-price').value;
-                const cat = document.getElementById('new-prod-cat').value;
-                const promo = document.getElementById('new-prod-promo').checked;
-                const descricao = document.getElementById('new-prod-desc').value;
-                const sizes = document.getElementById('clothing-sizes').value;
-                
-                const fileInput = document.getElementById('new-prod-file');
-                if(!nome || !preco) return App.utils.toast("Preencha nome e preço", "error");
-
-                let galeriaUrls = [];
-                if(fileInput.files.length > 0) {
-                    App.utils.toast("Enviando fotos...", "info");
-                    for(let i=0; i<fileInput.files.length; i++) {
-                        const file = fileInput.files[i];
-                        const fileName = `${Date.now()}_${i}_${file.name.replace(/\s/g,'_')}`;
-                        const {error} = await _sb.storage.from('produtos').upload(fileName, file);
-                        if(!error) { const {data} = _sb.storage.from('produtos').getPublicUrl(fileName); galeriaUrls.push(data.publicUrl); }
+                saveLogistics: async () => {
+                    const addr = document.getElementById('store-pickup-address').value;
+                    const fee = document.getElementById('store-delivery-fee').value;
+                    
+                    await _sb.from('stores').update({ 
+                        endereco_retirada: addr, 
+                        taxa_entrega_padrao: fee 
+                    }).eq('id', App.state.storeId);
+                    
+                    App.utils.toast("Configurações de entrega salvas!", "success");
+                },
+                loadComandas: async () => {
+                    const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', {ascending: true});
+                    const container = document.getElementById('admin-comanda-grid');
+                    if (data) {
+                        container.innerHTML = data.map(c => `
+                            <div class="comanda-card bg-${c.status}" onclick="App.store.manageComanda('${c.id}', ${JSON.stringify(c.items || []).replace(/"/g, '&quot;')}, ${c.numero}, '${c.status}')">
+                                <div class="comanda-corner"></div>
+                                <div class="comanda-dot"></div>
+                                <div style="position:absolute; top:5px; right:5px; font-size:0.8rem; background:rgba(0,0,0,0.2); padding:2px 6px; border-radius:4px; z-index:10;" onclick="event.stopPropagation(); App.store.deleteComanda('${c.id}')">✕</div>
+                                <div style="font-size:1.5rem;">${c.numero}</div>
+                                <div class="text-xs" style="text-transform:uppercase;">${c.status}</div>
+                            </div>
+                        `).join('');
+                        if(document.getElementById('comanda-list-container')) document.getElementById('comanda-list-container').innerHTML = container.innerHTML;
                     }
-                }
+                },
+                deleteComanda: async (id) => {
+                    if(confirm("Excluir esta comanda permanentemente?")) {
+                        await _sb.from('comandas').delete().eq('id', id);
+                        App.store.loadComandas();
+                    }
+                },
+                manageComanda: (id, items, num, status) => {
+                    if (status === 'livre') return alert("Comanda livre. Garçom deve abrir lançando pedidos.");
+                    
+                    App.state.currentComanda = id;
+                    App.state.currentComandaItems = items;
+                    App.state.currentMesaNum = num;
+                    App.state.comandaTotal = items.reduce((acc, i) => acc + (i.price * i.qtd), 0);
 
-                let deliveryInfo = null;
-                if(cat === 'Comidas' || cat === 'Bebidas') {
-                    deliveryInfo = JSON.stringify({ fee_val: document.getElementById('delivery-fee-val').value, fee_type: document.getElementById('delivery-fee-type').value });
-                }
-
-                const payload = {
-                    store_id: App.state.storeId,
-                    nome, preco: parseFloat(preco), categoria: cat, promocao: promo,
-                    descricao: descricao,
-                    sizes: sizes,
-                    delivery_info: deliveryInfo
-                };
-                if(galeriaUrls.length > 0) { payload.imagem_url = galeriaUrls[0]; payload.galeria = galeriaUrls; }
-
-                let res;
-                if(id) res = await _sb.from('products').update(payload).eq('id', id);
-                else { 
-                    if(galeriaUrls.length===0 && !id) payload.imagem_url = 'https://placehold.co/400x300?text=NexLog';
-                    res = await _sb.from('products').insert(payload); 
-                }
-
-                if(res.error) alert("Erro: "+res.error.message);
-                else { alert("Salvo!"); App.store.closeProductModal(); App.catalog.fetchPublic(); App.store.init(); }
-            },
-            saveCredentials: async () => {
-                const acc = document.getElementById('store-access-token').value.trim();
-                const pub = document.getElementById('store-public-key').value.trim();
-                if(!acc || !pub) return App.utils.toast("Preencha ambas as chaves!", "error");
-                await _sb.from('stores').update({ mp_access_token: acc, mp_public_key: pub }).eq('id', App.state.storeId);
-                App.utils.toast("Chaves salvas e protegidas!", "success");
-                App.store.init();
-            },
-            resetKeys: async () => {
-                if(confirm("Isso pausará seus recebimentos. Continuar?")) {
-                    await _sb.from('stores').update({ mp_access_token: null, mp_public_key: null }).eq('id', App.state.storeId);
-                    App.store.init();
-                }
-            },
-            linkPartner: async () => {
-                const email = document.getElementById('partner-email-input').value.trim();
-                if(!email) return App.utils.toast("Digite o email do motorista", "error");
-                const { data: user } = await _sb.from('profiles').select('id').eq('email', email).single();
-                if(!user) return App.utils.toast("Motorista não encontrado no sistema.", "error");
-                await _sb.from('stores').update({ parceiro_exclusivo_id: user.id }).eq('id', App.state.storeId);
-                App.utils.toast("Parceiro vinculado com sucesso!", "success");
-                App.store.init();
-            },
-            dispatch: async (id) => {
-                await _sb.from('orders').update({ status: 'aguardando_prestador', data_agendada: new Date().toISOString() }).eq('id', id);
-                App.utils.toast('Despachado!', 'success'); App.store.init();
-            },
-            setupPrinter: () => {
-                window.print();
-            },
-            printOrder: (order) => {
-                const store = App.state.currentStore || {};
-                const content = `
-                    <div style="font-family: monospace; width: 300px; padding: 10px; text-align: center;">
-                        <h3>${store.nome_loja || 'NEXLOG PEDIDOS'}</h3>
-                        ${store.cnpj ? `<p style="font-size:0.8rem; margin:0;">CNPJ: ${store.cnpj}</p>` : ''}
-                        ${store.whatsapp ? `<p style="font-size:0.8rem; margin:0;">Tel: ${store.whatsapp}</p>` : ''}
-                        <p style="margin-top:5px; border-bottom: 1px dashed black; padding-bottom:5px;">${new Date().toLocaleString()}</p>
-                        <p><strong>Pedido #${order.id}</strong></p>
-                        <p>Cliente: ${order.profiles?.nome_completo}</p>
-                        <hr style="border-top: 1px dashed black;">
-                        <div style="text-align: left;">
-                            <p><strong>Item:</strong> ${order.products?.nome}</p>
-                            <p><strong>Valor:</strong> R$ ${(order.taxa_servico/0.15).toFixed(2)}</p>
+                    const itemsHtml = items.map((item, idx) => `
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding:8px;">
+                            <div>
+                                <span style="font-weight:bold;">${item.qtd}x ${item.nome}</span>
+                                <span class="text-xs text-muted">Garçom: ${item.garcom || 'N/A'}</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span>R$ ${(item.price * item.qtd).toFixed(2)}</span>
+                                <button class="btn btn-danger btn-sm" style="padding:2px 8px;" onclick="App.store.removeItemFromComanda(${idx})"><i class="ri-delete-bin-line"></i></button>
+                            </div>
                         </div>
-                        <hr style="border-top: 1px dashed black;">
-                        <h3>TOTAL: R$ ${(order.taxa_servico/0.15).toFixed(2)}</h3>
-                        <p style="font-size: 0.8rem;">Obrigado pela preferência!</p>
-                    </div>
-                `;
-                const area = document.getElementById('printable-area');
-                area.innerHTML = content;
-                window.print(); 
-            },
-            createCoupon: async () => {
-                const code = document.getElementById('new-coupon-code').value.toUpperCase().trim();
-                const percent = parseInt(document.getElementById('new-coupon-percent').value);
-                
-                if(!code || !percent) return App.utils.toast("Preencha código e porcentagem", "error");
+                    `).join('');
 
-                const { error } = await _sb.from('coupons').insert({
-                    store_id: App.state.storeId,
-                    code: code,
-                    percent: percent
-                });
+                    App.payment.openSplitModal(id, items, num);
+                    
+                    const modalBody = document.querySelector('#split-pay-modal .modal-body');
+                    const editDiv = document.createElement('div');
+                    editDiv.id = 'admin-comanda-edit-list';
+                    editDiv.innerHTML = `<h5>Itens da Mesa ${num}</h5><div style="max-height:150px; overflow-y:auto; margin-bottom:15px; border:1px solid #eee;">${itemsHtml}</div>`;
+                    
+                    const old = document.getElementById('admin-comanda-edit-list');
+                    if(old) old.remove();
+                    
+                    modalBody.insertBefore(editDiv, modalBody.firstChild);
+                },
+                removeItemFromComanda: async (index) => {
+                    if(!confirm("Remover este item?")) return;
+                    const items = App.state.currentComandaItems;
+                    items.splice(index, 1); 
+                    await _sb.from('comandas').update({ items: items }).eq('id', App.state.currentComanda);
+                    App.store.manageComanda(App.state.currentComanda, items, App.state.currentMesaNum, 'aberta');
+                    App.store.loadComandas();
+                },
+                filterHistory: async () => {
+                    const dateStr = document.getElementById('history-date').value;
+                    if(!dateStr) return alert("Selecione uma data");
 
-                if(error) App.utils.toast("Erro ao criar cupom", "error");
-                else {
-                    App.utils.toast("Cupom criado!", "success");
-                    App.store.loadCoupons();
-                    document.getElementById('new-coupon-code').value = "";
-                }
-            },
-            loadCoupons: async () => {
-                const { data } = await _sb.from('coupons').select('*').eq('store_id', App.state.storeId).eq('active', true);
-                const div = document.getElementById('coupon-list-display');
-                if(!data || data.length === 0) {
-                    div.innerHTML = '<span class="text-xs text-muted">Nenhum cupom ativo.</span>';
-                    return;
-                }
-                div.innerHTML = data.map(c => `
-                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:5px; font-size:0.8rem;">
-                        <strong>${c.code} (${c.percent}%)</strong>
-                        <span style="color:red; cursor:pointer;" onclick="App.store.deleteCoupon('${c.id}')">Excluir</span>
-                    </div>
-                `).join('');
-            },
-            deleteCoupon: async (id) => {
-                if(confirm("Excluir cupom?")) {
-                    await _sb.from('coupons').delete().eq('id', id);
-                    App.store.loadCoupons();
-                }
-            }
-        },
-            filterHistory: async () => {
-    const dateStr = document.getElementById('history-date').value;
-    if(!dateStr) return alert("Selecione uma data");
+                    const { data } = await _sb.from('comandas')
+                        .select('*')
+                        .eq('store_id', App.state.storeId)
+                        .eq('status', 'fechada')
+                        .gte('created_at', `${dateStr}T00:00:00`)
+                        .lte('created_at', `${dateStr}T23:59:59`);
 
-    // Busca comandas fechadas na data selecionada (considerando fuso horário UTC do banco)
-    const { data } = await _sb.from('comandas')
-        .select('*')
-        .eq('store_id', App.state.storeId)
-        .eq('status', 'fechada')
-        .gte('created_at', `${dateStr}T00:00:00`)
-        .lte('created_at', `${dateStr}T23:59:59`);
+                    const container = document.getElementById('history-results');
+                    
+                    if(!data || data.length === 0) {
+                        container.innerHTML = '<p class="text-sm text-muted">Nenhuma venda encontrada neste dia.</p>';
+                        return;
+                    }
 
-    const container = document.getElementById('history-results');
-    
-    if(!data || data.length === 0) {
-        container.innerHTML = '<p class="text-sm text-muted">Nenhuma venda encontrada neste dia.</p>';
-        return;
-    }
+                    let totalDay = 0;
+                    const list = data.map(c => {
+                        const val = c.total_pago || 0;
+                        totalDay += val;
+                        return `<div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px 0; font-size:0.9rem;"><span>Mesa ${c.numero}</span><strong>R$ ${val.toFixed(2)}</strong></div>`;
+                    }).join('');
 
-    let totalDay = 0;
-    const list = data.map(c => {
-        const val = c.total_pago || 0;
-        totalDay += val;
-        return `
-            <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px 0; font-size:0.9rem;">
-                <span>Mesa ${c.numero}</span>
-                <strong>R$ ${val.toFixed(2)}</strong>
-            </div>
-        `;
-    }).join('');
+                    container.innerHTML = `<div style="background:var(--success-bg); color:var(--success-dark); padding:10px; border-radius:8px; margin-bottom:10px; font-weight:bold; text-align:center;">Total em ${dateStr.split('-').reverse().join('/')}: R$ ${totalDay.toFixed(2)}</div>${list}`;
+                },
+                renderOrders: (orders) => {
+                        document.getElementById('store-orders-list').innerHTML = orders?.map(o => {
+                        let providerHtml = '';
+                        if(o.prestador) {
+                            providerHtml = `<div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:8px; margin-top:10px; font-size:0.85rem;"><strong>Prestador:</strong> ${o.prestador.nome_completo}<br><strong>Chave Pix:</strong> ${o.prestador.chave_pix || 'Não inf.'}</div>`;
+                        }
+                        
+                        let printBtn = '';
+                        if(o.products?.categoria === 'Comidas' || o.products?.categoria === 'Bebidas') {
+                            const oSafe = JSON.stringify(o).replace(/"/g, '&quot;');
+                            printBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:auto; float:right;" onclick='App.store.printOrder(${oSafe})'><i class="ri-printer-line"></i> Imprimir</button>`;
+                        }
 
-    container.innerHTML = `
-        <div style="background:var(--success-bg); color:var(--success-dark); padding:10px; border-radius:8px; margin-bottom:10px; font-weight:bold; text-align:center;">
-            Total em ${dateStr.split('-').reverse().join('/')}: R$ ${totalDay.toFixed(2)}
-        </div>
-        ${list}
-    `;
-},
-            admin: {
-                 createComandas: async () => {
-                     const start = parseInt(document.getElementById('comanda-start').value);
-                     const end = parseInt(document.getElementById('comanda-end').value);
-                     if (!start || !end || end < start) return alert("Intervalo inválido");
-                     const rows = [];
-                     for(let i=start; i<=end; i++) rows.push({ store_id: App.state.storeId, numero: i, status: 'livre' });
-                     const { error } = await _sb.from('comandas').insert(rows);
-                     if(error) alert("Erro ao criar: " + error.message);
-                     else { alert(`${rows.length} comandas criadas!`); App.store.loadComandas(); }
-                 },
-                 registerStaff: async () => {
-                     const name = document.getElementById('staff-name').value;
-                     const email = document.getElementById('staff-email').value;
-                     const pass = document.getElementById('staff-pass').value;
-                     const role = document.getElementById('staff-role').value;
-                     const rate = document.getElementById('staff-rate').value;
-                     if(!name || !email || !pass) return alert("Preencha todos os campos");
-                     const { data: newUser, error } = await _sb.from('profiles').insert({
-                        nome_completo: name, email: email, password: pass, role: role, is_verified: true
-                     }).select().single();
-                     if(error) return alert("Erro no perfil: " + error.message);
-                     await _sb.from('store_staff').insert({ store_id: App.state.storeId, profile_id: newUser.id, cargo: role, taxa_servico: rate });
-                     alert("Funcionário cadastrado!");
-                 }
-            },
-           payment: {
-            openSplitModal: (comandaId, items, numeroMesa) => {
-                App.state.currentComanda = comandaId;
-                App.state.paymentSplits = [];
-                App.state.currentComandaItems = items;
-                App.state.currentMesaNum = numeroMesa;
-                let total = 0;
-                if(items && Array.isArray(items)) total = items.reduce((acc, item) => acc + (item.price * item.qtd), 0);
-                App.state.comandaTotal = total;
-                document.getElementById('split-total-due').innerText = `R$ ${total.toFixed(2)}`;
-                document.getElementById('split-remaining').innerText = `R$ ${total.toFixed(2)}`;
-                document.getElementById('split-amount').value = total.toFixed(2); 
-                document.getElementById('split-history').innerHTML = '';
-                const modalBody = document.querySelector('#split-pay-modal .modal-body');
-                const oldBtn = document.getElementById('btn-print-split-detail'); if(oldBtn) oldBtn.remove();
-                const printBtn = document.createElement('button');
-                printBtn.id = 'btn-print-split-detail'; printBtn.className = 'btn btn-info btn-sm btn-full'; printBtn.style.marginBottom = '10px'; printBtn.innerHTML = '<i class="ri-printer-line"></i> Imprimir Conferência';
-                printBtn.onclick = () => App.payment.printCheck();
-                const historyTitle = modalBody.querySelector('h5');
-                modalBody.insertBefore(printBtn, historyTitle);
-                document.getElementById('split-pay-modal').style.display = 'flex';
-            },
-            printCheck: () => {
-                const items = App.state.currentComandaItems || [];
-                const num = App.state.currentMesaNum || '?';
-                const total = App.state.comandaTotal || 0;
-                let itemsHtml = items.map(i => `<div style="display:flex; justify-content:space-between;"><span>${i.qtd}x ${i.nome}</span><span>R$ ${(i.price * i.qtd).toFixed(2)}</span></div>`).join('');
-                const content = `<div style="font-family: monospace; width: 300px; padding: 10px;"><h3 style="text-align:center;">CONFERÊNCIA</h3><p style="text-align:center; font-size:1.2rem;">MESA ${num}</p><p>${new Date().toLocaleString()}</p><hr>${itemsHtml}<hr><h3 style="text-align:right;">TOTAL: R$ ${total.toFixed(2)}</h3></div>`;
-                const area = document.getElementById('printable-area'); area.innerHTML = content; window.print();
-            },
-            toggleCardFields: () => {
-                const method = document.getElementById('split-method').value;
-                document.getElementById('card-fields').style.display = (method === 'cartao') ? 'flex' : 'none';
-            },
-            addSplit: () => {
-                const amount = parseFloat(document.getElementById('split-amount').value);
-                const method = document.getElementById('split-method').value;
-                const nsu = document.getElementById('card-nsu').value;
-                if(!amount || amount <= 0) return alert("Valor inválido");
-                App.state.paymentSplits.push({ amount, method, nsu });
-                const hist = document.getElementById('split-history');
-                hist.innerHTML = App.state.paymentSplits.map(s => `<div>- R$ ${s.amount.toFixed(2)} (${s.method.toUpperCase()})</div>`).join('');
-                const paid = App.state.paymentSplits.reduce((acc, s) => acc + s.amount, 0);
-                const remain = App.state.comandaTotal - paid;
-                document.getElementById('split-remaining').innerText = `R$ ${remain > 0 ? remain.toFixed(2) : '0.00'}`;
-                if(remain <= 0.01) {
-                    document.getElementById('btn-finish-split').disabled = false;
-                    document.getElementById('split-amount').value = 0;
-                } else {
-                    document.getElementById('split-amount').value = remain.toFixed(2);
-                }
-            },
-            finalizeSplit: async () => {
-                await _sb.from('comandas').update({ status: 'fechada', payments_info: App.state.paymentSplits, total_pago: App.state.comandaTotal }).eq('id', App.state.currentComanda);
-                App.utils.toast("Conta Fechada!", "success");
-                document.getElementById('split-pay-modal').style.display = 'none';
-                if(App.state.profile.role === 'loja_admin') App.store.init();
-                else if(App.waiter && App.waiter.loadTables) App.waiter.loadTables();
-            },
-            open: async (total, orderPayload) => {
-                // --- CORREÇÃO: LOGIN OBRIGATÓRIO (REDUNDÂNCIA) ---
-                 if(!App.state.user) {
-                     App.utils.toast("Faça login!", "warning");
-                     App.router.go('auth');
-                     return;
-                 }
-                // ------------------------------------------------
-                App.state.pendingPayment = { total, orderPayload };
-                document.getElementById('pay-total-display').innerText = `R$ ${total.toFixed(2)}`;
-                document.getElementById('payment-modal').style.display = 'flex';
-                document.getElementById('payment-brick_container').innerHTML = '';
-                const oldPix = document.getElementById('pix-display-area'); if(oldPix) oldPix.remove();
-                document.getElementById('payment-brick_container').style.display = 'block';
-                if(total <= 0) { alert("Valor zero."); App.payment.finalizeSuccess(); return; }
-                App.payment.renderBrick(total);
-            },
-            close: () => {
-                document.getElementById('payment-modal').style.display = 'none';
-                if (App.state.brickController) App.state.brickController.unmount();
-                if (App.state.pixInterval) clearInterval(App.state.pixInterval); 
-            },
-            renderBrick: async (amount) => {
-                const builder = mpInstance.bricks();
-                // CORREÇÃO DO ERRO DE EMAIL NULL
-                const userEmail = App.state.profile?.email || 'guest@nexlog.com';
-                
-                App.state.brickController = await builder.create("payment", "payment-brick_container", {
-                    initialization: { amount: amount, payer: { email: userEmail } },
-                    customization: { paymentMethods: { ticket: "all", bankTransfer: "all", creditCard: "all", debitCard: "all", maxInstallments: 3 }, visual: { style: { theme: 'default' } } },
-                    callbacks: {
-                        onReady: () => console.log("Brick Ready"),
-                        onError: (e) => console.error(e),
-                        onSubmit: async ({ formData }) => {
-                            formData.store_id = App.state.pendingPayment.orderPayload.store_id; 
-                            return new Promise((resolve, reject) => {
-                                fetch("/api/pix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData) })
-                                .then(async r => {
-                                    const data = await r.json();
-                                    if(!r.ok) { App.utils.toast(data.message || "Erro", "error"); reject(); return; }
-                                    if(data.status === 'approved') { App.utils.toast("Aprovado!", "success"); App.payment.finalizeSuccess(); resolve(); }
-                                    else if(data.status === 'pending' && data.payment_method_id === 'pix') { App.payment.showPixScreen(data); resolve(); }
-                                    else { App.utils.toast("Recusado.", "error"); reject(); }
-                                }).catch(() => { App.utils.toast("Erro Conexão", "error"); reject(); });
-                            });
+                        return `
+                        <div class="card" style="margin-bottom:1rem; border-left: 4px solid ${o.status==='pendente'?'var(--warning)':'var(--success)'};">
+                            <div style="display:flex; justify-content:space-between"><strong>${o.products?.nome}</strong><span class="badge status-${o.status}">${o.status}</span></div>
+                            <p class="text-sm">Cliente: ${o.profiles?.nome_completo}</p>
+                            ${printBtn}
+                            <div style="clear:both;"></div>
+                            ${o.status === 'pendente' ? `<button class="btn btn-primary btn-sm btn-full" onclick="App.store.dispatch('${o.id}')">Liberar para Entrega</button>` : ''}
+                            ${providerHtml}
+                        </div>`;
+                    }).join('') || '<p class="text-sm">Nenhum pedido.</p>';
+                },
+                listenMessages: () => {
+                    const myStoreId = App.state.storeId;
+                    _sb.channel('store-notifications')
+                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `store_id=eq.${myStoreId}` }, 
+                    async (payload) => {
+                        if(payload.new.sender_id !== App.state.user.id) {
+                            const { data: sender } = await _sb.from('profiles').select('nome_completo').eq('id', payload.new.sender_id).single();
+                            App.utils.showChatNotification(sender.nome_completo, payload.new.content, payload.new.client_id);
+                        }
+                    })
+                    .subscribe();
+                },
+                calcMetrics: async (orders) => {
+                    const now = new Date();
+                    let dayTotal = 0, weekTotal = 0, monthTotal = 0;
+                    
+                    orders.forEach(o => {
+                        if(['aceito', 'concluido', 'em_rota', 'aguardando_prestador'].includes(o.status)) {
+                            const val = o.taxa_servico / 0.15; 
+                            const orderDate = new Date(o.created_at);
+                            if(orderDate.toDateString() === now.toDateString()) dayTotal += val;
+                            if(orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear()) monthTotal += val;
+                            const diffTime = Math.abs(now - orderDate);
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                            if(diffDays <= 7) weekTotal += val;
+                        }
+                    });
+
+                    const { data: comandas } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).eq('status', 'fechada');
+                    
+                    if(comandas) {
+                        comandas.forEach(c => {
+                            const val = c.total_pago || 0;
+                            const cDate = new Date(c.created_at);
+                            if(cDate.toDateString() === now.toDateString()) dayTotal += val;
+                            if(cDate.getMonth() === now.getMonth()) monthTotal += val;
+                        });
+                    }
+                    
+                    document.getElementById('metric-day').innerText = `R$ ${dayTotal.toFixed(2)}`;
+                    document.getElementById('metric-week').innerText = `R$ ${weekTotal.toFixed(2)}`;
+                    document.getElementById('metric-month').innerText = `R$ ${monthTotal.toFixed(2)}`;
+                },
+                loadMyProducts: async () => {
+                    const { data } = await _sb.from('products').select('*').eq('store_id', App.state.storeId);
+                    document.getElementById('store-products-list').innerHTML = data?.map(p => {
+                        const pSafe = JSON.stringify(p).replace(/"/g, '&quot;');
+                        return `
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
+                            <div>
+                                <div style="font-weight:bold">${p.nome} ${p.promocao ? '<span style="color:red; font-size:0.7rem">(Promo)</span>' : ''}</div>
+                                <div class="text-xs text-muted">R$ ${p.preco.toFixed(2)}</div>
+                            </div>
+                            <div style="display:flex; gap:5px;">
+                                <button class="btn btn-sm btn-secondary" style="width:auto" onclick='App.store.openEditProduct(${pSafe})'>Editar</button>
+                                <button class="btn btn-sm btn-danger" style="width:auto; padding:5px 8px;" onclick="App.store.deleteProduct('${p.id}')"><i class="ri-delete-bin-line"></i></button>
+                            </div>
+                        </div>`;
+                    }).join('');
+                },
+                deleteProduct: async (id) => {
+                    if(confirm("Deseja realmente excluir este produto?")) {
+                        await _sb.from('products').delete().eq('id', id);
+                        App.utils.toast("Produto excluído!", "success");
+                        App.store.loadMyProducts();
+                        App.catalog.fetchPublic();
+                    }
+                },
+                openProductModal: () => {
+                    document.getElementById('prod-modal-title').innerText = "Adicionar Serviço/Produto";
+                    document.getElementById('btn-save-prod').innerText = "Publicar Serviço";
+                    document.getElementById('edit-prod-id').value = "";
+                    document.getElementById('new-prod-name').value = "";
+                    document.getElementById('new-prod-price').value = "";
+                    document.getElementById('new-prod-promo').checked = false;
+                    document.getElementById('gesso-price-m2').value = "";
+                    document.getElementById('gesso-labor-val').value = "";
+                    document.getElementById('delivery-fee-val').value = "";
+                    document.getElementById('new-prod-file').value = ""; 
+                    document.getElementById('new-prod-desc').value = "";
+                    
+                    App.store.renderAdminSizes(""); // Inicializa quadradinhos vazios
+
+                    document.getElementById('new-prod-cat').value = CONFIG.categories[0];
+                    App.store.checkCategory(CONFIG.categories[0]);
+                    document.getElementById('product-modal').style.display = 'flex';
+                },
+                openEditProduct: (p) => {
+                    document.getElementById('prod-modal-title').innerText = "Editar Serviço/Produto";
+                    document.getElementById('btn-save-prod').innerText = "Salvar Alterações";
+                    document.getElementById('edit-prod-id').value = p.id;
+                    document.getElementById('new-prod-cat').value = p.categoria;
+                    document.getElementById('new-prod-name').value = p.nome;
+                    document.getElementById('new-prod-price').value = p.preco;
+                    document.getElementById('new-prod-promo').checked = p.promocao;
+                    document.getElementById('new-prod-desc').value = p.descricao || "";
+                    
+                    // Inicializa quadradinhos com valores
+                    App.store.renderAdminSizes(p.sizes || "");
+
+                    if(p.gesso_info) {
+                        try {
+                            const g = typeof p.gesso_info === 'string' ? JSON.parse(p.gesso_info) : p.gesso_info;
+                            document.getElementById('gesso-price-m2').value = g.price_m2 || "";
+                            document.getElementById('gesso-labor-val').value = g.labor_val || "";
+                            document.getElementById('gesso-labor-type').value = g.labor_type || "fixed";
+                        } catch(e) {}
+                    }
+
+                    if(p.delivery_info) {
+                        try {
+                            const d = typeof p.delivery_info === 'string' ? JSON.parse(p.delivery_info) : p.delivery_info;
+                            document.getElementById('delivery-fee-val').value = d.fee_val || "";
+                            document.getElementById('delivery-fee-type').value = d.fee_type || "fixed";
+                        } catch(e) {}
+                    }
+                    
+                    App.store.checkCategory(p.categoria);
+                    document.getElementById('product-modal').style.display = 'flex';
+                },
+                closeProductModal: () => document.getElementById('product-modal').style.display = 'none',
+                checkCategory: (cat) => {
+                    document.getElementById('hotel-dates-area').style.display = 'none';
+                    document.getElementById('gesso-options-area').style.display = 'none';
+                    document.getElementById('delivery-options-area').style.display = 'none';
+                    document.getElementById('clothing-options-area').style.display = 'none';
+
+                    if(cat === 'Hoteis/Pousadas') {
+                        document.getElementById('hotel-dates-area').style.display = 'block';
+                    } else if (cat === 'Serviços de Gesso') {
+                        document.getElementById('gesso-options-area').style.display = 'block';
+                    } else if (cat === 'Comidas' || cat === 'Bebidas') {
+                        document.getElementById('delivery-options-area').style.display = 'block';
+                    } else if (cat === 'Roupas') {
+                        document.getElementById('clothing-options-area').style.display = 'block';
+                    }
+                },
+                submitProduct: async () => {
+                    if(!App.state.storeId) {
+                        alert("Erro crítico: ID da Loja não encontrado.");
+                        return;
+                    }
+
+                    const id = document.getElementById('edit-prod-id').value;
+                    const nome = document.getElementById('new-prod-name').value;
+                    const preco = document.getElementById('new-prod-price').value;
+                    const cat = document.getElementById('new-prod-cat').value;
+                    const promo = document.getElementById('new-prod-promo').checked;
+                    const descricao = document.getElementById('new-prod-desc').value;
+                    const sizes = document.getElementById('clothing-sizes').value; // Pega dos quadradinhos
+
+                    const fileInput = document.getElementById('new-prod-file');
+                    const files = fileInput.files;
+
+                    if (!nome || !preco) return App.utils.toast("Preencha nome e preço", "error");
+                    
+                    let galeriaUrls = [];
+                    
+                    if (files.length > 0) {
+                        App.utils.toast(`Enviando ${files.length} fotos... aguarde.`, "info");
+                        for (let i = 0; i < files.length; i++) {
+                            const file = files[i];
+                            const fileName = `${Date.now()}_${i}_${file.name.replace(/\s/g, '_')}`;
+                            const { error: upErr } = await _sb.storage.from('produtos').upload(fileName, file);
+                            
+                            if (!upErr) {
+                                const { data } = _sb.storage.from('produtos').getPublicUrl(fileName);
+                                galeriaUrls.push(data.publicUrl);
+                            }
                         }
                     }
-                });
-            },
-            showPixScreen: (data) => {
-                document.getElementById('payment-brick_container').style.display = 'none';
-                const qr = data.point_of_interaction.transaction_data;
-                const div = document.createElement('div'); div.id='pix-display-area'; div.style.textAlign='center';
-                div.innerHTML = `<div style="background:#f1f5f9; padding:20px; border-radius:12px; margin-bottom:15px; border:2px dashed #cbd5e1;"><img src="data:image/png;base64,${qr.qr_code_base64}" style="width:200px"></div><p class="text-xs">Copie e Cole: <input value="${qr.qr_code}" readonly style="width:100%"></p><div style="margin-top:20px; color:var(--primary)"><i class="ri-loader-4-line spin" style="font-size:2rem"></i><p>Aguardando pagamento...</p></div>`;
-                document.querySelector('#payment-modal .modal-body').appendChild(div);
-                App.payment.startPolling(data.id, App.state.pendingPayment.orderPayload.store_id);
-            },
-            startPolling: (pid, sid) => {
-                 if(App.state.pixInterval) clearInterval(App.state.pixInterval);
-                 App.state.pixInterval = setInterval(async () => { try { const res=await fetch(`/api/pix?id=${pid}&store_id=${sid}`); const d=await res.json(); if(d.status==='approved') { clearInterval(App.state.pixInterval); App.payment.finalizeSuccess(); } } catch(e){} }, 3000);
-            },
-            finalizeSuccess: async () => {
-                App.payment.close();
-                const { orderPayload } = App.state.pendingPayment;
-                await _sb.from('orders').insert({ cliente_id: App.state.user.id, product_id: orderPayload.product_id, store_id: orderPayload.store_id, endereco_destino: orderPayload.address, requer_montagem: orderPayload.requer_montagem, taxa_servico: orderPayload.taxa, status: 'pendente' });
-                App.utils.toast('Pedido realizado!', 'success'); App.router.go('cliente'); App.client.init();
-                if (orderPayload.address.includes("(Itens:")) {
-                     const content = `<div style="font-family: monospace; width: 300px; padding: 10px;"><h3 style="text-align:center;">PEDIDO COZINHA</h3><p>Cliente: ${App.state.profile.nome_completo}</p><p>Endereço: ${orderPayload.address.split('(Itens:')[0]}</p><hr><p><strong>Itens:</strong></p><p>${orderPayload.address.split('(Itens:')[1].replace(')', '')}</p></div>`;
-                     const area = document.getElementById('printable-area'); area.innerHTML = content; window.print();
+
+                    const dateStart = document.getElementById('hotel-start-date').value;
+                    const dateEnd = document.getElementById('hotel-end-date').value;
+                    let disp = null;
+                    if(cat === 'Hoteis/Pousadas' && dateStart && dateEnd) disp = `${dateStart}|${dateEnd}`;
+
+                    let gessoInfo = null;
+                    if(cat === 'Serviços de Gesso') {
+                        gessoInfo = JSON.stringify({
+                            price_m2: document.getElementById('gesso-price-m2').value,
+                            labor_val: document.getElementById('gesso-labor-val').value,
+                            labor_type: document.getElementById('gesso-labor-type').value
+                        });
+                    }
+
+                    let deliveryInfo = null;
+                    if(cat === 'Comidas' || cat === 'Bebidas') {
+                        deliveryInfo = JSON.stringify({
+                            fee_val: document.getElementById('delivery-fee-val').value,
+                            fee_type: document.getElementById('delivery-fee-type').value
+                        });
+                    }
+                    
+                    const payload = { 
+                        store_id: App.state.storeId, 
+                        nome, 
+                        preco: parseFloat(preco), 
+                        categoria: cat, 
+                        promocao: promo, 
+                        disponibilidade: disp,
+                        gesso_info: gessoInfo,
+                        delivery_info: deliveryInfo, 
+                        descricao: descricao,
+                        sizes: sizes
+                    };
+
+                    if (galeriaUrls.length > 0) {
+                        payload.imagem_url = galeriaUrls[0]; 
+                        payload.galeria = galeriaUrls;       
+                    }
+
+                    let res;
+                    if(id) {
+                        res = await _sb.from('products').update(payload).eq('id', id);
+                    } else {
+                        if(galeriaUrls.length === 0 && !id) payload.imagem_url = 'https://placehold.co/400x300?text=NexLog';
+                        res = await _sb.from('products').insert(payload);
+                    }
+
+                    if(res.error) { 
+                        alert("Erro ao salvar: " + res.error.message); 
+                    } else {
+                        alert("Produto salvo com sucesso!");
+                        App.store.closeProductModal(); 
+                        App.catalog.fetchPublic(); 
+                        App.store.init();
+                    }
+                },
+                saveCredentials: async () => {
+                    const acc = document.getElementById('store-access-token').value.trim();
+                    const pub = document.getElementById('store-public-key').value.trim();
+                    if(!acc || !pub) return App.utils.toast("Preencha ambas as chaves!", "error");
+                    await _sb.from('stores').update({ mp_access_token: acc, mp_public_key: pub }).eq('id', App.state.storeId);
+                    App.utils.toast("Chaves salvas e protegidas!", "success");
+                    App.store.init();
+                },
+                resetKeys: async () => {
+                    if(confirm("Isso pausará seus recebimentos. Continuar?")) {
+                        await _sb.from('stores').update({ mp_access_token: null, mp_public_key: null }).eq('id', App.state.storeId);
+                        App.store.init();
+                    }
+                },
+                linkPartner: async () => {
+                    const email = document.getElementById('partner-email-input').value.trim();
+                    if(!email) return App.utils.toast("Digite o email do motorista", "error");
+                    const { data: user } = await _sb.from('profiles').select('id').eq('email', email).single();
+                    if(!user) return App.utils.toast("Motorista não encontrado no sistema.", "error");
+                    await _sb.from('stores').update({ parceiro_exclusivo_id: user.id }).eq('id', App.state.storeId);
+                    App.utils.toast("Parceiro vinculado com sucesso!", "success");
+                    App.store.init();
+                },
+                dispatch: async (id) => {
+                    await _sb.from('orders').update({ status: 'aguardando_prestador', data_agendada: new Date().toISOString() }).eq('id', id);
+                    App.utils.toast('Despachado!', 'success'); App.store.init();
+                },
+                setupPrinter: () => {
+                    window.print();
+                },
+                printOrder: (order) => {
+                    const store = App.state.currentStore || {};
+                    const content = `
+                        <div style="font-family: monospace; width: 300px; padding: 10px; text-align: center;">
+                            <h3>${store.nome_loja || 'NEXLOG PEDIDOS'}</h3>
+                            ${store.cnpj ? `<p style="font-size:0.8rem; margin:0;">CNPJ: ${store.cnpj}</p>` : ''}
+                            ${store.whatsapp ? `<p style="font-size:0.8rem; margin:0;">Tel: ${store.whatsapp}</p>` : ''}
+                            <p style="margin-top:5px; border-bottom: 1px dashed black; padding-bottom:5px;">${new Date().toLocaleString()}</p>
+                            <p><strong>Pedido #${order.id}</strong></p>
+                            <p>Cliente: ${order.profiles?.nome_completo}</p>
+                            <hr style="border-top: 1px dashed black;">
+                            <div style="text-align: left;">
+                                <p><strong>Item:</strong> ${order.products?.nome}</p>
+                                <p><strong>Valor:</strong> R$ ${(order.taxa_servico/0.15).toFixed(2)}</p>
+                            </div>
+                            <hr style="border-top: 1px dashed black;">
+                            <h3>TOTAL: R$ ${(order.taxa_servico/0.15).toFixed(2)}</h3>
+                            <p style="font-size: 0.8rem;">Obrigado pela preferência!</p>
+                        </div>
+                    `;
+                    const area = document.getElementById('printable-area');
+                    area.innerHTML = content;
+                    window.print(); 
+                },
+                createCoupon: async () => {
+                    const code = document.getElementById('new-coupon-code').value.toUpperCase().trim();
+                    const percent = parseInt(document.getElementById('new-coupon-percent').value);
+                    
+                    if(!code || !percent) return App.utils.toast("Preencha código e porcentagem", "error");
+
+                    const { error } = await _sb.from('coupons').insert({
+                        store_id: App.state.storeId,
+                        code: code,
+                        percent: percent
+                    });
+
+                    if(error) App.utils.toast("Erro ao criar cupom", "error");
+                    else {
+                        App.utils.toast("Cupom criado!", "success");
+                        App.store.loadCoupons();
+                        document.getElementById('new-coupon-code').value = "";
+                    }
+                },
+                loadCoupons: async () => {
+                    const { data } = await _sb.from('coupons').select('*').eq('store_id', App.state.storeId).eq('active', true);
+                    const div = document.getElementById('coupon-list-display');
+                    if(!data || data.length === 0) {
+                        div.innerHTML = '<span class="text-xs text-muted">Nenhum cupom ativo.</span>';
+                        return;
+                    }
+                    div.innerHTML = data.map(c => `
+                        <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:5px; font-size:0.8rem;">
+                            <strong>${c.code} (${c.percent}%)</strong>
+                            <span style="color:red; cursor:pointer;" onclick="App.store.deleteCoupon('${c.id}')">Excluir</span>
+                        </div>
+                    `).join('');
+                },
+                deleteCoupon: async (id) => {
+                    if(confirm("Excluir cupom?")) {
+                        await _sb.from('coupons').delete().eq('id', id);
+                        App.store.loadCoupons();
+                    }
                 }
-            }
-        },
+            },
+            
+            cart: {
+                activeCoupon: null,
+                storeSettings: null,
+
+                open: async () => { 
+                    document.getElementById('cart-modal').style.display = 'flex'; 
+                    
+                    // Busca configurações da loja (taxa e endereço) para exibir
+                    if(App.state.cart.length > 0) {
+                        const sid = App.state.cart[0].storeId;
+                        const { data } = await _sb.from('stores').select('taxa_entrega_padrao, endereco_retirada').eq('id', sid).single();
+                        App.cart.storeSettings = data;
+                        
+                        // Atualiza textos visuais do modal (Valor da taxa e Endereço de retirada)
+                        const fee = data?.taxa_entrega_padrao || 0;
+                        const labelFee = document.getElementById('label-delivery-fee');
+                        if(labelFee) labelFee.innerText = `R$ ${parseFloat(fee).toFixed(2)}`;
+                        
+                        const txtPickup = document.getElementById('txt-pickup-addr');
+                        if(txtPickup) txtPickup.innerText = data?.endereco_retirada || "Endereço não configurado";
+                    }
+
+                    // Reseta a visualização para o padrão (Entrega selecionada)
+                    const radioDelivery = document.getElementById('method-delivery');
+                    if(radioDelivery) radioDelivery.checked = true;
+                    
+                    App.cart.toggleAddressField(); // Chama para garantir que o campo de endereço apareça
+                    App.cart.render(); 
+                    App.cart.updateFloater(); 
+                },
+
+                // NOVA FUNÇÃO: Controla a visibilidade do campo de endereço vs Info de retirada
+                toggleAddressField: () => {
+                    const isDelivery = document.getElementById('method-delivery')?.checked;
+                    const addrContainer = document.getElementById('delivery-address-container');
+                    const pickupInfo = document.getElementById('pickup-info-display');
+                    
+                    if (isDelivery) {
+                        // Se for entrega: Mostra campo de endereço, esconde info da loja
+                        if(addrContainer) addrContainer.style.display = 'block';
+                        if(pickupInfo) pickupInfo.style.display = 'none';
+                    } else {
+                        // Se for retirada: Esconde campo de endereço, mostra info da loja
+                        if(addrContainer) addrContainer.style.display = 'none';
+                        if(pickupInfo) pickupInfo.style.display = 'block';
+                    }
+                    App.cart.updateFloater(); // Recalcula o total (adiciona ou remove taxa)
+                },
+                
+                add: (product, storeId) => {
+                     if (App.state.cart.length > 0 && App.state.cart[0].storeId !== storeId) {
+                         if(!confirm("Você tem itens de outra loja. Limpar carrinho?")) return;
+                         App.state.cart = [];
+                         App.cart.activeCoupon = null;
+                     }
+                     App.state.cart.push({ ...product, storeId });
+                     App.utils.toast("Adicionado!", "success");
+                     App.cart.updateFloater();
+                },
+
+                remove: (index) => { App.state.cart.splice(index, 1); App.cart.render(); App.cart.updateFloater(); },
+
+                applyCoupon: async () => {
+                    const code = document.getElementById('cart-coupon-input').value.toUpperCase().trim();
+                    if(!code || App.state.cart.length === 0) return;
+                    const storeId = App.state.cart[0].storeId;
+                    
+                    const { data, error } = await _sb.from('coupons').select('*').eq('code', code).eq('store_id', storeId).eq('active', true).single();
+                    const msg = document.getElementById('coupon-msg');
+                    
+                    if(error || !data) {
+                        msg.innerHTML = '<span style="color:red">Inválido.</span>';
+                        App.cart.activeCoupon = null;
+                    } else {
+                        msg.innerHTML = `<span style="color:green">-${data.percent}% OFF em Roupas!</span>`;
+                        App.cart.activeCoupon = data;
+                        App.cart.updateFloater(); 
+                        App.cart.render();
+                    }
+                },
+
+                render: () => {
+                     const container = document.getElementById('cart-items-list');
+                     if(App.state.cart.length === 0) {
+                         container.innerHTML = '<p class="text-center text-muted">Vazio.</p>';
+                         document.getElementById('cart-total-modal').innerText = "R$ 0,00";
+                         return;
+                     }
+                     
+                     container.innerHTML = App.state.cart.map((item, idx) => {
+                         let price = item.preco;
+                         let discountHtml = '';
+                         if(App.cart.activeCoupon && item.categoria === 'Roupas') {
+                             const discount = price * (App.cart.activeCoupon.percent / 100);
+                             price -= discount;
+                             discountHtml = `<span class="text-xs" style="color:green;">-${App.cart.activeCoupon.percent}%</span>`;
+                         }
+                         return `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;"><div><b>${item.nome}</b><br><span class="text-xs">R$ ${item.preco.toFixed(2)} ${discountHtml}</span></div><button class="btn btn-sm btn-danger" onclick="App.cart.remove(${idx})">X</button></div>`;
+                     }).join('');
+                     
+                     App.cart.updateFloater(); 
+                },
+
+                calculateTotal: () => {
+                    let productsTotal = 0;
+                    App.state.cart.forEach(item => {
+                        let p = item.preco;
+                        if(App.cart.activeCoupon && item.categoria === 'Roupas') {
+                             p = p - (p * (App.cart.activeCoupon.percent / 100));
+                        }
+                        productsTotal += p;
+                    });
+
+                    const isDelivery = document.getElementById('method-delivery')?.checked;
+                    let deliveryFee = 0;
+                    
+                    if(isDelivery && App.cart.storeSettings) {
+                        deliveryFee = parseFloat(App.cart.storeSettings.taxa_entrega_padrao || 0);
+                    }
+
+                    return { productsTotal, deliveryFee, finalTotal: productsTotal + deliveryFee };
+                },
+
+                updateFloater: () => {
+                     const floater = document.getElementById('cart-floater');
+                     if(App.state.cart.length > 0) {
+                         floater.style.display = 'flex';
+                         const totals = App.cart.calculateTotal();
+                         
+                         document.getElementById('cart-count').innerText = `${App.state.cart.length} itens`;
+                         document.getElementById('cart-total').innerText = `R$ ${totals.finalTotal.toFixed(2)}`;
+                         
+                         const modalTotal = document.getElementById('cart-total-modal');
+                         if(modalTotal) modalTotal.innerText = `R$ ${totals.finalTotal.toFixed(2)}` + (totals.deliveryFee > 0 ? ` (Frete: R$ ${totals.deliveryFee})` : '');
+                     } else floater.style.display = 'none';
+                },
+
+                checkout: async () => {
+                     if(!App.state.user) {
+                         App.utils.toast("Faça login para finalizar a compra!", "warning");
+                         document.getElementById('cart-modal').style.display = 'none';
+                         App.router.go('auth');
+                         return;
+                     }
+                     
+                     if(App.state.cart.length === 0) return;
+                     
+                     const totals = App.cart.calculateTotal();
+                     const isDelivery = document.getElementById('method-delivery').checked;
+                     const storeId = App.state.cart[0].storeId;
+                     
+                     let address = "";
+                     
+                     if(isDelivery) {
+                         // LÓGICA NOVA: Pega o valor do input HTML (textarea)
+                         const inputAddr = document.getElementById('cart-delivery-address');
+                         const val = inputAddr ? inputAddr.value.trim() : "";
+                         
+                         if(!val) return alert("Por favor, preencha o campo 'Endereço de Entrega' acima.");
+                         
+                         address = `ENTREGA: ${val}`;
+                     } else {
+                         const pickupAddr = App.cart.storeSettings?.endereco_retirada || "Loja";
+                         address = `RETIRADA NA LOJA (${pickupAddr})`;
+                         if(!confirm(`Confirma a RETIRADA em:\n${pickupAddr}\n\nTotal: R$ ${totals.finalTotal.toFixed(2)}`)) return;
+                     }
+
+                     document.getElementById('cart-modal').style.display = 'none';
+                     App.utils.toast("Iniciando pagamento...", "info");
+                     
+                     const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', storeId).single();
+                     const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
+                     mpInstance = new MercadoPago(publicKeyToUse);
+                     
+                     const itemsDesc = App.state.cart.map(i => i.nome).join(', ');
+                     
+                     App.payment.open(totals.finalTotal, { 
+                         product_id: App.state.cart[0].id, 
+                         store_id: storeId, 
+                         basePrice: totals.finalTotal, 
+                         address: `${address} (Itens: ${itemsDesc})`, 
+                         requer_montagem: false, 
+                         taxa: totals.finalTotal * 0.15 
+                     });
+                     
+                     App.state.cart = [];
+                     App.cart.activeCoupon = null;
+                     App.cart.updateFloater();
+                     
+                     // Limpa o campo de texto para a próxima vez
+                     if(document.getElementById('cart-delivery-address')) {
+                         document.getElementById('cart-delivery-address').value = "";
+                     }
+                }
+            },
+            
+            catalog: {
+                currentCat: 'Todos',
+                filter: (cat, btn) => {
+                    document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+                    if(btn) btn.classList.add('active');
+                    App.catalog.currentCat = cat;
+                    App.catalog.load();
+                },
+
+                // --- FUNÇÃO PARA SELECIONAR TAMANHO VISUALMENTE ---
+                selectSize: (element) => {
+                    // Remove a classe 'selected' dos irmãos
+                    const parent = element.parentElement;
+                    const siblings = parent.querySelectorAll('.size-box');
+                    siblings.forEach(el => el.classList.remove('selected'));
+                    // Adiciona no clicado
+                    element.classList.add('selected');
+                },
+                // --------------------------------------------------
+
+                load: async () => {
+                    let query = _sb.from('products').select('*, stores(nome_loja)');
+                    if(App.catalog.currentCat !== 'Todos') query = query.eq('categoria', App.catalog.currentCat);
+                    const { data } = await query;
+                    const promos = data?.filter(p => p.promocao);
+                    const normal = data?.filter(p => !p.promocao);
+                    let html = '';
+                    if(promos && promos.length > 0) {
+                        html += `<div style="grid-column:1/-1; margin-bottom:10px;"><h3 style="color:var(--danger)">🔥 Ofertas em Destaque</h3></div>`;
+                        html += promos.map(p => App.catalog.renderCard(p)).join('');
+                        if(normal && normal.length > 0) html += `<div style="grid-column:1/-1; margin:20px 0 10px 0;"><h3 style="color:var(--primary)">Outros Serviços</h3></div>`;
+                    }
+                    html += normal?.map(p => App.catalog.renderCard(p)).join('');
+                    document.getElementById('public-catalog').innerHTML = html || '<p style="grid-column:1/-1; text-align:center">Nenhuma oferta nesta categoria.</p>';
+                },
+                
+                renderCard: (p) => {
+                    let dispInfo = '';
+                    let actionText = "Adicionar ao Carrinho"; 
+                    
+                    // Tratamento seguro de texto
+                    const pSafe = JSON.stringify(p).replace(/"/g, '&quot;').replace(/'/g, "&#39;").replace(/\n/g, " ");   
+                        
+                    let dSafe = 'null';
+                    if(p.delivery_info) {
+                        dSafe = `'${JSON.stringify(p.delivery_info).replace(/"/g, '&quot;').replace(/'/g, "&#39;")}'`;
+                    }
+                    
+                    const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Manutenção', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Fretes e Mudanças', 'Jardinagem', 'Outros'];
+
+                    let onclick = '';
+                    
+                    if (serviceCats.includes(p.categoria)) {
+                        // SERVIÇOS
+                        actionText = "Contratar Serviço";
+                        onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${dSafe})`;
+                    } else {
+                        // PRODUTOS
+                        actionText = (p.categoria === 'Comidas' || p.categoria === 'Bebidas') ? "Fazer Pedido" : "Comprar";
+                        onclick = `App.cart.add(${pSafe}, "${p.store_id}")`;
+                    }
+                    
+                    // --- RENDERIZAÇÃO DOS QUADRADINHOS (ROUPAS) ---
+                    let sizeSelectorHtml = '';
+                    const containerId = `size-container-${p.id}`; // ID único
+                    
+                    if(p.categoria === 'Roupas') {
+                        let chips = '';
+                        if (p.sizes && p.sizes.trim() !== '') {
+                            const sizesArr = p.sizes.split(',').map(s => s.trim());
+                            // Cria os quadradinhos clicáveis
+                            chips = sizesArr.map(s => `<div class="size-box" onclick="App.catalog.selectSize(this)">${s}</div>`).join('');
+                        } else {
+                            chips = `<div class="size-box selected" onclick="App.catalog.selectSize(this)">Único</div>`;
+                        }
+
+                        sizeSelectorHtml = `
+                            <div style="margin-top:5px;">
+                                <label class="text-xs" style="font-weight:bold; color:#555;">Escolha o Tamanho:</label>
+                                <div id="${containerId}" class="size-selector-container">
+                                    ${chips}
+                                </div>
+                            </div>
+                        `;
+                        // Função especial para buscar o tamanho selecionado visualmente
+                        onclick = `App.catalog.addToCartClothing('${p.id}', '${p.store_id}', '${containerId}')`;
+                    }
+                    // ----------------------------------------------
+                    
+                    if(p.categoria === 'Hoteis/Pousadas' && p.disponibilidade) {
+                        onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", null)`;
+                    } 
+                    else if (p.categoria === 'Serviços de Gesso' && p.gesso_info) {
+                        actionText = "Orçamento";
+                        onclick = `App.client.openBudget(${pSafe})`;
+                    }
+
+                    let imagesHtml = '';
+                    if (p.galeria && Array.isArray(p.galeria) && p.galeria.length > 0) {
+                        const imgs = p.galeria.map(url => `<img src="${url}" class="gallery-img" loading="lazy">`).join('');
+                        imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery">${imgs}</div><div class="gallery-badge"><i class="ri-image-line"></i> ${p.galeria.length} fotos</div></div>`;
+                    } else {
+                        const imgUrl = p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto';
+                        imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery"><img src="${imgUrl}" class="gallery-img"></div></div>`;
+                    }
+
+                    return `
+                        <div class="card">
+                            ${p.promocao ? '<div class="badge badge-promo">PROMOÇÃO</div>' : ''}
+                            ${imagesHtml}
+                            <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div>
+                            <h4>${p.nome}</h4>
+                            <p class="text-sm text-muted" style="margin-bottom:5px; line-height:1.2;">${p.descricao || ''}</p>
+                            <h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
+                            
+                            ${sizeSelectorHtml} 
+                            ${dispInfo}
+                            <button class="btn ${serviceCats.includes(p.categoria)?'btn-secondary':'btn-success'} btn-full" style="margin-top:10px" onclick="${onclick}">${actionText}</button>
+                            <button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>
+                        </div>`;
+                },
+                
+                fetchPublic: async () => { App.catalog.load(); },
+
+                addToCartClothing: async (pid, sid, containerId) => {
+                    // Busca o elemento selecionado no HTML
+                    const container = document.getElementById(containerId);
+                    const selected = container ? container.querySelector('.selected') : null;
+                    
+                    if (!selected) {
+                        alert("Por favor, selecione um tamanho clicando na opção desejada.");
+                        return;
+                    }
+                    const tamanho = selected.innerText;
+
+                    // Busca dados limpos do banco
+                    const { data: p } = await _sb.from('products').select('*').eq('id', pid).single();
+                    
+                    // Adiciona com o tamanho no nome
+                    const prodToAdd = { ...p, nome: `${p.nome} (Tam: ${tamanho})` };
+                    App.cart.add(prodToAdd, sid);
+                }
+
+            },
+
+            payment: {
+                openSplitModal: (comandaId, items, numeroMesa) => {
+                    App.state.currentComanda = comandaId;
+                    App.state.paymentSplits = [];
+                    App.state.currentComandaItems = items;
+                    App.state.currentMesaNum = numeroMesa;
+                    let total = 0;
+                    if(items && Array.isArray(items)) total = items.reduce((acc, item) => acc + (item.price * item.qtd), 0);
+                    App.state.comandaTotal = total;
+                    document.getElementById('split-total-due').innerText = `R$ ${total.toFixed(2)}`;
+                    document.getElementById('split-remaining').innerText = `R$ ${total.toFixed(2)}`;
+                    document.getElementById('split-amount').value = total.toFixed(2); 
+                    document.getElementById('split-history').innerHTML = '';
+                    const modalBody = document.querySelector('#split-pay-modal .modal-body');
+                    const oldBtn = document.getElementById('btn-print-split-detail'); if(oldBtn) oldBtn.remove();
+                    const printBtn = document.createElement('button');
+                    printBtn.id = 'btn-print-split-detail'; printBtn.className = 'btn btn-info btn-sm btn-full'; printBtn.style.marginBottom = '10px'; printBtn.innerHTML = '<i class="ri-printer-line"></i> Imprimir Conferência';
+                    printBtn.onclick = () => App.payment.printCheck();
+                    const historyTitle = modalBody.querySelector('h5');
+                    modalBody.insertBefore(printBtn, historyTitle);
+                    document.getElementById('split-pay-modal').style.display = 'flex';
+                },
+                printCheck: () => {
+                    const items = App.state.currentComandaItems || [];
+                    const num = App.state.currentMesaNum || '?';
+                    const total = App.state.comandaTotal || 0;
+                    let itemsHtml = items.map(i => `<div style="display:flex; justify-content:space-between;"><span>${i.qtd}x ${i.nome}</span><span>R$ ${(i.price * i.qtd).toFixed(2)}</span></div>`).join('');
+                    const content = `<div style="font-family: monospace; width: 300px; padding: 10px;"><h3 style="text-align:center;">CONFERÊNCIA</h3><p style="text-align:center; font-size:1.2rem;">MESA ${num}</p><p>${new Date().toLocaleString()}</p><hr>${itemsHtml}<hr><h3 style="text-align:right;">TOTAL: R$ ${total.toFixed(2)}</h3></div>`;
+                    const area = document.getElementById('printable-area'); area.innerHTML = content; window.print();
+                },
+                toggleCardFields: () => {
+                    const method = document.getElementById('split-method').value;
+                    document.getElementById('card-fields').style.display = (method === 'cartao') ? 'flex' : 'none';
+                },
+                addSplit: () => {
+                    const amount = parseFloat(document.getElementById('split-amount').value);
+                    const method = document.getElementById('split-method').value;
+                    const nsu = document.getElementById('card-nsu').value;
+                    if(!amount || amount <= 0) return alert("Valor inválido");
+                    App.state.paymentSplits.push({ amount, method, nsu });
+                    const hist = document.getElementById('split-history');
+                    hist.innerHTML = App.state.paymentSplits.map(s => `<div>- R$ ${s.amount.toFixed(2)} (${s.method.toUpperCase()})</div>`).join('');
+                    const paid = App.state.paymentSplits.reduce((acc, s) => acc + s.amount, 0);
+                    const remain = App.state.comandaTotal - paid;
+                    document.getElementById('split-remaining').innerText = `R$ ${remain > 0 ? remain.toFixed(2) : '0.00'}`;
+                    if(remain <= 0.01) {
+                        document.getElementById('btn-finish-split').disabled = false;
+                        document.getElementById('split-amount').value = 0;
+                    } else {
+                        document.getElementById('split-amount').value = remain.toFixed(2);
+                    }
+                },
+                finalizeSplit: async () => {
+                    await _sb.from('comandas').update({ status: 'fechada', payments_info: App.state.paymentSplits, total_pago: App.state.comandaTotal }).eq('id', App.state.currentComanda);
+                    App.utils.toast("Conta Fechada!", "success");
+                    document.getElementById('split-pay-modal').style.display = 'none';
+                    if(App.state.profile.role === 'loja_admin') App.store.init();
+                    else if(App.waiter && App.waiter.loadTables) App.waiter.loadTables();
+                },
+                open: async (total, orderPayload) => {
+                    if(!App.state.user) {
+                         App.utils.toast("Faça login!", "warning");
+                         App.router.go('auth');
+                         return;
+                    }
+
+                    App.state.pendingPayment = { total, orderPayload };
+                    document.getElementById('pay-total-display').innerText = `R$ ${total.toFixed(2)}`;
+                    document.getElementById('payment-modal').style.display = 'flex';
+                    document.getElementById('payment-brick_container').innerHTML = '';
+                    const oldPix = document.getElementById('pix-display-area'); if(oldPix) oldPix.remove();
+                    document.getElementById('payment-brick_container').style.display = 'block';
+                    if(total <= 0) { alert("Valor zero."); App.payment.finalizeSuccess(); return; }
+                    App.payment.renderBrick(total);
+                },
+                close: () => {
+                    document.getElementById('payment-modal').style.display = 'none';
+                    if (App.state.brickController) App.state.brickController.unmount();
+                    if (App.state.pixInterval) clearInterval(App.state.pixInterval); 
+                },
+                renderBrick: async (amount) => {
+                    const builder = mpInstance.bricks();
+                    // CORREÇÃO ERRO EMAIL NULL
+                    const userEmail = App.state.profile?.email || 'guest@nexlog.com';
+                    
+                    App.state.brickController = await builder.create("payment", "payment-brick_container", {
+                        initialization: { amount: amount, payer: { email: userEmail } },
+                        customization: { paymentMethods: { ticket: "all", bankTransfer: "all", creditCard: "all", debitCard: "all", maxInstallments: 3 }, visual: { style: { theme: 'default' } } },
+                        callbacks: {
+                            onReady: () => console.log("Brick Ready"),
+                            onError: (e) => console.error(e),
+                            onSubmit: async ({ formData }) => {
+                                formData.store_id = App.state.pendingPayment.orderPayload.store_id; 
+                                return new Promise((resolve, reject) => {
+                                    fetch("/api/pix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData) })
+                                    .then(async r => {
+                                        const data = await r.json();
+                                        if(!r.ok) { App.utils.toast(data.message || "Erro", "error"); reject(); return; }
+                                        if(data.status === 'approved') { App.utils.toast("Aprovado!", "success"); App.payment.finalizeSuccess(); resolve(); }
+                                        else if(data.status === 'pending' && data.payment_method_id === 'pix') { App.payment.showPixScreen(data); resolve(); }
+                                        else { App.utils.toast("Recusado.", "error"); reject(); }
+                                    }).catch(() => { App.utils.toast("Erro Conexão", "error"); reject(); });
+                                });
+                            }
+                        }
+                    });
+                },
+                showPixScreen: (data) => {
+                    document.getElementById('payment-brick_container').style.display = 'none';
+                    const qr = data.point_of_interaction.transaction_data;
+                    const div = document.createElement('div'); div.id='pix-display-area'; div.style.textAlign='center';
+                    div.innerHTML = `<div style="background:#f1f5f9; padding:20px; border-radius:12px; margin-bottom:15px; border:2px dashed #cbd5e1;"><img src="data:image/png;base64,${qr.qr_code_base64}" style="width:200px"></div><p class="text-xs">Copie e Cole: <input value="${qr.qr_code}" readonly style="width:100%"></p><div style="margin-top:20px; color:var(--primary)"><i class="ri-loader-4-line spin" style="font-size:2rem"></i><p>Aguardando pagamento...</p></div>`;
+                    document.querySelector('#payment-modal .modal-body').appendChild(div);
+                    App.payment.startPolling(data.id, App.state.pendingPayment.orderPayload.store_id);
+                },
+                startPolling: (pid, sid) => {
+                     if(App.state.pixInterval) clearInterval(App.state.pixInterval);
+                     App.state.pixInterval = setInterval(async () => { try { const res=await fetch(`/api/pix?id=${pid}&store_id=${sid}`); const d=await res.json(); if(d.status==='approved') { clearInterval(App.state.pixInterval); App.payment.finalizeSuccess(); } } catch(e){} }, 3000);
+                },
+                finalizeSuccess: async () => {
+                    App.payment.close();
+                    const { orderPayload } = App.state.pendingPayment;
+                    await _sb.from('orders').insert({ cliente_id: App.state.user.id, product_id: orderPayload.product_id, store_id: orderPayload.store_id, endereco_destino: orderPayload.address, requer_montagem: orderPayload.requer_montagem, taxa_servico: orderPayload.taxa, status: 'pendente' });
+                    App.utils.toast('Pedido realizado!', 'success'); App.router.go('cliente'); App.client.init();
+                    
+                    if (orderPayload.address.includes("(Itens:")) {
+                        const content = `<div style="font-family: monospace; width: 300px; padding: 10px;"><h3 style="text-align:center;">PEDIDO COZINHA</h3><p>Cliente: ${App.state.profile.nome_completo}</p><p>Endereço: ${orderPayload.address.split('(Itens:')[0]}</p><hr><p><strong>Itens:</strong></p><p>${orderPayload.address.split('(Itens:')[1].replace(')', '')}</p></div>`;
+                        const area = document.getElementById('printable-area'); area.innerHTML = content; window.print();
+                    }
+                }
+            },
+
             client: {
                 init: async () => {
                     const { data: orders } = await _sb.from('orders').select('*, products(nome)').eq('cliente_id', App.state.user.id).order('created_at', {ascending:false});
@@ -1791,21 +2260,21 @@
                      if(data && data.items) {
                          const total = data.items.reduce((acc, i) => acc + (i.price * i.qtd), 0);
                          if(confirm(`Mesa ${num}: Total R$ ${total.toFixed(2)}. Pagar agora online?`)) {
-                              const pk = data.stores?.mp_public_key || CONFIG.adminPublicKey;
-                              mpInstance = new MercadoPago(pk);
-                              App.payment.open(total, { store_id: data.store_id, basePrice: total, address: `MESA ${num} (Pagto Online)`, requer_montagem: false, taxa: 0 });
+                             const pk = data.stores?.mp_public_key || CONFIG.adminPublicKey;
+                             mpInstance = new MercadoPago(pk);
+                             App.payment.open(total, { store_id: data.store_id, basePrice: total, address: `MESA ${num} (Pagto Online)`, requer_montagem: false, taxa: 0 });
                          }
                      } else { alert("Mesa não encontrada ou fechada."); }
                 },
                 confirmOrder: async (pid, sid, price, category, deliveryInfoRaw) => { 
-                    if(!App.state.user) { App.router.go('auth'); return; }
+                    // TRAVA DE LOGIN
+                    if(!App.state.user) { App.utils.toast("Faça login!", "warning"); App.router.go('auth'); return; }
+                    
                     let address = "";
                     if (category === 'Hoteis/Pousadas') {
                         const { data: userProfile } = await _sb.from('profiles').select('*').eq('id', App.state.user.id).single();
-                        if(userProfile) {
-                            address = `RESERVA: ${userProfile.nome_completo} | CPF: ${userProfile.cpf || 'Não inf.'} | Email: ${userProfile.email}`;
-                            alert("Dados capturados para reserva. Prossiga para o pagamento.");
-                        } else address = "Dados de reserva pendentes.";
+                        if(userProfile) { address = `RESERVA: ${userProfile.nome_completo} | CPF: ${userProfile.cpf || 'Não inf.'} | Email: ${userProfile.email}`; alert("Dados capturados para reserva. Prossiga para o pagamento."); } 
+                        else address = "Dados de reserva pendentes.";
                     } else {
                         address = prompt("Endereço de Entrega Completo:"); 
                         if(!address) return;
@@ -1833,13 +2302,9 @@
                             if(feeVal > 0) alert(`Será adicionada uma taxa de entrega de R$ ${feeVal.toFixed(2)}`);
                         } catch(e) {}
                     }
-                   const serviceCats = ['Fretes e Mudanças', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Manutenção Eletrodomésticos', 'Jardinagem', 'Serviços de Manutenção', 'Outros'];
+                    const serviceCats = ['Fretes e Mudanças', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Manutenção Eletrodomésticos', 'Jardinagem', 'Serviços de Manutenção', 'Outros'];
                     if (serviceCats.includes(category)) {
-                        // Se for serviço e não tiver taxa definida, mantém zero e avisa
-                        if (feeVal === 0) { 
-                            feeVal = 0; 
-                            alert("Não cobramos taxa de deslocamento para este serviço."); 
-                        }
+                        if (feeVal === 0) { feeVal = 0; alert("Não cobramos taxa de deslocamento para este serviço."); }
                     }
                     finalPrice += feeVal;
                     const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', sid).single();
@@ -1900,59 +2365,46 @@
                     alert(`O valor total é R$ ${total.toFixed(2)}. Você pagará 50% (R$ ${downPayment.toFixed(2)}) agora.`);
                 }
             },
-           waiter: {
+
+            waiter: {
                 init: async () => {
                     const { data: staffData } = await _sb.from('store_staff').select('store_id').eq('profile_id', App.state.user.id).single();
                     if(!staffData) return alert("Você não está vinculado a nenhuma loja.");
                     App.state.storeId = staffData.store_id; 
-                    
-                    // CORREÇÃO: Chama a função própria do garçom, não a da loja
                     App.waiter.loadTables(); 
-                    
-                    // Configura atualização em tempo real para o garçom ver mesas abrindo/fechando
                     _sb.channel('waiter-updates')
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: `store_id=eq.${App.state.storeId}` }, 
                     () => { App.waiter.loadTables(); })
                     .subscribe();
                 },
-                // NOVA FUNÇÃO: Carrega mesas com clique configurado para PEDIDOS
                 loadTables: async () => {
                     const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', {ascending: true});
                     const container = document.getElementById('comanda-list-container');
-                    
                     if (data) {
                         container.innerHTML = data.map(c => `
                             <div class="comanda-card bg-${c.status}" onclick="App.waiter.openComanda('${c.id}', '${c.numero}')">
-                                <div class="comanda-corner"></div>
-                                <div class="comanda-dot"></div>
-                                <div style="font-size:1.5rem;">${c.numero}</div>
-                                <div class="text-xs" style="text-transform:uppercase;">${c.status}</div>
-                            </div>
-                        `).join('');
+                                <div class="comanda-corner"></div><div class="comanda-dot"></div>
+                                <div style="font-size:1.5rem;">${c.numero}</div><div class="text-xs" style="text-transform:uppercase;">${c.status}</div>
+                            </div>`).join('');
                     }
                 },
                 openComanda: async (id, numero) => {
                     App.state.currentComanda = id;
                     document.getElementById('comanda-title').innerText = `Mesa ${numero}`; 
-                    
-                    // Limpa o campo de busca
                     document.getElementById('waiter-prod-search').value = "";
                     document.getElementById('waiter-search-results').style.display = 'none';
-                    
                     document.getElementById('comanda-modal').style.display = 'flex';
                     App.waiter.loadItems(id);
                 },
                 loadItems: async (comandaId) => {
                     const { data } = await _sb.from('comandas').select('items').eq('id', comandaId).single();
                     const list = document.getElementById('comanda-items-list');
-                    
                     if(data && data.items && data.items.length > 0) {
                         list.innerHTML = data.items.map(item => `
                             <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px;">
                                 <span style="font-weight:bold;">${item.qtd}x ${item.nome}</span>
                                 <span>R$ ${(item.price * item.qtd).toFixed(2)}</span>
-                            </div>
-                        `).join('');
+                            </div>`).join('');
                     } else {
                         list.innerHTML = '<p class="text-sm text-muted text-center" style="padding:10px">Nenhum item lançado.</p>';
                     }
@@ -1960,674 +2412,107 @@
                 addItem: async () => {
                     const term = document.getElementById('waiter-prod-search').value;
                     if(!term) return alert("Digite o nome do produto");
-                    
                     App.utils.toast("Buscando...", "info");
-                    
-                    // Busca produto pelo nome (case insensitive)
-                    const { data } = await _sb.from('products')
-                        .select('*')
-                        .eq('store_id', App.state.storeId)
-                        .ilike('nome', `%${term}%`)
-                        .limit(5); // Traz até 5 resultados
-                    
+                    const { data } = await _sb.from('products').select('*').eq('store_id', App.state.storeId).ilike('nome', `%${term}%`).limit(5);
                     const resultBox = document.getElementById('waiter-search-results');
-                    
                     if(data && data.length > 0) {
-                        // Se tiver só 1 resultado exato, adiciona direto? Não, melhor listar pra evitar erro.
                         resultBox.style.display = 'block';
                         resultBox.innerHTML = data.map(p => `
-                            <div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; background:#fff;" 
-                                 onclick="App.waiter.confirmAdd('${p.id}', '${p.nome}', ${p.preco})">
+                            <div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; background:#fff;" onclick="App.waiter.confirmAdd('${p.id}', '${p.nome}', ${p.preco})">
                                 <strong>${p.nome}</strong> - R$ ${p.preco.toFixed(2)}
-                            </div>
-                        `).join('');
+                            </div>`).join('');
                     } else {
                         alert("Produto não encontrado");
                         resultBox.style.display = 'none';
                     }
                 },
                 confirmAdd: async (id, nome, price) => {
-                    // Adiciona o item na comanda
                     const { data: current } = await _sb.from('comandas').select('items').eq('id', App.state.currentComanda).single();
                     let currentItems = current.items || [];
-                    
-                    // Verifica se já tem o item pra somar quantidade
                     const existing = currentItems.find(i => i.id === id);
-                    if(existing) {
-                        existing.qtd += 1;
-                    } else {
-                        currentItems.push({ id: id, nome: nome, price: price, qtd: 1 });
-                    }
-                    
+                    if(existing) existing.qtd += 1;
+                    else currentItems.push({ id: id, nome: nome, price: price, qtd: 1 });
                     await _sb.from('comandas').update({ items: currentItems, status: 'aberta' }).eq('id', App.state.currentComanda);
-                    
                     document.getElementById('waiter-search-results').style.display = 'none';
                     document.getElementById('waiter-prod-search').value = '';
                     App.utils.toast(`Adicionado: ${nome}`, 'success');
                     App.waiter.loadItems(App.state.currentComanda);
-                    
-                    // Atualiza a lista de mesas (para mudar cor pra vermelha/aberta)
                     App.waiter.loadTables();
                 },
                 printBill: () => {
-                     // IMPRESSÃO DE CONFERÊNCIA (NÃO FISCAL)
-                     const itemsHtml = document.getElementById('comanda-items-list').innerHTML;
-                     const mesa = document.getElementById('comanda-title').innerText;
-                     
-                     const content = `
-                        <div style="font-family: monospace; width: 300px; padding: 0 10px;">
-                            <br>
-                            <h3 style="text-align:center; margin:0;">CONFERÊNCIA</h3>
-                            <p style="text-align:center; margin:5px 0;">${mesa}</p>
-                            <p style="text-align:center; font-size:0.8rem;">${new Date().toLocaleString()}</p>
-                            <hr style="border-top: 1px dashed black;">
-                            ${itemsHtml}
-                            <hr style="border-top: 1px dashed black;">
-                            <p style="text-align:center; font-size:0.8rem;">* Não vale como documento fiscal *</p>
-                            <br><br>
-                        </div>
-                    `;
-                    const area = document.getElementById('printable-area');
-                    area.innerHTML = content;
-                    window.print();
+                      const itemsHtml = document.getElementById('comanda-items-list').innerHTML;
+                      const mesa = document.getElementById('comanda-title').innerText;
+                      const content = `<div style="font-family: monospace; width: 300px; padding: 0 10px;"><br><h3 style="text-align:center; margin:0;">CONFERÊNCIA</h3><p style="text-align:center; margin:5px 0;">${mesa}</p><p style="text-align:center; font-size:0.8rem;">${new Date().toLocaleString()}</p><hr style="border-top: 1px dashed black;">${itemsHtml}<hr style="border-top: 1px dashed black;"><p style="text-align:center; font-size:0.8rem;">* Não vale como documento fiscal *</p><br><br></div>`;
+                      const area = document.getElementById('printable-area'); area.innerHTML = content; window.print();
                 },
                 sendToKitchen: () => {
-                    // IMPRESSÃO PARA COZINHA
                     const itemsHtml = document.getElementById('comanda-items-list').innerHTML;
                     const mesa = document.getElementById('comanda-title').innerText;
-                    
-                    const content = `
-                        <div style="font-family: monospace; width: 300px; padding: 0 10px;">
-                            <br>
-                            <h3 style="text-align:center; margin:0;">PEDIDO COZINHA</h3>
-                            <p style="text-align:center; font-size:1.2rem; font-weight:bold; margin:5px 0;">${mesa}</p>
-                            <p style="text-align:center;">${new Date().toLocaleTimeString()}</p>
-                            <hr style="border-top: 2px solid black;">
-                            <div style="font-size:1.1rem; font-weight:bold;">
-                                ${itemsHtml}
-                            </div>
-                            <hr style="border-top: 2px solid black;">
-                            <br>
-                        </div>
-                    `;
-                    const area = document.getElementById('printable-area');
-                    area.innerHTML = content;
-                    window.print();
-                    
+                    const content = `<div style="font-family: monospace; width: 300px; padding: 0 10px;"><br><h3 style="text-align:center; margin:0;">PEDIDO COZINHA</h3><p style="text-align:center; font-size:1.2rem; font-weight:bold; margin:5px 0;">${mesa}</p><p style="text-align:center;">${new Date().toLocaleTimeString()}</p><hr style="border-top: 2px solid black;"><div style="font-size:1.1rem; font-weight:bold;">${itemsHtml}</div><hr style="border-top: 2px solid black;"><br></div>`;
+                    const area = document.getElementById('printable-area'); area.innerHTML = content; window.print();
                     document.getElementById('comanda-modal').style.display = 'none';
                     App.utils.toast("Enviado para cozinha!", "success");
                 }
             },
-          cart: {
-            activeCoupon: null,
-            storeSettings: null,
-
-            open: async () => { 
-                document.getElementById('cart-modal').style.display = 'flex'; 
-                if(App.state.cart.length > 0) {
-                    const sid = App.state.cart[0].storeId;
-                    const { data } = await _sb.from('stores').select('taxa_entrega_padrao, endereco_retirada').eq('id', sid).single();
-                    App.cart.storeSettings = data;
-                    const fee = data?.taxa_entrega_padrao || 0;
-                    document.getElementById('label-delivery-fee').innerText = `R$ ${parseFloat(fee).toFixed(2)}`;
-                    document.getElementById('txt-pickup-addr').innerText = data?.endereco_retirada || "Endereço não configurado";
-                }
-                const radioDelivery = document.getElementById('method-delivery');
-                if(radioDelivery) radioDelivery.checked = true;
-                App.cart.toggleAddressField(); 
-                App.cart.render(); 
-                App.cart.updateFloater(); 
-            },
             
-            toggleAddressField: () => {
-                const isDelivery = document.getElementById('method-delivery')?.checked;
-                const addrContainer = document.getElementById('delivery-address-container');
-                const pickupInfo = document.getElementById('pickup-info-display');
-                if (isDelivery) {
-                    if(addrContainer) addrContainer.style.display = 'block';
-                    if(pickupInfo) pickupInfo.style.display = 'none';
-                } else {
-                    if(addrContainer) addrContainer.style.display = 'none';
-                    if(pickupInfo) pickupInfo.style.display = 'block';
-                }
-                App.cart.updateFloater(); 
-            },
-            
-            add: (product, storeId) => {
-                 if (App.state.cart.length > 0 && App.state.cart[0].storeId !== storeId) {
-                     if(!confirm("Itens de outra loja. Limpar carrinho?")) return;
-                     App.state.cart = [];
-                     App.cart.activeCoupon = null;
-                 }
-                 App.state.cart.push({ ...product, storeId });
-                 App.utils.toast("Adicionado!", "success");
-                 App.cart.updateFloater();
-            },
-
-            remove: (index) => { App.state.cart.splice(index, 1); App.cart.render(); App.cart.updateFloater(); },
-
-            applyCoupon: async () => {
-                const code = document.getElementById('cart-coupon-input').value.toUpperCase().trim();
-                if(!code || App.state.cart.length === 0) return;
-                const storeId = App.state.cart[0].storeId;
-                const { data, error } = await _sb.from('coupons').select('*').eq('code', code).eq('store_id', storeId).eq('active', true).single();
-                const msg = document.getElementById('coupon-msg');
-                if(error || !data) {
-                    msg.innerHTML = '<span style="color:red">Inválido.</span>';
-                    App.cart.activeCoupon = null;
-                } else {
-                    msg.innerHTML = `<span style="color:green">-${data.percent}% OFF em Roupas!</span>`;
-                    App.cart.activeCoupon = data;
-                    App.cart.updateFloater(); 
-                    App.cart.render();
-                }
-            },
-
-            render: () => {
-                 const container = document.getElementById('cart-items-list');
-                 if(App.state.cart.length === 0) {
-                     container.innerHTML = '<p class="text-center text-muted">Vazio.</p>';
-                     document.getElementById('cart-total-modal').innerText = "R$ 0,00";
-                     return;
-                 }
-                 container.innerHTML = App.state.cart.map((item, idx) => {
-                     let price = item.preco;
-                     let discountHtml = '';
-                     if(App.cart.activeCoupon && item.categoria === 'Roupas') {
-                         const discount = price * (App.cart.activeCoupon.percent / 100);
-                         price -= discount;
-                         discountHtml = `<span class="text-xs" style="color:green;">-${App.cart.activeCoupon.percent}%</span>`;
-                     }
-                     return `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;"><div><b>${item.nome}</b><br><span class="text-xs">R$ ${item.preco.toFixed(2)} ${discountHtml}</span></div><button class="btn btn-sm btn-danger" onclick="App.cart.remove(${idx})">X</button></div>`;
-                 }).join('');
-                 App.cart.updateFloater(); 
-            },
-
-            calculateTotal: () => {
-                let productsTotal = 0;
-                App.state.cart.forEach(item => {
-                    let p = item.preco;
-                    if(App.cart.activeCoupon && item.categoria === 'Roupas') p = p - (p * (App.cart.activeCoupon.percent / 100));
-                    productsTotal += p;
-                });
-                const isDelivery = document.getElementById('method-delivery')?.checked;
-                let deliveryFee = 0;
-                if(isDelivery && App.cart.storeSettings) deliveryFee = parseFloat(App.cart.storeSettings.taxa_entrega_padrao || 0);
-                return { productsTotal, deliveryFee, finalTotal: productsTotal + deliveryFee };
-            },
-
-            updateFloater: () => {
-                 const floater = document.getElementById('cart-floater');
-                 if(App.state.cart.length > 0) {
-                     floater.style.display = 'flex';
-                     const totals = App.cart.calculateTotal();
-                     document.getElementById('cart-count').innerText = `${App.state.cart.length} itens`;
-                     document.getElementById('cart-total').innerText = `R$ ${totals.finalTotal.toFixed(2)}`;
-                     const modalTotal = document.getElementById('cart-total-modal');
-                     if(modalTotal) modalTotal.innerText = `R$ ${totals.finalTotal.toFixed(2)}` + (totals.deliveryFee > 0 ? ` (Frete: R$ ${totals.deliveryFee})` : '');
-                 } else floater.style.display = 'none';
-            },
-
-            checkout: async () => {
-                 // --- VERIFICAÇÃO DE LOGIN ---
-                 if(!App.state.user) {
-                     App.utils.toast("Faça login para finalizar a compra!", "warning");
-                     document.getElementById('cart-modal').style.display = 'none';
-                     App.router.go('auth');
-                     return;
-                 }
-                 // ---------------------------
-
-                 if(App.state.cart.length === 0) return;
-                 const totals = App.cart.calculateTotal();
-                 const isDelivery = document.getElementById('method-delivery').checked;
-                 const storeId = App.state.cart[0].storeId;
-                 
-                 let address = "";
-                 
-                 if(isDelivery) {
-                     const inputAddr = document.getElementById('cart-delivery-address');
-                     const val = inputAddr ? inputAddr.value.trim() : "";
-                     if(!val) return alert("Por favor, preencha o endereço de entrega.");
-                     address = `ENTREGA: ${val}`;
-                 } else {
-                     const pickupAddr = App.cart.storeSettings?.endereco_retirada || "Loja";
-                     address = `RETIRADA NA LOJA (${pickupAddr})`;
-                     if(!confirm(`Confirma a RETIRADA em:\n${pickupAddr}\n\nTotal: R$ ${totals.finalTotal.toFixed(2)}`)) return;
-                 }
-
-                 document.getElementById('cart-modal').style.display = 'none';
-                 App.utils.toast("Iniciando pagamento...", "info");
-                 
-                 const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', storeId).single();
-                 const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
-                 mpInstance = new MercadoPago(publicKeyToUse);
-                 
-                 const itemsDesc = App.state.cart.map(i => i.nome).join(', ');
-                 
-                 App.payment.open(totals.finalTotal, { 
-                     product_id: App.state.cart[0].id, 
-                     store_id: storeId, 
-                     basePrice: totals.finalTotal, 
-                     address: `${address} (Itens: ${itemsDesc})`, 
-                     requer_montagem: false, 
-                     taxa: totals.finalTotal * 0.15 
-                 });
-                 
-                 App.state.cart = [];
-                 App.cart.activeCoupon = null;
-                 App.cart.updateFloater();
-                 if(document.getElementById('cart-delivery-address')) document.getElementById('cart-delivery-address').value = "";
-            }
-        },
-
-            render: () => {
-                 const container = document.getElementById('cart-items-list');
-                 if(App.state.cart.length === 0) {
-                     container.innerHTML = '<p class="text-center text-muted">Vazio.</p>';
-                     document.getElementById('cart-total-modal').innerText = "R$ 0,00";
-                     return;
-                 }
-                 
-                 container.innerHTML = App.state.cart.map((item, idx) => {
-                     let price = item.preco;
-                     let discountHtml = '';
-                     if(App.cart.activeCoupon && item.categoria === 'Roupas') {
-                         const discount = price * (App.cart.activeCoupon.percent / 100);
-                         price -= discount;
-                         discountHtml = `<span class="text-xs" style="color:green;">-${App.cart.activeCoupon.percent}%</span>`;
-                     }
-                     return `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;"><div><b>${item.nome}</b><br><span class="text-xs">R$ ${item.preco.toFixed(2)} ${discountHtml}</span></div><button class="btn btn-sm btn-danger" onclick="App.cart.remove(${idx})">X</button></div>`;
-                 }).join('');
-                 
-                 App.cart.updateFloater(); 
-            },
-
-            calculateTotal: () => {
-                let productsTotal = 0;
-                App.state.cart.forEach(item => {
-                    let p = item.preco;
-                    if(App.cart.activeCoupon && item.categoria === 'Roupas') {
-                         p = p - (p * (App.cart.activeCoupon.percent / 100));
-                    }
-                    productsTotal += p;
-                });
-
-                const isDelivery = document.getElementById('method-delivery')?.checked;
-                let deliveryFee = 0;
-                
-                if(isDelivery && App.cart.storeSettings) {
-                    deliveryFee = parseFloat(App.cart.storeSettings.taxa_entrega_padrao || 0);
-                }
-
-                return { productsTotal, deliveryFee, finalTotal: productsTotal + deliveryFee };
-            },
-
-            updateFloater: () => {
-                 const floater = document.getElementById('cart-floater');
-                 if(App.state.cart.length > 0) {
-                     floater.style.display = 'flex';
-                     const totals = App.cart.calculateTotal();
-                     
-                     document.getElementById('cart-count').innerText = `${App.state.cart.length} itens`;
-                     document.getElementById('cart-total').innerText = `R$ ${totals.finalTotal.toFixed(2)}`;
-                     
-                     const modalTotal = document.getElementById('cart-total-modal');
-                     if(modalTotal) modalTotal.innerText = `R$ ${totals.finalTotal.toFixed(2)}` + (totals.deliveryFee > 0 ? ` (Frete: R$ ${totals.deliveryFee})` : '');
-                 } else floater.style.display = 'none';
-            },
-
-            checkout: async () => {
-                 if(App.state.cart.length === 0) return;
-                 
-                 const totals = App.cart.calculateTotal();
-                 const isDelivery = document.getElementById('method-delivery').checked;
-                 const storeId = App.state.cart[0].storeId;
-                 
-                 let address = "";
-                 
-                 if(isDelivery) {
-                     // LÓGICA NOVA: Pega o valor do input HTML (textarea)
-                     const inputAddr = document.getElementById('cart-delivery-address');
-                     const val = inputAddr ? inputAddr.value.trim() : "";
-                     
-                     if(!val) return alert("Por favor, preencha o campo 'Endereço de Entrega' acima.");
-                     
-                     address = `ENTREGA: ${val}`;
-                 } else {
-                     const pickupAddr = App.cart.storeSettings?.endereco_retirada || "Loja";
-                     address = `RETIRADA NA LOJA (${pickupAddr})`;
-                     if(!confirm(`Confirma a RETIRADA em:\n${pickupAddr}\n\nTotal: R$ ${totals.finalTotal.toFixed(2)}`)) return;
-                 }
-
-                 document.getElementById('cart-modal').style.display = 'none';
-                 App.utils.toast("Iniciando pagamento...", "info");
-                 
-                 const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', storeId).single();
-                 const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
-                 mpInstance = new MercadoPago(publicKeyToUse);
-                 
-                 const itemsDesc = App.state.cart.map(i => i.nome).join(', ');
-                 
-                 App.payment.open(totals.finalTotal, { 
-                     product_id: App.state.cart[0].id, 
-                     store_id: storeId, 
-                     basePrice: totals.finalTotal, 
-                     address: `${address} (Itens: ${itemsDesc})`, 
-                     requer_montagem: false, 
-                     taxa: totals.finalTotal * 0.15 
-                 });
-                 
-                 App.state.cart = [];
-                 App.cart.activeCoupon = null;
-                 App.cart.updateFloater();
-                 
-                 // Limpa o campo de texto para a próxima vez
-                 if(document.getElementById('cart-delivery-address')) {
-                     document.getElementById('cart-delivery-address').value = "";
-                 }
-            }
-        },
-        catalog: {
-            currentCat: 'Todos',
-            filter: (cat, btn) => {
-                document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
-                if(btn) btn.classList.add('active');
-                App.catalog.currentCat = cat;
-                App.catalog.load();
-            },
-            
-            // --- FUNÇÃO PARA SELECIONAR TAMANHO (CLIENTE) ---
-            selectSize: (element) => {
-                const parent = element.parentElement;
-                const boxes = parent.getElementsByClassName('size-box');
-                for (let box of boxes) {
-                    box.classList.remove('selected');
-                }
-                element.classList.add('selected');
-            },
-
-            load: async () => {
-                let query = _sb.from('products').select('*, stores(nome_loja)');
-                if(App.catalog.currentCat !== 'Todos') query = query.eq('categoria', App.catalog.currentCat);
-                const { data } = await query;
-                const promos = data?.filter(p => p.promocao);
-                const normal = data?.filter(p => !p.promocao);
-                let html = '';
-                if(promos && promos.length > 0) {
-                    html += `<div style="grid-column:1/-1; margin-bottom:10px;"><h3 style="color:var(--danger)">🔥 Ofertas em Destaque</h3></div>`;
-                    html += promos.map(p => App.catalog.renderCard(p)).join('');
-                    if(normal && normal.length > 0) html += `<div style="grid-column:1/-1; margin:20px 0 10px 0;"><h3 style="color:var(--primary)">Outros Serviços</h3></div>`;
-                }
-                html += normal?.map(p => App.catalog.renderCard(p)).join('');
-                document.getElementById('public-catalog').innerHTML = html || '<p style="grid-column:1/-1; text-align:center">Nenhuma oferta nesta categoria.</p>';
-            },
-
-            renderCard: (p) => {
-                let dispInfo = '';
-                let actionText = "Adicionar ao Carrinho"; 
-                
-                // Tratamento seguro de texto
-                const pSafe = JSON.stringify(p).replace(/"/g, '&quot;').replace(/'/g, "&#39;").replace(/\n/g, " ");   
-                let dSafe = 'null';
-                if(p.delivery_info) dSafe = `'${JSON.stringify(p.delivery_info).replace(/"/g, '&quot;').replace(/'/g, "&#39;")}'`;
-                
-                const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Pedreiros', 'Jardinagem', 'Outros'];
-
-                let onclick = '';
-                
-                if (serviceCats.includes(p.categoria)) {
-                    actionText = "Contratar Serviço";
-                    onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${dSafe})`;
-                } else {
-                    actionText = (p.categoria === 'Comidas' || p.categoria === 'Bebidas') ? "Fazer Pedido" : "Comprar";
-                    onclick = `App.cart.add(${pSafe}, "${p.store_id}")`;
-                }
-                
-                // --- VISUAL DOS TAMANHOS ---
-                let sizeSelectorHtml = '';
-                const containerId = `size-container-${p.id}`; 
-                
-                if(p.categoria === 'Roupas') {
-                    let chips = '';
-                    if (p.sizes && p.sizes.trim() !== '') {
-                        const sizesArr = p.sizes.split(',').map(s => s.trim());
-                        chips = sizesArr.map(s => `<div class="size-box" onclick="App.catalog.selectSize(this)">${s}</div>`).join('');
-                    } else {
-                        chips = `<div class="size-box selected" onclick="App.catalog.selectSize(this)">Único</div>`;
-                    }
-                    sizeSelectorHtml = `<div style="margin-top:10px;"><label class="text-xs" style="font-weight:bold; color:#555;">Escolha o Tamanho:</label><div id="${containerId}" class="size-selector-container">${chips}</div></div>`;
-                    onclick = `App.catalog.addToCartClothing('${p.id}', '${p.store_id}', '${containerId}')`;
-                }
-                
-                if(p.categoria === 'Hoteis/Pousadas' && p.disponibilidade) {
-                     onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", null)`;
-                } 
-                else if (p.categoria === 'Serviços de Gesso' && p.gesso_info) {
-                    actionText = "Orçamento";
-                    onclick = `App.client.openBudget(${pSafe})`;
-                }
-                
-                const imgUrl = (p.galeria && p.galeria.length > 0) ? p.galeria[0] : (p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto');
-                
-                return `<div class="card">${p.promocao ? '<div class="badge badge-promo">PROMOÇÃO</div>' : ''}<div class="product-gallery-wrapper"><div class="product-gallery"><img src="${imgUrl}" class="gallery-img"></div></div><div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div><h4>${p.nome}</h4><p class="text-sm text-muted" style="margin-bottom:5px;">${p.descricao || ''}</p><h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>${sizeSelectorHtml}${dispInfo}<button class="btn ${serviceCats.includes(p.categoria)?'btn-secondary':'btn-success'} btn-full" style="margin-top:10px" onclick="${onclick}">${actionText}</button><button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button></div>`;
-            },
-            
-            fetchPublic: async () => { App.catalog.load(); },
-
-            addToCartClothing: async (pid, sid, containerId) => {
-                const container = document.getElementById(containerId);
-                const selected = container ? container.querySelector('.selected') : null;
-                if (!selected) return alert("Selecione um tamanho.");
-                const tamanho = selected.innerText;
-                const { data: p } = await _sb.from('products').select('*').eq('id', pid).single();
-                const prodToAdd = { ...p, nome: `${p.nome} (Tam: ${tamanho})` };
-                App.cart.add(prodToAdd, sid);
-            }
-        },// <--- AQUI FECHA O CATALOG
-            
-            chat: {
-                open: async (storeId, clientId = null) => {
-                    if(!App.state.user) return App.router.go('auth');
-                    App.state.activeChatStore = storeId;
-                    App.state.activeChatClient = clientId || App.state.user.id; 
-                    document.getElementById('chat-modal').style.display = 'flex';
-                    const msgs = document.getElementById('chat-msgs');
-                    msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Carregando histórico...</div>';
+            provider: {
+                init: async () => {
+                    const { data: job } = await _sb.from('orders').select('*, products(nome, categoria), profiles:cliente_id(nome_completo, whatsapp)').or(`status.eq.aguardando_prestador,status.eq.em_rota`).order('created_at', { ascending: false });
+                    const myEmail = App.state.profile.email;
+                    // Filtra jobs: se a loja tem parceiro exclusivo, so mostra se for eu
+                    // Isso exigiria uma query mais complexa, faremos filtro no client side por simplicidade
+                    const container = document.getElementById('provider-jobs-list');
                     
-                    const { data } = await _sb.from('messages').select('*').eq('store_id', storeId).eq('client_id', App.state.activeChatClient).order('created_at', { ascending: true });
-                    msgs.innerHTML = '';
-                    if(data && data.length > 0) data.forEach(m => App.chat.renderMsg(m));
-                    else msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Inicie a conversa...</div>';
+                    // Busca lojas onde sou parceiro
+                    const { data: myStores } = await _sb.from('stores').select('id').eq('parceiro_exclusivo_id', App.state.user.id);
+                    const myStoreIds = myStores ? myStores.map(s => s.id) : [];
 
-                    if(App.state.chatSub) _sb.removeChannel(App.state.chatSub);
-                    App.state.chatSub = _sb.channel('public:messages')
-                        .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `store_id=eq.${storeId}` }, (payload) => {
-                            if(payload.new.client_id === App.state.activeChatClient) {
-                                if (payload.eventType === 'INSERT') {
-                                    if(msgs.innerText.includes("Inicie a conversa")) msgs.innerHTML = "";
-                                    App.chat.renderMsg(payload.new);
-                                } else if (payload.eventType === 'UPDATE') {
-                                    const msgDiv = document.getElementById(`msg-${payload.new.id}`);
-                                    if(msgDiv) {
-                                        if (payload.new.is_deleted) msgDiv.innerHTML = `<span class="chat-deleted"><i class="ri-prohibited-line"></i> Mensagem apagada</span>`;
-                                        else {
-                                            let contentHtml = payload.new.content;
-                                            if (payload.new.is_edited) contentHtml += `<span class="chat-edited-label"><i class="ri-pencil-line"></i> Editada</span>`;
-                                            if (msgDiv.classList.contains('mine')) {
-                                                 const encodedContent = encodeURIComponent(payload.new.content);
-                                                 contentHtml += `<button class="chat-options-btn" onclick="App.chat.showOptions(${payload.new.id}, '${encodedContent}', ${payload.new.is_edited})"><i class="ri-more-2-fill"></i></button>`;
-                                            }
-                                            msgDiv.innerHTML = contentHtml;
-                                        }
-                                    }
-                                }
-                            }
-                        }).subscribe();
-                },
-                loadHistory: async (viewType) => {
-                    if (!App.state.user) return;
-                    const myId = App.state.user.id;
                     let html = '';
-                    let query = _sb.from('messages').select('*, profiles:sender_id(nome_completo), stores:store_id(nome_loja)').order('created_at', {ascending:false}).limit(50);
-                    if(viewType === 'loja') query = query.eq('store_id', App.state.storeId);
-                    else query = query.eq('client_id', myId);
-                    const { data } = await query;
-                    
-                    if(!data || data.length === 0) html = '<p class="text-sm text-muted">Nenhuma conversa.</p>';
-                    else {
-                        const unique = new Set();
-                        data.forEach(msg => {
-                            let cid = (viewType === 'loja') ? msg.client_id : msg.store_id;
-                            if(!unique.has(cid)) {
-                                unique.add(cid);
-                                let name = (viewType === 'loja') ? (msg.sender_id !== myId ? msg.profiles?.nome_completo : 'Cliente') : (msg.stores?.nome_loja || 'Loja');
-                                html += `<div class="chat-history-item" onclick="App.chat.open('${viewType==='loja'?App.state.storeId:cid}', '${viewType==='loja'?cid:myId}')"><div class="chat-user-info"><div><i class="ri-message-3-line"></i> ${name}</div><div class="text-xs">Abrir conversa</div></div><i class="ri-arrow-right-s-line"></i></div>`;
+                    if(job) {
+                        for(let j of job) {
+                            // Verifica exclusividade
+                            const { data: store } = await _sb.from('stores').select('parceiro_exclusivo_id').eq('id', j.store_id).single();
+                            if(store.parceiro_exclusivo_id && store.parceiro_exclusivo_id !== App.state.user.id) continue; // Pula se for exclusivo de outro
+
+                            let actionBtn = '';
+                            if(j.status === 'aguardando_prestador') {
+                                actionBtn = `<button class="btn btn-success btn-sm btn-full" onclick="App.provider.acceptJob('${j.id}')">Aceitar Corrida/Serviço</button>`;
+                            } else if (j.status === 'em_rota' && j.prestador_id === App.state.user.id) {
+                                actionBtn = `<button class="btn btn-info btn-sm btn-full" onclick="App.map.open('${j.id}', true, '${j.endereco_destino}')">Continuar Rota</button>`;
                             }
-                        });
-                    }
-                    document.getElementById(viewType === 'loja' ? 'store-chat-list' : 'client-chat-list').innerHTML = html;
-                },
-                send: async (content = null, type = 'text') => {
-                    const txtInput = document.getElementById('chat-input');
-                    const txt = content || txtInput.value;
-                    if(!txt && type === 'text') return;
-                    await _sb.from('messages').insert({ store_id: App.state.activeChatStore, client_id: App.state.activeChatClient, sender_id: App.state.user.id, content: txt });
-                    if(type === 'text') txtInput.value = '';
-                },
-                recordAudio: async () => {
-                    if (!navigator.mediaDevices) return alert("Navegador sem suporte a áudio.");
-                    if (!App.state.mediaRecorder) {
-                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        App.state.mediaRecorder = new MediaRecorder(stream);
-                        App.state.mediaRecorder.ondataavailable = e => App.state.audioChunks.push(e.data);
-                        App.state.mediaRecorder.onstop = async () => {
-                            const blob = new Blob(App.state.audioChunks, { type: 'audio/ogg; codecs=opus' });
-                            App.state.audioChunks = [];
-                            const fileName = `audio_${Date.now()}.ogg`;
-                            const { data, error } = await _sb.storage.from('chat_uploads').upload(fileName, blob);
-                            if(!error) {
-                                const { data: url } = _sb.storage.from('chat_uploads').getPublicUrl(fileName);
-                                App.chat.send(`<audio controls src="${url.publicUrl}"></audio>`, 'audio');
-                            } else alert("Erro upload áudio");
-                        };
-                        App.state.mediaRecorder.start();
-                        App.utils.toast("Gravando... Toque de novo para enviar.", "info");
-                    } else {
-                        if(App.state.mediaRecorder.state === 'recording') { App.state.mediaRecorder.stop(); App.utils.toast("Enviando...", "success"); }
-                        else { App.state.mediaRecorder.start(); App.utils.toast("Gravando...", "info"); }
-                    }
-                },
-                showOptions: (msgId, encodedContent, isEdited) => {
-                    const currentContent = decodeURIComponent(encodedContent);
-                    if (currentContent.includes('<audio')) {
-                        if(confirm("Deseja apagar este áudio para todos?")) App.chat.deleteMsg(msgId);
-                        return;
-                    }
-                    const action = prompt("Digite 'apagar' para excluir ou digite o novo texto para editar:", currentContent);
-                    if (action === null) return; 
-                    if (action.toLowerCase() === 'apagar') App.chat.deleteMsg(msgId);
-                    else if (action !== currentContent) {
-                        if (isEdited) alert("Esta mensagem já foi editada uma vez e não pode ser alterada novamente.");
-                        else App.chat.editMsg(msgId, action);
-                    }
-                },
-                deleteMsg: async (id) => {
-                    const { error } = await _sb.from('messages').update({ is_deleted: true, content: '🚫 Mensagem apagada' }).eq('id', id);
-                    if(error) alert("Erro ao apagar: " + error.message);
-                },
-                editMsg: async (id, newContent) => {
-                    const { error } = await _sb.from('messages').update({ content: newContent, is_edited: true }).eq('id', id);
-                    if(error) alert("Erro ao editar: " + error.message);
-                },
-                renderMsg: (msg) => {
-                    const div = document.createElement('div');
-                    const isMine = msg.sender_id === App.state.user.id;
-                    div.className = `chat-bubble ${isMine ? 'mine' : 'theirs'}`;
-                    div.id = `msg-${msg.id}`;
-                    
-                    if (msg.is_deleted) div.innerHTML = `<span class="chat-deleted"><i class="ri-prohibited-line"></i> Mensagem apagada</span>`;
-                    else {
-                        let contentHtml = msg.content;
-                        if (msg.is_edited) contentHtml += `<span class="chat-edited-label"><i class="ri-pencil-line"></i> Editada</span>`;
-                        if (isMine) {
-                             const encodedContent = encodeURIComponent(msg.content);
-                             contentHtml += `<button class="chat-options-btn" onclick="App.chat.showOptions(${msg.id}, '${encodedContent}', ${msg.is_edited})"><i class="ri-more-2-fill"></i></button>`;
+
+                            if(actionBtn) {
+                                html += `
+                                <div class="card" style="margin-bottom:1rem">
+                                    <div style="display:flex; justify-content:space-between"><strong>${j.products?.nome}</strong><span class="badge status-${j.status}">${j.status}</span></div>
+                                    <p class="text-sm">Destino: ${j.endereco_destino}</p>
+                                    <div style="font-weight:bold; color:var(--success-dark); margin-bottom:5px;">Ganho: R$ ${(j.taxa_servico).toFixed(2)}</div>
+                                    ${actionBtn}
+                                </div>`;
+                            }
                         }
-                        div.innerHTML = contentHtml;
                     }
-                    const status = document.createElement('div');
-                    status.className = 'chat-status';
-                    status.innerHTML = `<i class="ri-check-double-line" style="color:${isMine ? '#fff' : '#2563eb'}"></i>`;
-                    div.appendChild(status);
-                    const container = document.getElementById('chat-msgs');
-                    container.appendChild(div);
-                    container.scrollTop = container.scrollHeight;
+                    container.innerHTML = html || '<p>Nenhum serviço disponível.</p>';
+                    
+                    document.getElementById('provider-role-label').innerText = App.state.profile.role.toUpperCase();
+                    document.getElementById('provider-pix-display').innerText = App.state.profile.chave_pix || 'Não cadastrada';
                 },
-                close: () => {
-                    document.getElementById('chat-modal').style.display = 'none';
-                    if(App.state.chatSub) _sb.removeChannel(App.state.chatSub);
-                }
-            },
-
-            map: {
-                open: (id, isDriver, addr='') => {
-                    App.state.activeOrder = id; document.getElementById('map-modal').style.display='flex';
-                    const dest = document.getElementById('map-dest-address'); if(isDriver) { dest.innerHTML=`<strong>Destino:</strong> ${addr}`; dest.style.display='block'; } else dest.style.display='none';
-                    document.getElementById('btn-start-gps').style.display = isDriver ? 'block' : 'none'; document.getElementById('btn-end-gps').style.display = 'none';
-                    setTimeout(() => {
-                        if(!App.state.mapInstance) { App.state.mapInstance = L.map('map').setView([-23.5505, -46.6333], 13); let tileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'; if (CONFIG.mapboxToken.includes('pk.')) tileUrl = `https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/{z}/{x}/{y}?access_token=${CONFIG.mapboxToken}`; L.tileLayer(tileUrl, { attribution: 'Mapbox / OpenStreetMap' }).addTo(App.state.mapInstance); }
-                        App.state.mapInstance.invalidateSize(); if(!isDriver) App.map.watchOrder(id);
-                    }, 500);
+                updatePix: async () => {
+                    const pix = prompt("Informe sua chave Pix para recebimento:");
+                    if(pix) {
+                        await _sb.from('profiles').update({ chave_pix: pix }).eq('id', App.state.user.id);
+                        App.state.profile.chave_pix = pix;
+                        App.provider.init();
+                        App.utils.toast("Pix atualizado!", "success");
+                    }
                 },
-                watchOrder: (id) => { 
-                    _sb.channel(`track-${id}`).on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, (payload) => { 
-                        const { lat_atual, lng_atual, status } = payload.new; 
-                        if(status==='em_rota') App.utils.toast('Saiu para entrega!', 'info'); 
-                        if(status==='concluido') { App.utils.toast('Entrega Finalizada!', 'success'); document.getElementById('map-status-badge').innerText="Concluído"; } 
-                        if(lat_atual && lng_atual) App.map.updatePin(lat_atual, lng_atual); 
-                    }).subscribe(); 
-                },
-                startGPS: () => { 
-                    document.getElementById('btn-start-gps').style.display='none'; document.getElementById('btn-end-gps').style.display='block'; 
-                    _sb.from('orders').update({ status: 'em_rota' }).eq('id', App.state.activeOrder); 
-                    App.state.watchId = navigator.geolocation.watchPosition(async (pos) => { 
-                        App.map.updatePin(pos.coords.latitude, pos.coords.longitude); 
-                        await _sb.from('orders').update({ lat_atual: pos.coords.latitude, lng_atual: pos.coords.longitude }).eq('id', App.state.activeOrder); 
-                    }, null, {enableHighAccuracy:true}); 
-                },
-                finishDelivery: async () => { if(confirm("Confirmar entrega?")) { navigator.geolocation.clearWatch(App.state.watchId); await _sb.from('orders').update({ status: 'concluido' }).eq('id', App.state.activeOrder); App.utils.toast("Finalizado!", "success"); App.map.close(); App.provider.init(); } },
-                updatePin: (lat, lng) => { if(App.state.marker) App.state.marker.setLatLng([lat,lng]); else App.state.marker=L.marker([lat,lng]).addTo(App.state.mapInstance); App.state.mapInstance.setView([lat,lng], 16); },
-                close: () => { document.getElementById('map-modal').style.display='none'; if(App.state.watchId) navigator.geolocation.clearWatch(App.state.watchId); _sb.removeAllChannels(); }
-            },
-
-            utils: {
-                toast: (msg, type='success') => { const c = document.getElementById('toast-container'); const e = document.createElement('div'); e.className=`toast ${type}`; e.innerHTML=`<span>${msg}</span>`; c.appendChild(e); setTimeout(()=>e.remove(), 4000); },
-                
-                // NOTIFICAÇÃO DO LOJISTA
-                showChatNotification: (name, msg, clientId) => {
-                    const c = document.getElementById('store-notifications');
-                    const e = document.createElement('div');
-                    e.className = 'chat-alert-card';
-                    e.innerHTML = `
-                        <div>
-                            <div style="font-weight:bold; color:var(--primary)">Nova mensagem de ${name}</div>
-                            <div style="font-size:0.9rem; color:var(--text-muted); margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">"${msg}"</div>
-                        </div>
-                        <button class="btn btn-sm btn-info" onclick="App.chat.open('${App.state.storeId}', '${clientId}'); this.parentElement.remove()">Responder</button>
-                    `;
-                    c.appendChild(e);
-                    setTimeout(() => e.remove(), 10000);
-                },
-
-                setupPWA: () => { const manifest = { "name": "NexLog", "short_name": "NexLog", "start_url": window.location.href, "display": "standalone", "background_color": "#ffffff", "theme_color": "#2563eb", "icons": [{ "src": "https://raw.githubusercontent.com/PazChurchParaipaba/projetoentrega/refs/heads/main/logo.png", "sizes": "192x192", "type": "image/png" }] }; const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'}); document.querySelector('#dynamic-manifest').setAttribute('href', URL.createObjectURL(blob)); window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); App.state.deferredPrompt = e; document.getElementById('pwa-banner').style.display = 'flex'; }); },
-                setupCategories: () => {
-                    const catList = document.getElementById('category-list');
-                    const catSelect = document.getElementById('new-prod-cat');
-                    CONFIG.categories.forEach(c => {
-                        catList.innerHTML += `<button class="cat-pill" onclick="App.catalog.filter('${c}', this)">${c}</button>`;
-                        catSelect.innerHTML += `<option value="${c}">${c}</option>`;
-                    });
+                acceptJob: async (id) => {
+                    await _sb.from('orders').update({ status: 'em_rota', prestador_id: App.state.user.id }).eq('id', id);
+                    App.utils.toast("Aceito! Iniciando navegação...", "success");
+                    // Pega endereço
+                    const { data } = await _sb.from('orders').select('endereco_destino').eq('id', id).single();
+                    App.map.open(id, true, data.endereco_destino);
+                    App.provider.init();
                 }
             }
         };
