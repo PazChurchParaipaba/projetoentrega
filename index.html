@@ -1070,32 +1070,50 @@
 
         const App = {
             state: { 
-                user: null, 
-                profile: null, 
-                tempRole: null, 
-                deferredPrompt: null, 
-                mapInstance: null, 
-                marker: null, 
-                watchId: null, 
-                activeOrder: null, 
-                storeId: null, 
-                pendingPayment: null, 
-                brickController: null, 
-                pixInterval: null, 
-                activeChatStore: null, 
-                activeChatClient: null,
-                chatSub: null,
-                currentBudgetTotal: 0,
-                mediaRecorder: null,
-                audioChunks: [],
-                cart: [], 
-                currentComanda: null, 
-                paymentSplits: [], 
-                comandaTotal: 0, 
-                currentComandaItems: [], 
+                user: null, profile: null, tempRole: null, deferredPrompt: null, 
+                mapInstance: null, marker: null, watchId: null, activeOrder: null, 
+                storeId: null, pendingPayment: null, brickController: null, 
+                pixInterval: null, activeChatStore: null, activeChatClient: null,
+                chatSub: null, currentBudgetTotal: 0, mediaRecorder: null,
+                audioChunks: [], cart: [], currentComanda: null, 
+                paymentSplits: [], comandaTotal: 0, currentComandaItems: [],
                 currentMesaNum: null
             },
-            
+
+            // --- MOVIDO O UTILS PARA CÁ (TOPO) PARA EVITAR ERROS DE LEITURA ---
+            utils: {
+                toast: (msg, type='success') => { 
+                    const c = document.getElementById('toast-container'); 
+                    const e = document.createElement('div'); 
+                    e.className=`toast ${type}`; 
+                    e.innerHTML=`<span>${msg}</span>`; 
+                    c.appendChild(e); 
+                    setTimeout(()=>e.remove(), 4000); 
+                },
+                showChatNotification: (name, msg, clientId) => {
+                    const c = document.getElementById('store-notifications');
+                    const e = document.createElement('div');
+                    e.className = 'chat-alert-card';
+                    e.innerHTML = `<div><div style="font-weight:bold; color:var(--primary)">Nova mensagem de ${name}</div><div style="font-size:0.9rem; color:var(--text-muted); margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">"${msg}"</div></div><button class="btn btn-sm btn-info" onclick="App.chat.open('${App.state.storeId}', '${clientId}'); this.parentElement.remove()">Responder</button>`;
+                    c.appendChild(e);
+                    setTimeout(() => e.remove(), 10000);
+                },
+                setupPWA: () => { 
+                    const manifest = { "name": "NexLog", "short_name": "NexLog", "start_url": window.location.href, "display": "standalone", "background_color": "#ffffff", "theme_color": "#2563eb", "icons": [{ "src": "https://raw.githubusercontent.com/PazChurchParaipaba/projetoentrega/refs/heads/main/logo.png", "sizes": "192x192", "type": "image/png" }] }; 
+                    const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'}); 
+                    document.querySelector('#dynamic-manifest').setAttribute('href', URL.createObjectURL(blob)); 
+                    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); App.state.deferredPrompt = e; document.getElementById('pwa-banner').style.display = 'flex'; }); 
+                },
+                setupCategories: () => {
+                    const catList = document.getElementById('category-list');
+                    const catSelect = document.getElementById('new-prod-cat');
+                    CONFIG.categories.forEach(c => {
+                        catList.innerHTML += `<button class="cat-pill" onclick="App.catalog.filter('${c}', this)">${c}</button>`;
+                        catSelect.innerHTML += `<option value="${c}">${c}</option>`;
+                    });
+                }
+            },
+
             init: async () => {
                 App.utils.setupPWA();
                 App.utils.setupCategories();
@@ -1111,6 +1129,8 @@
                     App.catalog.fetchPublic();
                 }
             },
+
+            // CONTINUA COM pwa: { ...
 
             pwa: {
                 install: () => {
