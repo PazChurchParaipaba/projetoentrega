@@ -2116,6 +2116,230 @@
                     App.cart.add(prodToAdd, sid);
                 }
             },
+            chat: {
+                open: async (storeId, clientId = null) => {
+                    if(!App.state.user) return App.router.go('auth');
+                    
+                    App.state.activeChatStore = storeId;
+                    // Se não passar cliente, assume que sou eu (usuário logado)
+                    App.state.activeChatClient = clientId || App.state.user.id; 
+                    
+                    document.getElementById('chat-modal').style.display = 'flex';
+                    const msgs = document.getElementById('chat-msgs');
+                    msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Carregando histórico...</div>';
+                    
+                    // Busca histórico
+                    const { data } = await _sb.from('messages')
+                        .select('*')
+                        .eq('store_id', storeId)
+                        .eq('client_id', App.state.activeChatClient)
+                        .order('created_at', { ascending: true });
+                        
+                    msgs.innerHTML = '';
+                    if(data && data.length > 0) {
+                        data.forEach(m => App.chat.renderMsg(m));
+                    } else {
+                        msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Inicie a conversa...</div>';
+                    }
+
+                    // Inscreve no Realtime
+                    if(App.state.chatSub) _sb.removeChannel(App.state.chatSub);
+                    
+                    App.state.chatSub = _sb.channel('public:messages')
+                        .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `store_id=eq.${storeId}` }, (payload) => {
+                            // Só renderiza se a mensagem for deste chat específico
+                            if(payload.new.client_id === App.state.activeChatClient) {
+                                if (payload.eventType === 'INSERT') {
+                                    if(msgs.innerText.includes("Inicie a conversa")) msgs.innerHTML = "";
+                                    App.chat.renderMsg(payload.new);
+                                } else if (payload.eventType === 'UPDATE') {
+                                    const msgDiv = document.getElementById(`msg-${payload.new.id}`);
+                                    if(msgDiv) {
+                                        if (payload.new.is_deleted) {
+                                            msgDiv.innerHTML = `<span class="chat-deleted"><i class="ri-prohibited-line"></i> Mensagem apagada</span>`;
+                                        } else {
+                                            let contentHtml = payload.new.content;
+                                            if (payload.new.is_edited) contentHtml += `<span class="chat-edited-label"><i class="ri-pencil-line"></i> Editada</span>`;
+                                            
+                                            // Se for minha, recoloca o botão de opções
+                                            if (msgDiv.classList.contains('mine')) {
+                                                 const encodedContent = encodeURIComponent(payload.new.content);
+                                                 contentHtml += `<button class="chat-options-btn" onclick="App.chat.showOptions(${payload.new.id}, '${encodedContent}', ${payload.new.is_edited})"><i class="ri-more-2-fill"></i></button>`;
+                                            }
+                                            msgDiv.innerHTML = contentHtml;
+                                        }
+                                    }
+                                }
+                            }
+                        }).subscribe();
+                },
+                
+                close: () => {
+                    document.getElementById('chat-modal').style.display = 'none';
+                    if(App.state.chatSub) _sb.removeChannel(App.state.chatSub);
+                },
+                
+                send: async (content = null, type = 'text') => {
+                    const txtInput = document.getElementById('chat-input');
+                    const txt = content || txtInput.value;
+                    
+                    if(!txt && type === 'text') return;
+                    
+                    await _sb.from('messages').insert({ 
+                        store_id: App.state.activeChatStore, 
+                        client_id: App.state.activeChatClient, 
+                        sender_id: App.state.user.id, 
+                        content: txt 
+                    });
+                    
+                    if(type === 'text') txtInput.value = '';
+                },
+                
+                recordAudio: async () => {
+                    if (!navigator.mediaDevices) return alert("Navegador sem suporte a áudio.");
+                    
+                    if (!App.state.mediaRecorder) {
+                        try {
+                            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                            App.state.mediaRecorder = new MediaRecorder(stream);
+                            
+                            App.state.mediaRecorder.ondataavailable = e => App.state.audioChunks.push(e.data);
+                            
+                            App.state.mediaRecorder.onstop = async () => {
+                                const blob = new Blob(App.state.audioChunks, { type: 'audio/ogg; codecs=opus' });
+                                App.state.audioChunks = [];
+                                const fileName = `audio_${Date.now()}.ogg`;
+                                
+                                const { data, error } = await _sb.storage.from('chat_uploads').upload(fileName, blob);
+                                
+                                if(!error) {
+                                    const { data: url } = _sb.storage.from('chat_uploads').getPublicUrl(fileName);
+                                    App.chat.send(`<audio controls src="${url.publicUrl}"></audio>`, 'audio');
+                                } else {
+                                    alert("Erro upload áudio: " + error.message);
+                                }
+                            };
+                            
+                            App.state.mediaRecorder.start();
+                            App.utils.toast("Gravando... Toque de novo para enviar.", "info");
+                        } catch(err) {
+                            alert("Erro ao acessar microfone: " + err.message);
+                        }
+                    } else {
+                        if(App.state.mediaRecorder.state === 'recording') { 
+                            App.state.mediaRecorder.stop(); 
+                            App.utils.toast("Enviando...", "success"); 
+                        } else { 
+                            App.state.mediaRecorder.start(); 
+                            App.utils.toast("Gravando...", "info"); 
+                        }
+                    }
+                },
+                
+                showOptions: (msgId, encodedContent, isEdited) => {
+                    const currentContent = decodeURIComponent(encodedContent);
+                    
+                    if (currentContent.includes('<audio')) {
+                        if(confirm("Deseja apagar este áudio para todos?")) App.chat.deleteMsg(msgId);
+                        return;
+                    }
+                    
+                    const action = prompt("Digite 'apagar' para excluir ou digite o novo texto para editar:", currentContent);
+                    
+                    if (action === null) return; 
+                    
+                    if (action.toLowerCase() === 'apagar') {
+                        App.chat.deleteMsg(msgId);
+                    } else if (action !== currentContent) {
+                        if (isEdited) alert("Esta mensagem já foi editada uma vez e não pode ser alterada novamente.");
+                        else App.chat.editMsg(msgId, action);
+                    }
+                },
+                
+                deleteMsg: async (id) => {
+                    const { error } = await _sb.from('messages').update({ is_deleted: true, content: '🚫 Mensagem apagada' }).eq('id', id);
+                    if(error) alert("Erro ao apagar: " + error.message);
+                },
+                
+                editMsg: async (id, newContent) => {
+                    const { error } = await _sb.from('messages').update({ content: newContent, is_edited: true }).eq('id', id);
+                    if(error) alert("Erro ao editar: " + error.message);
+                },
+                
+                renderMsg: (msg) => {
+                    const div = document.createElement('div');
+                    const isMine = msg.sender_id === App.state.user.id;
+                    div.className = `chat-bubble ${isMine ? 'mine' : 'theirs'}`;
+                    div.id = `msg-${msg.id}`;
+                    
+                    if (msg.is_deleted) {
+                        div.innerHTML = `<span class="chat-deleted"><i class="ri-prohibited-line"></i> Mensagem apagada</span>`;
+                    } else {
+                        let contentHtml = msg.content;
+                        if (msg.is_edited) contentHtml += `<span class="chat-edited-label"><i class="ri-pencil-line"></i> Editada</span>`;
+                        
+                        if (isMine) {
+                             const encodedContent = encodeURIComponent(msg.content);
+                             contentHtml += `<button class="chat-options-btn" onclick="App.chat.showOptions(${msg.id}, '${encodedContent}', ${msg.is_edited})"><i class="ri-more-2-fill"></i></button>`;
+                        }
+                        div.innerHTML = contentHtml;
+                    }
+                    
+                    const status = document.createElement('div');
+                    status.className = 'chat-status';
+                    status.innerHTML = `<i class="ri-check-double-line" style="color:${isMine ? '#fff' : '#2563eb'}"></i>`;
+                    div.appendChild(status);
+                    
+                    const container = document.getElementById('chat-msgs');
+                    container.appendChild(div);
+                    container.scrollTop = container.scrollHeight;
+                },
+                
+                loadHistory: async (viewType) => {
+                    if (!App.state.user) return;
+                    const myId = App.state.user.id;
+                    let html = '';
+                    
+                    // Lógica para carregar lista de conversas no painel
+                    let query = _sb.from('messages')
+                        .select('*, profiles:sender_id(nome_completo), stores:store_id(nome_loja)')
+                        .order('created_at', {ascending:false})
+                        .limit(50);
+                        
+                    if(viewType === 'loja') query = query.eq('store_id', App.state.storeId);
+                    else query = query.eq('client_id', myId);
+                    
+                    const { data } = await query;
+                    
+                    if(!data || data.length === 0) {
+                        html = '<p class="text-sm text-muted">Nenhuma conversa.</p>';
+                    } else {
+                        const unique = new Set();
+                        data.forEach(msg => {
+                            let cid = (viewType === 'loja') ? msg.client_id : msg.store_id;
+                            if(!unique.has(cid)) {
+                                unique.add(cid);
+                                let name = (viewType === 'loja') 
+                                    ? (msg.sender_id !== myId ? msg.profiles?.nome_completo : 'Cliente') 
+                                    : (msg.stores?.nome_loja || 'Loja');
+                                    
+                                html += `
+                                <div class="chat-history-item" onclick="App.chat.open('${viewType==='loja'?App.state.storeId:cid}', '${viewType==='loja'?cid:myId}')">
+                                    <div class="chat-user-info">
+                                        <div><i class="ri-message-3-line"></i> ${name}</div>
+                                        <div class="text-xs">Abrir conversa</div>
+                                    </div>
+                                    <i class="ri-arrow-right-s-line"></i>
+                                </div>`;
+                            }
+                        });
+                    }
+                    
+                    const targetId = viewType === 'loja' ? 'store-chat-list' : 'client-chat-list';
+                    const el = document.getElementById(targetId);
+                    if(el) el.innerHTML = html;
+                }
+            },
 
             payment: {
                 openSplitModal: (comandaId, items, numeroMesa) => {
