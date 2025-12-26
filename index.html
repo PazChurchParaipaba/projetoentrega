@@ -549,6 +549,22 @@
                             </div>
                             <button class="btn btn-success btn-sm" onclick="App.store.saveCredentials()">Salvar e Ativar</button>
                         </div>
+                        <div class="card" style="border-left: 5px solid #be185d; margin-top: 1.5rem;">
+                           <h4><i class="ri-ticket-line"></i> Criar Cupom (Roupas)</h4>
+                           <p class="text-sm">Gere descontos exclusivos para produtos da categoria Roupas.</p>
+                             <div style="display:flex; gap:10px; align-items:flex-end;">
+                                <div class="input-wrapper" style="margin-bottom:0; flex:2;">
+                                    <label class="text-xs">Código do Cupom</label>
+                                 <input id="new-coupon-code" class="input-field" placeholder="Ex: VERAO10" style="text-transform:uppercase;">
+                                 </div>
+                                    <div class="input-wrapper" style="margin-bottom:0; flex:1;">
+                                           <label class="text-xs">% Desconto</label>
+                                            <input type="number" id="new-coupon-percent" class="input-field" placeholder="10">
+                                           </div>
+                                 <button class="btn btn-sm" style="background:#be185d; color:white; height:46px;" onclick="App.store.createCoupon()">Criar</button>
+                                       </div>
+                               <div id="coupon-list-display" style="margin-top:15px; max-height:100px; overflow-y:auto;"></div>
+                                </div>
                         
                         <div id="store-keys-locked" style="display:none;" class="secure-box">
                             <i class="ri-shield-check-line" style="font-size:2.5rem; margin-bottom:10px;"></i><br>
@@ -790,6 +806,18 @@
                         </select>
                     </div>
                 </div>
+                <div id="clothing-options-area" style="display:none; background:#fdf2f8; padding:15px; border-radius:8px; border:1px solid #fbcfe8; margin-bottom:1rem;">
+                        <h5 style="color:#be185d">Detalhes da Peça (Roupas)</h5>
+                          <div class="input-wrapper">
+                            <label>Tamanhos Disponíveis (Separe por vírgula)</label>
+        <input type="text" id="clothing-sizes" class="input-field" placeholder="Ex: P, M, G, GG, 38, 40">
+    </div>
+</div>
+
+<div class="input-wrapper">
+    <label>Descrição do Produto</label>
+    <textarea id="new-prod-desc" class="input-field" rows="3" placeholder="Detalhes do tecido, medidas, estado de conservação..."></textarea>
+</div>
 
                 <div class="input-wrapper">
                     <label>Nome do Item</label>
@@ -932,6 +960,11 @@
             <div class="modal-body">
                 <div id="cart-items-list" style="margin-bottom: 1rem;"></div>
                 <div style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; margin-top:10px; text-align:right;">
+                    <div style="margin-top:10px; display:flex; gap:5px;">
+                       <input type="text" id="cart-coupon-input" class="input-field" placeholder="Cupom de desconto" style="text-transform:uppercase;">
+                          <button class="btn btn-secondary btn-sm" style="width:auto;" onclick="App.cart.applyCoupon()">Aplicar</button>
+                    </div>
+                      <div id="coupon-msg" class="text-xs" style="margin-bottom:10px;"></div>
                     <strong>Total: <span id="cart-total-modal">R$ 0,00</span></strong>
                 </div>
             </div>
@@ -1367,6 +1400,8 @@
                     document.getElementById('gesso-labor-val').value = "";
                     document.getElementById('delivery-fee-val').value = "";
                     document.getElementById('new-prod-file').value = ""; // Limpa fotos
+                    document.getElementById('new-prod-desc').value = "";
+                    document.getElementById('clothing-sizes').value = "";
                     
                     document.getElementById('new-prod-cat').value = CONFIG.categories[0];
                     App.store.checkCategory(CONFIG.categories[0]);
@@ -1380,6 +1415,10 @@
                     document.getElementById('new-prod-name').value = p.nome;
                     document.getElementById('new-prod-price').value = p.preco;
                     document.getElementById('new-prod-promo').checked = p.promocao;
+                    // Adicione estas linhas para carregar os dados
+                   document.getElementById('new-prod-desc').value = p.descricao || "";
+                   document.getElementById('clothing-sizes').value = p.sizes || "";
+
                     
                     if(p.gesso_info) {
                         try {
@@ -1403,18 +1442,23 @@
                 },
                 closeProductModal: () => document.getElementById('product-modal').style.display = 'none',
                 checkCategory: (cat) => {
-                    document.getElementById('hotel-dates-area').style.display = 'none';
-                    document.getElementById('gesso-options-area').style.display = 'none';
-                    document.getElementById('delivery-options-area').style.display = 'none';
-                    
-                    if(cat === 'Hoteis/Pousadas') {
-                        document.getElementById('hotel-dates-area').style.display = 'block';
-                    } else if (cat === 'Serviços de Gesso') {
-                        document.getElementById('gesso-options-area').style.display = 'block';
-                    } else if (cat === 'Comidas' || cat === 'Bebidas') {
-                        document.getElementById('delivery-options-area').style.display = 'block';
-                    }
-                },
+        
+    // ... (oculta os outros areas como antes)
+                  document.getElementById('hotel-dates-area').style.display = 'none';
+                  document.getElementById('gesso-options-area').style.display = 'none';
+               document.getElementById('delivery-options-area').style.display = 'none';
+              document.getElementById('clothing-options-area').style.display = 'none'; // Novo
+
+    if(cat === 'Hoteis/Pousadas') {
+        document.getElementById('hotel-dates-area').style.display = 'block';
+    } else if (cat === 'Serviços de Gesso') {
+        document.getElementById('gesso-options-area').style.display = 'block';
+    } else if (cat === 'Comidas' || cat === 'Bebidas') {
+        document.getElementById('delivery-options-area').style.display = 'block';
+    } else if (cat === 'Roupas') { // Lógica Nova
+        document.getElementById('clothing-options-area').style.display = 'block';
+    }
+},
                 submitProduct: async () => {
                     if(!App.state.storeId) {
                         alert("Erro crítico: ID da Loja não encontrado.");
@@ -1426,7 +1470,10 @@
                     const preco = document.getElementById('new-prod-price').value;
                     const cat = document.getElementById('new-prod-cat').value;
                     const promo = document.getElementById('new-prod-promo').checked;
-                    
+                    // Dentro da função, onde pega as variáveis (const nome = ...), adicione:
+                    const descricao = document.getElementById('new-prod-desc').value;
+                    const sizes = document.getElementById('clothing-sizes').value;
+
                     const fileInput = document.getElementById('new-prod-file');
                     const files = fileInput.files;
 
@@ -1480,6 +1527,8 @@
                         disponibilidade: disp,
                         gesso_info: gessoInfo,
                         delivery_info: deliveryInfo
+                        descricao: descricao,
+                        sizes: sizes
                     };
 
                     if (galeriaUrls.length > 0) {
@@ -1559,6 +1608,47 @@
                     window.print(); 
                 }
             },
+        createCoupon: async () => {
+    const code = document.getElementById('new-coupon-code').value.toUpperCase().trim();
+    const percent = parseInt(document.getElementById('new-coupon-percent').value);
+    
+    if(!code || !percent) return App.utils.toast("Preencha código e porcentagem", "error");
+
+    const { error } = await _sb.from('coupons').insert({
+        store_id: App.state.storeId,
+        code: code,
+        percent: percent
+    });
+
+    if(error) App.utils.toast("Erro ao criar cupom", "error");
+    else {
+        App.utils.toast("Cupom criado!", "success");
+        App.store.loadCoupons();
+        document.getElementById('new-coupon-code').value = "";
+    }
+},
+
+loadCoupons: async () => {
+    const { data } = await _sb.from('coupons').select('*').eq('store_id', App.state.storeId).eq('active', true);
+    const div = document.getElementById('coupon-list-display');
+    if(!data || data.length === 0) {
+        div.innerHTML = '<span class="text-xs text-muted">Nenhum cupom ativo.</span>';
+        return;
+    }
+    div.innerHTML = data.map(c => `
+        <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:5px; font-size:0.8rem;">
+            <strong>${c.code} (${c.percent}%)</strong>
+            <span style="color:red; cursor:pointer;" onclick="App.store.deleteCoupon('${c.id}')">Excluir</span>
+        </div>
+    `).join('');
+},
+
+deleteCoupon: async (id) => {
+    if(confirm("Excluir cupom?")) {
+        await _sb.from('coupons').delete().eq('id', id);
+        App.store.loadCoupons();
+    }
+},
             filterHistory: async () => {
     const dateStr = document.getElementById('history-date').value;
     if(!dateStr) return alert("Selecione uma data");
@@ -2072,134 +2162,277 @@
                     App.utils.toast("Enviado para cozinha!", "success");
                 }
             },
-            cart: {
-                open: () => { document.getElementById('cart-modal').style.display = 'flex'; App.cart.render(); },
-                add: (product, storeId) => {
-                     if (App.state.cart.length > 0 && App.state.cart[0].storeId !== storeId) {
-                         if(!confirm("Você tem itens de outra loja no carrinho. Deseja limpar o carrinho e iniciar um novo pedido?")) return;
-                         App.state.cart = [];
-                     }
-                     App.state.cart.push({ ...product, storeId });
-                     App.utils.toast("Adicionado ao carrinho!", "success");
-                     App.cart.updateFloater();
-                },
-                remove: (index) => { App.state.cart.splice(index, 1); App.cart.render(); App.cart.updateFloater(); },
-                render: () => {
-                     const container = document.getElementById('cart-items-list');
-                     if(App.state.cart.length === 0) {
-                         container.innerHTML = '<p class="text-center text-muted">Carrinho vazio.</p>';
-                         document.getElementById('cart-total-modal').innerText = "R$ 0,00";
-                         return;
-                     }
-                     let total = 0;
-                     container.innerHTML = App.state.cart.map((item, idx) => {
-                         total += item.preco;
-                         return `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding:10px;">
-                                 <div><div style="font-weight:bold">${item.nome}</div><div class="text-xs text-muted">R$ ${item.preco.toFixed(2)}</div></div>
-                                 <button class="btn btn-sm btn-danger" style="width:auto;" onclick="App.cart.remove(${idx})"><i class="ri-delete-bin-line"></i></button></div>`;
-                     }).join('');
-                     document.getElementById('cart-total-modal').innerText = `R$ ${total.toFixed(2)}`;
-                },
-                updateFloater: () => {
-                     const floater = document.getElementById('cart-floater');
-                     if(App.state.cart.length > 0) {
-                         floater.style.display = 'flex';
-                         const total = App.state.cart.reduce((sum, item) => sum + item.preco, 0);
-                         document.getElementById('cart-count').innerText = `${App.state.cart.length} itens`;
-                         document.getElementById('cart-total').innerText = `R$ ${total.toFixed(2)}`;
-                     } else floater.style.display = 'none';
-                },
-                checkout: async () => {
-                     if(App.state.cart.length === 0) return;
-                     const total = App.state.cart.reduce((sum, item) => sum + item.preco, 0);
-                     const storeId = App.state.cart[0].storeId;
-                     const itemsDesc = App.state.cart.map(i => i.nome).join(', ');
-                     document.getElementById('cart-modal').style.display = 'none';
-                     const address = prompt("Endereço de Entrega (ou Mesa):");
-                     if(!address) return;
-                     
-                     App.utils.toast("Iniciando pagamento...", "info");
-                     const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', storeId).single();
-                     const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
-                     mpInstance = new MercadoPago(publicKeyToUse);
-                     
-                     App.payment.open(total, { product_id: App.state.cart[0].id, store_id: storeId, basePrice: total, address: address + " (Itens: " + itemsDesc + ")", requer_montagem: false, taxa: total * 0.15 });
+           cart: {
+            activeCoupon: null, // Estado para guardar cupom
+
+            open: () => { document.getElementById('cart-modal').style.display = 'flex'; App.cart.render(); },
+            
+            add: (product, storeId) => {
+                 // Se tentar adicionar item de outra loja, pede pra limpar
+                 if (App.state.cart.length > 0 && App.state.cart[0].storeId !== storeId) {
+                     if(!confirm("Você tem itens de outra loja no carrinho. Deseja limpar o carrinho e iniciar um novo pedido?")) return;
                      App.state.cart = [];
-                     App.cart.updateFloater();
+                     App.cart.activeCoupon = null; // Reseta cupom se trocar de loja
+                 }
+                 App.state.cart.push({ ...product, storeId });
+                 App.utils.toast("Adicionado ao carrinho!", "success");
+                 App.cart.updateFloater();
+            },
+
+            remove: (index) => { App.state.cart.splice(index, 1); App.cart.render(); App.cart.updateFloater(); },
+
+            applyCoupon: async () => {
+                const code = document.getElementById('cart-coupon-input').value.toUpperCase().trim();
+                if(!code) return;
+                
+                if(App.state.cart.length === 0) return App.utils.toast("Carrinho vazio", "error");
+
+                const storeId = App.state.cart[0].storeId;
+                
+                // Verifica no banco se o cupom existe, é da loja certa e está ativo
+                const { data, error } = await _sb.from('coupons').select('*')
+                    .eq('code', code)
+                    .eq('store_id', storeId)
+                    .eq('active', true)
+                    .single();
+                    
+                const msg = document.getElementById('coupon-msg');
+                
+                if(error || !data) {
+                    msg.innerHTML = '<span style="color:red">Cupom inválido ou expirado.</span>';
+                    App.cart.activeCoupon = null;
+                } else {
+                    msg.innerHTML = `<span style="color:green">Cupom de ${data.percent}% aplicado em itens de ROUPAS!</span>`;
+                    App.cart.activeCoupon = data; // Salva o cupom na memória
+                    App.cart.render(); // Re-renderiza para atualizar totais visuais
+                    App.cart.updateFloater(); // Atualiza o total flutuante
                 }
             },
-            catalog: {
-                currentCat: 'Todos',
-                filter: (cat, btn) => {
-                    document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
-                    if(btn) btn.classList.add('active');
-                    App.catalog.currentCat = cat;
-                    App.catalog.load();
-                },
-                load: async () => {
-                    let query = _sb.from('products').select('*, stores(nome_loja)');
-                    if(App.catalog.currentCat !== 'Todos') query = query.eq('categoria', App.catalog.currentCat);
-                    const { data } = await query;
-                    const promos = data?.filter(p => p.promocao);
-                    const normal = data?.filter(p => !p.promocao);
-                    let html = '';
-                    if(promos && promos.length > 0) {
-                        html += `<div style="grid-column:1/-1; margin-bottom:10px;"><h3 style="color:var(--danger)">🔥 Ofertas em Destaque</h3></div>`;
-                        html += promos.map(p => App.catalog.renderCard(p)).join('');
-                        if(normal && normal.length > 0) html += `<div style="grid-column:1/-1; margin:20px 0 10px 0;"><h3 style="color:var(--primary)">Outros Serviços</h3></div>`;
-                    }
-                    html += normal?.map(p => App.catalog.renderCard(p)).join('');
-                    document.getElementById('public-catalog').innerHTML = html || '<p style="grid-column:1/-1; text-align:center">Nenhuma oferta nesta categoria.</p>';
-                },
-                renderCard: (p) => {
-                    let dispInfo = '';
-                    let actionText = "Contratar Serviço";
-                    if (p.categoria === 'Comidas' || p.categoria === 'Bebidas') actionText = "Fazer Pedido"; 
-                    if (p.categoria === 'Serviços de Gesso') actionText = "Orçamento";
-                    if (p.categoria === 'Roupas') actionText = "Comprar"; 
 
-                    const pSafe = JSON.stringify(p).replace(/"/g, '&quot;');
-                    const dSafe = JSON.stringify(p.delivery_info || null).replace(/"/g, '&quot;');
-                    let onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${dSafe})`;
-                    
-                    if(p.categoria === 'Hoteis/Pousadas') {
-                         if(p.disponibilidade) {
-                             const [start, end] = p.disponibilidade.split('|');
-                             const fmt = d => d.split('-').reverse().join('/');
-                             dispInfo = `<div class="text-xs" style="background:#f0f9ff; padding:5px; border-radius:4px; margin-top:5px; color:#0369a1;">📅 Disp: ${fmt(start)} até ${fmt(end)}</div>`;
-                             onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", null)`;
-                         }
-                    } else if (p.categoria === 'Serviços de Gesso' && p.gesso_info) {
-                        onclick = `App.client.openBudget(${pSafe})`;
-                        dispInfo = `<div class="text-xs" style="color:#854d0e; margin-top:5px;">Orçamento por m²</div>`;
-                    } else if (p.categoria === 'Comidas' || p.categoria === 'Bebidas') {
-                        onclick = `App.cart.add(${pSafe}, "${p.store_id}")`;
-                    }
-                    
-                    let actionBtn = `<button class="btn ${p.categoria==='Comidas'?'btn-success':'btn-secondary'} btn-full" style="margin-top:10px" onclick='${onclick}'>${p.categoria==='Comidas'?'Adicionar ao Carrinho':actionText}</button>`;
-                    let chatBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>`;
+            render: () => {
+                 const container = document.getElementById('cart-items-list');
+                 
+                 // Se vazio
+                 if(App.state.cart.length === 0) {
+                     container.innerHTML = '<p class="text-center text-muted">Carrinho vazio.</p>';
+                     document.getElementById('cart-total-modal').innerText = "R$ 0,00";
+                     if(document.getElementById('coupon-msg')) document.getElementById('coupon-msg').innerHTML = '';
+                     App.cart.activeCoupon = null;
+                     return;
+                 }
 
-                    let imagesHtml = '';
-                    if (p.galeria && Array.isArray(p.galeria) && p.galeria.length > 0) {
-                        const imgs = p.galeria.map(url => `<img src="${url}" class="gallery-img" loading="lazy">`).join('');
-                        imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery">${imgs}</div>${p.galeria.length > 1 ? '<div class="gallery-badge"><i class="ri-image-line"></i> ' + p.galeria.length + ' fotos</div>' : ''}</div>`;
-                    } else {
-                        imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery"><img src="${p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto'}" class="gallery-img"></div></div>`;
-                    }
-
-                    return `
-                        <div class="card">
-                            ${p.promocao ? '<div class="badge badge-promo">PROMOÇÃO</div>' : ''}
-                            ${imagesHtml}
-                            <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div>
-                            <h4>${p.nome}</h4><h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
-                            ${dispInfo}
-                            ${actionBtn}
-                            ${chatBtn}
-                        </div>`;
-                },
-                fetchPublic: async () => { App.catalog.load(); }
+                 let total = 0;
+                 
+                 // Gera lista de itens
+                 container.innerHTML = App.state.cart.map((item, idx) => {
+                     let price = item.preco;
+                     let discountHtml = '';
+                     
+                     // Lógica do desconto: SÓ APLICA SE FOR ROUPA
+                     if(App.cart.activeCoupon && item.categoria === 'Roupas') {
+                         const discount = price * (App.cart.activeCoupon.percent / 100);
+                         price = price - discount;
+                         discountHtml = `<span class="text-xs" style="color:green; display:block;">-${App.cart.activeCoupon.percent}% OFF (Cupom)</span>`;
+                     }
+                     
+                     total += price;
+                     
+                     return `<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding:10px;">
+                         <div>
+                            <div style="font-weight:bold">${item.nome}</div>
+                            <div class="text-xs text-muted">R$ ${item.preco.toFixed(2)}</div>
+                            ${discountHtml}
+                            ${discountHtml ? `<div class="text-xs font-bold">Final: R$ ${price.toFixed(2)}</div>` : ''}
+                         </div>
+                         <button class="btn btn-sm btn-danger" style="width:auto;" onclick="App.cart.remove(${idx})"><i class="ri-delete-bin-line"></i></button></div>`;
+                 }).join('');
+                 
+                 document.getElementById('cart-total-modal').innerText = `R$ ${total.toFixed(2)}`;
             },
+
+            updateFloater: () => {
+                 const floater = document.getElementById('cart-floater');
+                 if(App.state.cart.length > 0) {
+                     floater.style.display = 'flex';
+                     // Recalcula total para o botão flutuante considerando desconto
+                     let total = 0;
+                     App.state.cart.forEach(item => {
+                        let p = item.preco;
+                        if(App.cart.activeCoupon && item.categoria === 'Roupas') {
+                             p = p - (p * (App.cart.activeCoupon.percent / 100));
+                        }
+                        total += p;
+                     });
+                     
+                     document.getElementById('cart-count').innerText = `${App.state.cart.length} itens`;
+                     document.getElementById('cart-total').innerText = `R$ ${total.toFixed(2)}`;
+                 } else floater.style.display = 'none';
+            },
+
+            checkout: async () => {
+                 if(App.state.cart.length === 0) return;
+                 
+                 // Recalcula total com desconto para cobrança final
+                 let total = 0;
+                 App.state.cart.forEach(item => {
+                    let p = item.preco;
+                    if(App.cart.activeCoupon && item.categoria === 'Roupas') {
+                         p = p - (p * (App.cart.activeCoupon.percent / 100));
+                    }
+                    total += p;
+                 });
+
+                 const storeId = App.state.cart[0].storeId;
+                 const itemsDesc = App.state.cart.map(i => i.nome).join(', ');
+                 document.getElementById('cart-modal').style.display = 'none';
+                 
+                 const address = prompt("Endereço de Entrega (ou Mesa):");
+                 if(!address) return;
+                 
+                 App.utils.toast("Iniciando pagamento...", "info");
+                 
+                 // Busca chave pix da loja
+                 const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', storeId).single();
+                 const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
+                 mpInstance = new MercadoPago(publicKeyToUse);
+                 
+                 // Abre modal de pagamento com o TOTAL JÁ COM DESCONTO
+                 App.payment.open(total, { 
+                     product_id: App.state.cart[0].id, 
+                     store_id: storeId, 
+                     basePrice: total, 
+                     address: address + " (Itens: " + itemsDesc + ")", 
+                     requer_montagem: false, 
+                     taxa: total * 0.15 
+                 });
+                 
+                 // Limpa o carrinho após iniciar o checkout
+                 App.state.cart = [];
+                 App.cart.activeCoupon = null;
+                 App.cart.updateFloater();
+            }
+        },
+            catalog: {
+            currentCat: 'Todos',
+            filter: (cat, btn) => {
+                document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+                if(btn) btn.classList.add('active');
+                App.catalog.currentCat = cat;
+                App.catalog.load();
+            },
+            load: async () => {
+                let query = _sb.from('products').select('*, stores(nome_loja)');
+                if(App.catalog.currentCat !== 'Todos') query = query.eq('categoria', App.catalog.currentCat);
+                const { data } = await query;
+                const promos = data?.filter(p => p.promocao);
+                const normal = data?.filter(p => !p.promocao);
+                let html = '';
+                if(promos && promos.length > 0) {
+                    html += `<div style="grid-column:1/-1; margin-bottom:10px;"><h3 style="color:var(--danger)">🔥 Ofertas em Destaque</h3></div>`;
+                    html += promos.map(p => App.catalog.renderCard(p)).join('');
+                    if(normal && normal.length > 0) html += `<div style="grid-column:1/-1; margin:20px 0 10px 0;"><h3 style="color:var(--primary)">Outros Serviços</h3></div>`;
+                }
+                html += normal?.map(p => App.catalog.renderCard(p)).join('');
+                document.getElementById('public-catalog').innerHTML = html || '<p style="grid-column:1/-1; text-align:center">Nenhuma oferta nesta categoria.</p>';
+            },
+            renderCard: (p) => {
+                let dispInfo = '';
+                let actionText = "Contratar Serviço";
+                
+                // Define texto do botão baseado na categoria
+                if (p.categoria === 'Comidas' || p.categoria === 'Bebidas') actionText = "Fazer Pedido"; 
+                if (p.categoria === 'Serviços de Gesso') actionText = "Orçamento";
+                if (p.categoria === 'Roupas') actionText = "Comprar"; 
+
+                // Prepara dados seguros para passar no HTML
+                const pSafe = JSON.stringify(p).replace(/"/g, '&quot;');
+                const dSafe = JSON.stringify(p.delivery_info || null).replace(/"/g, '&quot;');
+                
+                // Onclick padrão
+                let onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${dSafe})`;
+                
+                // LÓGICA NOVA: Seletor de Tamanhos (Roupas)
+                let sizeSelectorHtml = '';
+                if(p.categoria === 'Roupas' && p.sizes) {
+                    const sizesArr = p.sizes.split(',').map(s => s.trim());
+                    const options = sizesArr.map(s => `<option value="${s}">${s}</option>`).join('');
+                    sizeSelectorHtml = `
+                        <div style="margin-top:5px;">
+                            <label class="text-xs">Tamanho:</label>
+                            <select id="size-select-${p.id}" class="input-field" style="padding:5px; height:auto; font-size:0.9rem;">
+                                ${options}
+                            </select>
+                        </div>
+                    `;
+                    // Atualiza o onclick para usar a função específica de roupas
+                    onclick = `App.catalog.addToCartClothing('${p.id}', '${p.store_id}', this)`;
+                }
+                
+                // Lógica para Hotéis
+                if(p.categoria === 'Hoteis/Pousadas') {
+                    if(p.disponibilidade) {
+                        const [start, end] = p.disponibilidade.split('|');
+                        const fmt = d => d.split('-').reverse().join('/');
+                        dispInfo = `<div class="text-xs" style="background:#f0f9ff; padding:5px; border-radius:4px; margin-top:5px; color:#0369a1;">📅 Disp: ${fmt(start)} até ${fmt(end)}</div>`;
+                        onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", null)`;
+                    }
+                // Lógica para Gesso
+                } else if (p.categoria === 'Serviços de Gesso' && p.gesso_info) {
+                    onclick = `App.client.openBudget(${pSafe})`;
+                    dispInfo = `<div class="text-xs" style="color:#854d0e; margin-top:5px;">Orçamento por m²</div>`;
+                // Lógica para Comidas/Bebidas
+                } else if (p.categoria === 'Comidas' || p.categoria === 'Bebidas') {
+                    onclick = `App.cart.add(${pSafe}, "${p.store_id}")`;
+                }
+                
+                let actionBtn = `<button class="btn ${p.categoria==='Comidas'?'btn-success':'btn-secondary'} btn-full" style="margin-top:10px" onclick='${onclick}'>${p.categoria==='Comidas'?'Adicionar ao Carrinho':actionText}</button>`;
+                let chatBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>`;
+
+                // Monta a galeria de imagens
+                let imagesHtml = '';
+                if (p.galeria && Array.isArray(p.galeria) && p.galeria.length > 0) {
+                    const imgs = p.galeria.map(url => `<img src="${url}" class="gallery-img" loading="lazy">`).join('');
+                    imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery">${imgs}</div>${p.galeria.length > 1 ? '<div class="gallery-badge"><i class="ri-image-line"></i> ' + p.galeria.length + ' fotos</div>' : ''}</div>`;
+                } else {
+                    imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery"><img src="${p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto'}" class="gallery-img"></div></div>`;
+                }
+
+                // RETORNO ÚNICO DO CARD COMPLETO
+                return `
+                    <div class="card">
+                        ${p.promocao ? '<div class="badge badge-promo">PROMOÇÃO</div>' : ''}
+                        ${imagesHtml}
+                        <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div>
+                        <h4>${p.nome}</h4>
+                        
+                        ${p.descricao ? `<p class="text-sm text-muted" style="margin-bottom:5px; line-height:1.2;">${p.descricao}</p>` : ''}
+                        
+                        <h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
+                        
+                        ${sizeSelectorHtml} 
+                        
+                        ${dispInfo}
+                        ${actionBtn}
+                        ${chatBtn}
+                    </div>`;
+            },
+            
+            fetchPublic: async () => { App.catalog.load(); },
+
+            // AGORA SIM, DENTRO DO CATALOG (note a vírgula acima)
+            addToCartClothing: async (pid, sid, btnElement) => {
+                const { data: p } = await _sb.from('products').select('*').eq('id', pid).single();
+                
+                const select = document.getElementById(`size-select-${pid}`);
+                if(!select) return; 
+                const tamanho = select.value;
+
+                const prodToAdd = { ...p, nome: `${p.nome} (Tam: ${tamanho})` };
+                
+                App.cart.add(prodToAdd, sid);
+            }
+
+        }, // <--- AQUI FECHA O CATALOG
             
             chat: {
                 open: async (storeId, clientId = null) => {
