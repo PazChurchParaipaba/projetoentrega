@@ -1070,17 +1070,33 @@
 
         const App = {
             state: { 
-                user: null, profile: null, tempRole: null, deferredPrompt: null, 
-                mapInstance: null, marker: null, watchId: null, activeOrder: null, 
-                storeId: null, pendingPayment: null, brickController: null, 
-                pixInterval: null, activeChatStore: null, activeChatClient: null,
-                chatSub: null, currentBudgetTotal: 0, mediaRecorder: null,
-                audioChunks: [], cart: [], currentComanda: null, 
-                paymentSplits: [], comandaTotal: 0, currentComandaItems: [],
+                user: null, 
+                profile: null, 
+                tempRole: null, 
+                deferredPrompt: null, 
+                mapInstance: null, 
+                marker: null, 
+                watchId: null, 
+                activeOrder: null, 
+                storeId: null, 
+                pendingPayment: null, 
+                brickController: null, 
+                pixInterval: null, 
+                activeChatStore: null, 
+                activeChatClient: null,
+                chatSub: null,
+                currentBudgetTotal: 0,
+                mediaRecorder: null,
+                audioChunks: [],
+                cart: [], 
+                currentComanda: null, 
+                paymentSplits: [], 
+                comandaTotal: 0, 
+                currentComandaItems: [], 
                 currentMesaNum: null
             },
-
-            // --- MOVIDO O UTILS PARA CÁ (TOPO) PARA EVITAR ERROS DE LEITURA ---
+            
+            // UTILS NO TOPO PARA EVITAR ERRO DE INICIALIZAÇÃO
             utils: {
                 toast: (msg, type='success') => { 
                     const c = document.getElementById('toast-container'); 
@@ -1090,20 +1106,33 @@
                     c.appendChild(e); 
                     setTimeout(()=>e.remove(), 4000); 
                 },
+                
                 showChatNotification: (name, msg, clientId) => {
                     const c = document.getElementById('store-notifications');
                     const e = document.createElement('div');
                     e.className = 'chat-alert-card';
-                    e.innerHTML = `<div><div style="font-weight:bold; color:var(--primary)">Nova mensagem de ${name}</div><div style="font-size:0.9rem; color:var(--text-muted); margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">"${msg}"</div></div><button class="btn btn-sm btn-info" onclick="App.chat.open('${App.state.storeId}', '${clientId}'); this.parentElement.remove()">Responder</button>`;
+                    e.innerHTML = `
+                        <div>
+                            <div style="font-weight:bold; color:var(--primary)">Nova mensagem de ${name}</div>
+                            <div style="font-size:0.9rem; color:var(--text-muted); margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">"${msg}"</div>
+                        </div>
+                        <button class="btn btn-sm btn-info" onclick="App.chat.open('${App.state.storeId}', '${clientId}'); this.parentElement.remove()">Responder</button>
+                    `;
                     c.appendChild(e);
                     setTimeout(() => e.remove(), 10000);
                 },
+
                 setupPWA: () => { 
                     const manifest = { "name": "NexLog", "short_name": "NexLog", "start_url": window.location.href, "display": "standalone", "background_color": "#ffffff", "theme_color": "#2563eb", "icons": [{ "src": "https://raw.githubusercontent.com/PazChurchParaipaba/projetoentrega/refs/heads/main/logo.png", "sizes": "192x192", "type": "image/png" }] }; 
                     const blob = new Blob([JSON.stringify(manifest)], {type: 'application/json'}); 
                     document.querySelector('#dynamic-manifest').setAttribute('href', URL.createObjectURL(blob)); 
-                    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); App.state.deferredPrompt = e; document.getElementById('pwa-banner').style.display = 'flex'; }); 
+                    window.addEventListener('beforeinstallprompt', (e) => { 
+                        e.preventDefault(); 
+                        App.state.deferredPrompt = e; 
+                        document.getElementById('pwa-banner').style.display = 'flex'; 
+                    }); 
                 },
+                
                 setupCategories: () => {
                     const catList = document.getElementById('category-list');
                     const catSelect = document.getElementById('new-prod-cat');
@@ -1129,8 +1158,6 @@
                     App.catalog.fetchPublic();
                 }
             },
-
-            // CONTINUA COM pwa: { ...
 
             pwa: {
                 install: () => {
@@ -1215,8 +1242,7 @@
                     const pass = document.getElementById('reg-pass').value;
                     const name = document.getElementById('reg-name').value.trim();
                     const role = App.state.tempRole;
-                    const btn = document.getElementById('btn-final-reg');
-
+                    
                     if(!email || !pass || !name) return App.utils.toast('Preencha os campos corretamente', 'error');
                     
                     try {
@@ -1240,7 +1266,6 @@
                             const cnpj = document.getElementById('reg-cnpj').value.trim();
                             const { error: storeError } = await _sb.from('stores').insert({ admin_id: newUser.id, nome_loja: storeName || "Minha Loja Nova", cnpj: cnpj, whatsapp: whatsApp });
                             if(storeError) {
-                                console.error("Erro ao criar loja:", storeError);
                                 alert("Usuário criado, mas erro ao criar loja: " + storeError.message);
                                 return; 
                             }
@@ -1268,536 +1293,567 @@
             },
 
             store: {
-            init: async () => {
-                if (!App.state.user) return;
-                let { data: store } = await _sb.from('stores').select('*').eq('admin_id', App.state.user.id).maybeSingle();
-                
-                if (!store) {
-                    const { data: newStore } = await _sb.from('stores').insert({ admin_id: App.state.user.id, nome_loja: 'Loja (Complete o Cadastro)' }).select().single();
-                    store = newStore;
-                }
-                
-                App.state.storeId = store.id;
-                App.state.currentStore = store;
-
-                // Carrega configurações de Logística
-                document.getElementById('store-pickup-address').value = store.endereco_retirada || '';
-                document.getElementById('store-delivery-fee').value = store.taxa_entrega_padrao || '';
-
-                if (store.tipo_loja === 'Restaurante') {
-                    document.getElementById('admin-restaurant-panel').style.display = 'block';
-                } else {
-                    document.getElementById('admin-restaurant-panel').style.display = 'none';
-                }
-
-                if(store.mp_access_token) {
-                    document.getElementById('store-keys-area').style.display = 'none';
-                    document.getElementById('store-keys-locked').style.display = 'block';
-                } else {
-                    document.getElementById('store-keys-area').style.display = 'block';
-                    document.getElementById('store-keys-locked').style.display = 'none';
-                }
-
-                if(store.parceiro_exclusivo_id) {
-                    const {data: p} = await _sb.from('profiles').select('nome_completo, email').eq('id', store.parceiro_exclusivo_id).single();
-                    if(p) document.getElementById('active-partner-display').innerText = `Parceiro Vinculado: ${p.nome_completo} (${p.email})`;
-                }
-
-                App.store.loadComandas();
-                // Carrega Cupons
-                App.store.loadCoupons();
-
-                const { data: orders } = await _sb.from('orders').select('*, products(nome, categoria, delivery_info), profiles!orders_cliente_id_fkey(nome_completo, email, cpf), prestador:profiles!orders_prestador_id_fkey(nome_completo, chave_pix)').eq('store_id', store.id).order('created_at', { ascending: false });
-                App.store.calcMetrics(orders || []);
-                App.store.renderOrders(orders);
-                
-                App.store.loadMyProducts();
-                App.store.listenMessages();
-                App.chat.loadHistory('loja');
-            },
-
-            // --- FUNÇÕES DOS QUADRADINHOS (ADMIN) ---
-            renderAdminSizes: (existingSizesStr = "") => {
-                const sizes = ['PP', 'P', 'M', 'G', 'GG', 'XG', '34', '36', '38', '40', '42', '44', '46', '48', '50', 'Único'];
-                const container = document.getElementById('admin-size-list');
-                if(container) {
-                    container.innerHTML = '';
-                    const existing = existingSizesStr ? existingSizesStr.split(',').map(s => s.trim()) : [];
+                init: async () => {
+                    if (!App.state.user) return;
+                    let { data: store } = await _sb.from('stores').select('*').eq('admin_id', App.state.user.id).maybeSingle();
                     
-                    sizes.forEach(s => {
-                        const div = document.createElement('div');
-                        div.className = `size-box ${existing.includes(s) ? 'admin-selected' : ''}`;
-                        div.innerText = s;
-                        div.onclick = () => {
-                            div.classList.toggle('admin-selected');
-                            App.store.updateHiddenSizeInput();
-                        };
-                        container.appendChild(div);
-                    });
-                    document.getElementById('clothing-sizes').value = existingSizesStr;
-                }
-            },
+                    if (!store) {
+                        const { data: newStore } = await _sb.from('stores').insert({ admin_id: App.state.user.id, nome_loja: 'Loja (Complete o Cadastro)' }).select().single();
+                        store = newStore;
+                    }
+                    
+                    App.state.storeId = store.id;
+                    App.state.currentStore = store;
 
-            updateHiddenSizeInput: () => {
-                const selected = Array.from(document.querySelectorAll('.size-box.admin-selected')).map(el => el.innerText);
-                document.getElementById('clothing-sizes').value = selected.join(',');
-            },
-            // ----------------------------------------
-            
-            saveLogistics: async () => {
-                const addr = document.getElementById('store-pickup-address').value;
-                const fee = document.getElementById('store-delivery-fee').value;
+                    // Carrega configurações de Logística
+                    document.getElementById('store-pickup-address').value = store.endereco_retirada || '';
+                    document.getElementById('store-delivery-fee').value = store.taxa_entrega_padrao || '';
+
+                    if (store.tipo_loja === 'Restaurante') {
+                        document.getElementById('admin-restaurant-panel').style.display = 'block';
+                    } else {
+                        document.getElementById('admin-restaurant-panel').style.display = 'none';
+                    }
+
+                    if(store.mp_access_token) {
+                        document.getElementById('store-keys-area').style.display = 'none';
+                        document.getElementById('store-keys-locked').style.display = 'block';
+                    } else {
+                        document.getElementById('store-keys-area').style.display = 'block';
+                        document.getElementById('store-keys-locked').style.display = 'none';
+                    }
+
+                    if(store.parceiro_exclusivo_id) {
+                        const {data: p} = await _sb.from('profiles').select('nome_completo, email').eq('id', store.parceiro_exclusivo_id).single();
+                        if(p) document.getElementById('active-partner-display').innerText = `Parceiro Vinculado: ${p.nome_completo} (${p.email})`;
+                    }
+
+                    App.store.loadComandas();
+                    // Carrega Cupons
+                    App.store.loadCoupons();
+
+                    const { data: orders } = await _sb.from('orders').select('*, products(nome, categoria, delivery_info), profiles!orders_cliente_id_fkey(nome_completo, email, cpf), prestador:profiles!orders_prestador_id_fkey(nome_completo, chave_pix)').eq('store_id', store.id).order('created_at', { ascending: false });
+                    App.store.calcMetrics(orders || []);
+                    App.store.renderOrders(orders);
+                    
+                    App.store.loadMyProducts();
+                    App.store.listenMessages();
+                    App.chat.loadHistory('loja');
+                },
+
+                // --- FUNÇÕES DOS QUADRADINHOS (ADMIN) ---
+                renderAdminSizes: (existingSizesStr = "") => {
+                    const sizes = ['PP', 'P', 'M', 'G', 'GG', 'XG', '34', '36', '38', '40', '42', '44', '46', '48', '50', 'Único'];
+                    const container = document.getElementById('admin-size-list');
+                    if(container) {
+                        container.innerHTML = '';
+                        const existing = existingSizesStr ? existingSizesStr.split(',').map(s => s.trim()) : [];
+                        
+                        sizes.forEach(s => {
+                            const div = document.createElement('div');
+                            div.className = `size-box ${existing.includes(s) ? 'admin-selected' : ''}`;
+                            div.innerText = s;
+                            div.onclick = () => {
+                                div.classList.toggle('admin-selected');
+                                App.store.updateHiddenSizeInput();
+                            };
+                            container.appendChild(div);
+                        });
+                        document.getElementById('clothing-sizes').value = existingSizesStr;
+                    }
+                },
+
+                updateHiddenSizeInput: () => {
+                    const selected = Array.from(document.querySelectorAll('.size-box.admin-selected')).map(el => el.innerText);
+                    document.getElementById('clothing-sizes').value = selected.join(',');
+                },
+                // ----------------------------------------
                 
-                await _sb.from('stores').update({ 
-                    endereco_retirada: addr, 
-                    taxa_entrega_padrao: fee 
-                }).eq('id', App.state.storeId);
-                
-                App.utils.toast("Configurações salvas!", "success");
-            },
-            loadComandas: async () => {
-                const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', {ascending: true});
-                const container = document.getElementById('admin-comanda-grid');
-                if (data) {
-                    container.innerHTML = data.map(c => `
-                        <div class="comanda-card bg-${c.status}" onclick="App.store.manageComanda('${c.id}', ${JSON.stringify(c.items || []).replace(/"/g, '&quot;')}, ${c.numero}, '${c.status}')">
-                            <div class="comanda-corner"></div>
-                            <div class="comanda-dot"></div>
-                            <div style="position:absolute; top:5px; right:5px; font-size:0.8rem; background:rgba(0,0,0,0.2); padding:2px 6px; border-radius:4px; z-index:10;" onclick="event.stopPropagation(); App.store.deleteComanda('${c.id}')">✕</div>
-                            <div style="font-size:1.5rem;">${c.numero}</div>
-                            <div class="text-xs" style="text-transform:uppercase;">${c.status}</div>
+                saveLogistics: async () => {
+                    const addr = document.getElementById('store-pickup-address').value;
+                    const fee = document.getElementById('store-delivery-fee').value;
+                    
+                    await _sb.from('stores').update({ 
+                        endereco_retirada: addr, 
+                        taxa_entrega_padrao: fee 
+                    }).eq('id', App.state.storeId);
+                    
+                    App.utils.toast("Configurações salvas!", "success");
+                },
+                loadComandas: async () => {
+                    const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', {ascending: true});
+                    const container = document.getElementById('admin-comanda-grid');
+                    if (data) {
+                        container.innerHTML = data.map(c => `
+                            <div class="comanda-card bg-${c.status}" onclick="App.store.manageComanda('${c.id}', ${JSON.stringify(c.items || []).replace(/"/g, '&quot;')}, ${c.numero}, '${c.status}')">
+                                <div class="comanda-corner"></div>
+                                <div class="comanda-dot"></div>
+                                <div style="position:absolute; top:5px; right:5px; font-size:0.8rem; background:rgba(0,0,0,0.2); padding:2px 6px; border-radius:4px; z-index:10;" onclick="event.stopPropagation(); App.store.deleteComanda('${c.id}')">✕</div>
+                                <div style="font-size:1.5rem;">${c.numero}</div>
+                                <div class="text-xs" style="text-transform:uppercase;">${c.status}</div>
+                            </div>
+                        `).join('');
+                        if(document.getElementById('comanda-list-container')) document.getElementById('comanda-list-container').innerHTML = container.innerHTML;
+                    }
+                },
+                deleteComanda: async (id) => {
+                    if(confirm("Excluir esta comanda permanentemente?")) {
+                        await _sb.from('comandas').delete().eq('id', id);
+                        App.store.loadComandas();
+                    }
+                },
+                manageComanda: (id, items, num, status) => {
+                    if (status === 'livre') return alert("Comanda livre. Garçom deve abrir lançando pedidos.");
+                    
+                    App.state.currentComanda = id;
+                    App.state.currentComandaItems = items;
+                    App.state.currentMesaNum = num;
+                    App.state.comandaTotal = items.reduce((acc, i) => acc + (i.price * i.qtd), 0);
+
+                    const itemsHtml = items.map((item, idx) => `
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding:8px;">
+                            <div>
+                                <span style="font-weight:bold;">${item.qtd}x ${item.nome}</span>
+                                <span class="text-xs text-muted">Garçom: ${item.garcom || 'N/A'}</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span>R$ ${(item.price * item.qtd).toFixed(2)}</span>
+                                <button class="btn btn-danger btn-sm" style="padding:2px 8px;" onclick="App.store.removeItemFromComanda(${idx})"><i class="ri-delete-bin-line"></i></button>
+                            </div>
                         </div>
                     `).join('');
-                    if(document.getElementById('comanda-list-container')) document.getElementById('comanda-list-container').innerHTML = container.innerHTML;
-                }
-            },
-            deleteComanda: async (id) => {
-                if(confirm("Excluir esta comanda permanentemente?")) {
-                    await _sb.from('comandas').delete().eq('id', id);
+
+                    App.payment.openSplitModal(id, items, num);
+                    
+                    const modalBody = document.querySelector('#split-pay-modal .modal-body');
+                    const editDiv = document.createElement('div');
+                    editDiv.id = 'admin-comanda-edit-list';
+                    editDiv.innerHTML = `<h5>Itens da Mesa ${num}</h5><div style="max-height:150px; overflow-y:auto; margin-bottom:15px; border:1px solid #eee;">${itemsHtml}</div>`;
+                    
+                    const old = document.getElementById('admin-comanda-edit-list');
+                    if(old) old.remove();
+                    
+                    modalBody.insertBefore(editDiv, modalBody.firstChild);
+                },
+                removeItemFromComanda: async (index) => {
+                    if(!confirm("Remover este item?")) return;
+                    const items = App.state.currentComandaItems;
+                    items.splice(index, 1); 
+                    await _sb.from('comandas').update({ items: items }).eq('id', App.state.currentComanda);
+                    App.store.manageComanda(App.state.currentComanda, items, App.state.currentMesaNum, 'aberta');
                     App.store.loadComandas();
-                }
-            },
-            manageComanda: (id, items, num, status) => {
-                if (status === 'livre') return alert("Comanda livre. Garçom deve abrir lançando pedidos.");
-                
-                App.state.currentComanda = id;
-                App.state.currentComandaItems = items;
-                App.state.currentMesaNum = num;
-                App.state.comandaTotal = items.reduce((acc, i) => acc + (i.price * i.qtd), 0);
+                },
+                filterHistory: async () => {
+                    const dateStr = document.getElementById('history-date').value;
+                    if(!dateStr) return alert("Selecione uma data");
 
-                const itemsHtml = items.map((item, idx) => `
-                    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding:8px;">
-                        <div>
-                            <span style="font-weight:bold;">${item.qtd}x ${item.nome}</span>
-                            <span class="text-xs text-muted">Garçom: ${item.garcom || 'N/A'}</span>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <span>R$ ${(item.price * item.qtd).toFixed(2)}</span>
-                            <button class="btn btn-danger btn-sm" style="padding:2px 8px;" onclick="App.store.removeItemFromComanda(${idx})"><i class="ri-delete-bin-line"></i></button>
-                        </div>
-                    </div>
-                `).join('');
+                    const { data } = await _sb.from('comandas')
+                        .select('*')
+                        .eq('store_id', App.state.storeId)
+                        .eq('status', 'fechada')
+                        .gte('created_at', `${dateStr}T00:00:00`)
+                        .lte('created_at', `${dateStr}T23:59:59`);
 
-                App.payment.openSplitModal(id, items, num);
-                
-                const modalBody = document.querySelector('#split-pay-modal .modal-body');
-                const editDiv = document.createElement('div');
-                editDiv.id = 'admin-comanda-edit-list';
-                editDiv.innerHTML = `<h5>Itens da Mesa ${num}</h5><div style="max-height:150px; overflow-y:auto; margin-bottom:15px; border:1px solid #eee;">${itemsHtml}</div>`;
-                
-                const old = document.getElementById('admin-comanda-edit-list');
-                if(old) old.remove();
-                
-                modalBody.insertBefore(editDiv, modalBody.firstChild);
-            },
-            removeItemFromComanda: async (index) => {
-                if(!confirm("Remover este item?")) return;
-                const items = App.state.currentComandaItems;
-                items.splice(index, 1); 
-                await _sb.from('comandas').update({ items: items }).eq('id', App.state.currentComanda);
-                App.store.manageComanda(App.state.currentComanda, items, App.state.currentMesaNum, 'aberta');
-                App.store.loadComandas();
-            },
-            filterHistory: async () => {
-                const dateStr = document.getElementById('history-date').value;
-                if(!dateStr) return alert("Selecione uma data");
+                    const container = document.getElementById('history-results');
+                    
+                    if(!data || data.length === 0) {
+                        container.innerHTML = '<p class="text-sm text-muted">Nenhuma venda encontrada neste dia.</p>';
+                        return;
+                    }
 
-                const { data } = await _sb.from('comandas')
-                    .select('*')
-                    .eq('store_id', App.state.storeId)
-                    .eq('status', 'fechada')
-                    .gte('created_at', `${dateStr}T00:00:00`)
-                    .lte('created_at', `${dateStr}T23:59:59`);
+                    let totalDay = 0;
+                    const list = data.map(c => {
+                        const val = c.total_pago || 0;
+                        totalDay += val;
+                        return `<div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px 0; font-size:0.9rem;"><span>Mesa ${c.numero}</span><strong>R$ ${val.toFixed(2)}</strong></div>`;
+                    }).join('');
 
-                const container = document.getElementById('history-results');
-                
-                if(!data || data.length === 0) {
-                    container.innerHTML = '<p class="text-sm text-muted">Nenhuma venda encontrada neste dia.</p>';
-                    return;
-                }
+                    container.innerHTML = `<div style="background:var(--success-bg); color:var(--success-dark); padding:10px; border-radius:8px; margin-bottom:10px; font-weight:bold; text-align:center;">Total em ${dateStr.split('-').reverse().join('/')}: R$ ${totalDay.toFixed(2)}</div>${list}`;
+                },
+                renderOrders: (orders) => {
+                        document.getElementById('store-orders-list').innerHTML = orders?.map(o => {
+                        let providerHtml = '';
+                        if(o.prestador) {
+                            providerHtml = `<div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:8px; margin-top:10px; font-size:0.85rem;"><strong>Prestador:</strong> ${o.prestador.nome_completo}<br><strong>Chave Pix:</strong> ${o.prestador.chave_pix || 'Não inf.'}</div>`;
+                        }
+                        
+                        let printBtn = '';
+                        if(o.products?.categoria === 'Comidas' || o.products?.categoria === 'Bebidas') {
+                            const oSafe = JSON.stringify(o).replace(/"/g, '&quot;');
+                            printBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:auto; float:right;" onclick='App.store.printOrder(${oSafe})'><i class="ri-printer-line"></i> Imprimir</button>`;
+                        }
 
-                let totalDay = 0;
-                const list = data.map(c => {
-                    const val = c.total_pago || 0;
-                    totalDay += val;
-                    return `<div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px 0; font-size:0.9rem;"><span>Mesa ${c.numero}</span><strong>R$ ${val.toFixed(2)}</strong></div>`;
-                }).join('');
+                        return `
+                        <div class="card" style="margin-bottom:1rem; border-left: 4px solid ${o.status==='pendente'?'var(--warning)':'var(--success)'};">
+                            <div style="display:flex; justify-content:space-between"><strong>${o.products?.nome}</strong><span class="badge status-${o.status}">${o.status}</span></div>
+                            <p class="text-sm">Cliente: ${o.profiles?.nome_completo}</p>
+                            ${printBtn}
+                            <div style="clear:both;"></div>
+                            ${o.status === 'pendente' ? `<button class="btn btn-primary btn-sm btn-full" onclick="App.store.dispatch('${o.id}')">Liberar para Entrega</button>` : ''}
+                            ${providerHtml}
+                        </div>`;
+                    }).join('') || '<p class="text-sm">Nenhum pedido.</p>';
+                },
+                listenMessages: () => {
+                    const myStoreId = App.state.storeId;
+                    _sb.channel('store-notifications')
+                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `store_id=eq.${myStoreId}` }, 
+                    async (payload) => {
+                        if(payload.new.sender_id !== App.state.user.id) {
+                            const { data: sender } = await _sb.from('profiles').select('nome_completo').eq('id', payload.new.sender_id).single();
+                            App.utils.showChatNotification(sender.nome_completo, payload.new.content, payload.new.client_id);
+                        }
+                    })
+                    .subscribe();
+                },
+                calcMetrics: async (orders) => {
+                    const now = new Date();
+                    let dayTotal = 0, weekTotal = 0, monthTotal = 0;
+                    
+                    orders.forEach(o => {
+                        if(['aceito', 'concluido', 'em_rota', 'aguardando_prestador'].includes(o.status)) {
+                            const val = o.taxa_servico / 0.15; 
+                            const orderDate = new Date(o.created_at);
+                            if(orderDate.toDateString() === now.toDateString()) dayTotal += val;
+                            if(orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear()) monthTotal += val;
+                            const diffTime = Math.abs(now - orderDate);
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                            if(diffDays <= 7) weekTotal += val;
+                        }
+                    });
 
-                container.innerHTML = `<div style="background:var(--success-bg); color:var(--success-dark); padding:10px; border-radius:8px; margin-bottom:10px; font-weight:bold; text-align:center;">Total em ${dateStr.split('-').reverse().join('/')}: R$ ${totalDay.toFixed(2)}</div>${list}`;
-            },
-            renderOrders: (orders) => {
-                    document.getElementById('store-orders-list').innerHTML = orders?.map(o => {
-                    let providerHtml = '';
-                    if(o.prestador) {
-                        providerHtml = `<div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:8px; margin-top:10px; font-size:0.85rem;"><strong>Prestador:</strong> ${o.prestador.nome_completo}<br><strong>Chave Pix:</strong> ${o.prestador.chave_pix || 'Não inf.'}</div>`;
+                    const { data: comandas } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).eq('status', 'fechada');
+                    
+                    if(comandas) {
+                        comandas.forEach(c => {
+                            const val = c.total_pago || 0;
+                            const cDate = new Date(c.created_at);
+                            if(cDate.toDateString() === now.toDateString()) dayTotal += val;
+                            if(cDate.getMonth() === now.getMonth()) monthTotal += val;
+                        });
                     }
                     
-                    let printBtn = '';
-                    if(o.products?.categoria === 'Comidas' || o.products?.categoria === 'Bebidas') {
-                        const oSafe = JSON.stringify(o).replace(/"/g, '&quot;');
-                        printBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:auto; float:right;" onclick='App.store.printOrder(${oSafe})'><i class="ri-printer-line"></i> Imprimir</button>`;
+                    document.getElementById('metric-day').innerText = `R$ ${dayTotal.toFixed(2)}`;
+                    document.getElementById('metric-week').innerText = `R$ ${weekTotal.toFixed(2)}`;
+                    document.getElementById('metric-month').innerText = `R$ ${monthTotal.toFixed(2)}`;
+                },
+                loadMyProducts: async () => {
+                    const { data } = await _sb.from('products').select('*').eq('store_id', App.state.storeId);
+                    document.getElementById('store-products-list').innerHTML = data?.map(p => {
+                        const pSafe = JSON.stringify(p).replace(/"/g, '&quot;');
+                        return `
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
+                            <div>
+                                <div style="font-weight:bold">${p.nome} ${p.promocao ? '<span style="color:red; font-size:0.7rem">(Promo)</span>' : ''}</div>
+                                <div class="text-xs text-muted">R$ ${p.preco.toFixed(2)}</div>
+                            </div>
+                            <div style="display:flex; gap:5px;">
+                                <button class="btn btn-sm btn-secondary" style="width:auto" onclick='App.store.openEditProduct(${pSafe})'>Editar</button>
+                                <button class="btn btn-sm btn-danger" style="width:auto; padding:5px 8px;" onclick="App.store.deleteProduct('${p.id}')"><i class="ri-delete-bin-line"></i></button>
+                            </div>
+                        </div>`;
+                    }).join('');
+                },
+                deleteProduct: async (id) => {
+                    if(confirm("Deseja realmente excluir este produto?")) {
+                        await _sb.from('products').delete().eq('id', id);
+                        App.utils.toast("Produto excluído!", "success");
+                        App.store.loadMyProducts();
+                        App.catalog.fetchPublic();
+                    }
+                },
+                openProductModal: () => {
+                    document.getElementById('prod-modal-title').innerText = "Adicionar Serviço/Produto";
+                    document.getElementById('btn-save-prod').innerText = "Publicar Serviço";
+                    document.getElementById('edit-prod-id').value = "";
+                    document.getElementById('new-prod-name').value = "";
+                    document.getElementById('new-prod-price').value = "";
+                    document.getElementById('new-prod-promo').checked = false;
+                    document.getElementById('gesso-price-m2').value = "";
+                    document.getElementById('gesso-labor-val').value = "";
+                    document.getElementById('delivery-fee-val').value = "";
+                    document.getElementById('new-prod-file').value = ""; 
+                    document.getElementById('new-prod-desc').value = "";
+                    
+                    App.store.renderAdminSizes(""); // Inicializa quadradinhos vazios
+
+                    document.getElementById('new-prod-cat').value = CONFIG.categories[0];
+                    App.store.checkCategory(CONFIG.categories[0]);
+                    document.getElementById('product-modal').style.display = 'flex';
+                },
+                openEditProduct: (p) => {
+                    document.getElementById('prod-modal-title').innerText = "Editar Serviço/Produto";
+                    document.getElementById('btn-save-prod').innerText = "Salvar Alterações";
+                    document.getElementById('edit-prod-id').value = p.id;
+                    document.getElementById('new-prod-cat').value = p.categoria;
+                    document.getElementById('new-prod-name').value = p.nome;
+                    document.getElementById('new-prod-price').value = p.preco;
+                    document.getElementById('new-prod-promo').checked = p.promocao;
+                    document.getElementById('new-prod-desc').value = p.descricao || "";
+                    
+                    // Inicializa quadradinhos com valores
+                    App.store.renderAdminSizes(p.sizes || "");
+
+                    if(p.gesso_info) {
+                        try {
+                            const g = typeof p.gesso_info === 'string' ? JSON.parse(p.gesso_info) : p.gesso_info;
+                            document.getElementById('gesso-price-m2').value = g.price_m2 || "";
+                            document.getElementById('gesso-labor-val').value = g.labor_val || "";
+                            document.getElementById('gesso-labor-type').value = g.labor_type || "fixed";
+                        } catch(e) {}
                     }
 
-                    return `
-                    <div class="card" style="margin-bottom:1rem; border-left: 4px solid ${o.status==='pendente'?'var(--warning)':'var(--success)'};">
-                        <div style="display:flex; justify-content:space-between"><strong>${o.products?.nome}</strong><span class="badge status-${o.status}">${o.status}</span></div>
-                        <p class="text-sm">Cliente: ${o.profiles?.nome_completo}</p>
-                        ${printBtn}
-                        <div style="clear:both;"></div>
-                        ${o.status === 'pendente' ? `<button class="btn btn-primary btn-sm btn-full" onclick="App.store.dispatch('${o.id}')">Liberar para Entrega</button>` : ''}
-                        ${providerHtml}
-                    </div>`;
-                }).join('') || '<p class="text-sm">Nenhum pedido.</p>';
-            },
-            listenMessages: () => {
-                const myStoreId = App.state.storeId;
-                _sb.channel('store-notifications')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `store_id=eq.${myStoreId}` }, 
-                async (payload) => {
-                    if(payload.new.sender_id !== App.state.user.id) {
-                        const { data: sender } = await _sb.from('profiles').select('nome_completo').eq('id', payload.new.sender_id).single();
-                        App.utils.showChatNotification(sender.nome_completo, payload.new.content, payload.new.client_id);
+                    if(p.delivery_info) {
+                        try {
+                            const d = typeof p.delivery_info === 'string' ? JSON.parse(p.delivery_info) : p.delivery_info;
+                            document.getElementById('delivery-fee-val').value = d.fee_val || "";
+                            document.getElementById('delivery-fee-type').value = d.fee_type || "fixed";
+                        } catch(e) {}
                     }
-                })
-                .subscribe();
-            },
-            calcMetrics: async (orders) => {
-                const now = new Date();
-                let dayTotal = 0, weekTotal = 0, monthTotal = 0;
-                
-                orders.forEach(o => {
-                    if(['aceito', 'concluido', 'em_rota', 'aguardando_prestador'].includes(o.status)) {
-                        const val = o.taxa_servico / 0.15; 
-                        const orderDate = new Date(o.created_at);
-                        if(orderDate.toDateString() === now.toDateString()) dayTotal += val;
-                        if(orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear()) monthTotal += val;
-                        const diffTime = Math.abs(now - orderDate);
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-                        if(diffDays <= 7) weekTotal += val;
+                    
+                    App.store.checkCategory(p.categoria);
+                    document.getElementById('product-modal').style.display = 'flex';
+                },
+                closeProductModal: () => document.getElementById('product-modal').style.display = 'none',
+                checkCategory: (cat) => {
+                    document.getElementById('hotel-dates-area').style.display = 'none';
+                    document.getElementById('gesso-options-area').style.display = 'none';
+                    document.getElementById('delivery-options-area').style.display = 'none';
+                    document.getElementById('clothing-options-area').style.display = 'none';
+
+                    if(cat === 'Hoteis/Pousadas') {
+                        document.getElementById('hotel-dates-area').style.display = 'block';
+                    } else if (cat === 'Serviços de Gesso') {
+                        document.getElementById('gesso-options-area').style.display = 'block';
+                    } else if (cat === 'Comidas' || cat === 'Bebidas') {
+                        document.getElementById('delivery-options-area').style.display = 'block';
+                    } else if (cat === 'Roupas') {
+                        document.getElementById('clothing-options-area').style.display = 'block';
                     }
-                });
+                },
+                submitProduct: async () => {
+                    if(!App.state.storeId) {
+                        alert("Erro crítico: ID da Loja não encontrado.");
+                        return;
+                    }
 
-                const { data: comandas } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).eq('status', 'fechada');
-                
-                if(comandas) {
-                    comandas.forEach(c => {
-                        const val = c.total_pago || 0;
-                        const cDate = new Date(c.created_at);
-                        if(cDate.toDateString() === now.toDateString()) dayTotal += val;
-                        if(cDate.getMonth() === now.getMonth()) monthTotal += val;
-                    });
-                }
-                
-                document.getElementById('metric-day').innerText = `R$ ${dayTotal.toFixed(2)}`;
-                document.getElementById('metric-week').innerText = `R$ ${weekTotal.toFixed(2)}`;
-                document.getElementById('metric-month').innerText = `R$ ${monthTotal.toFixed(2)}`;
-            },
-            loadMyProducts: async () => {
-                const { data } = await _sb.from('products').select('*').eq('store_id', App.state.storeId);
-                document.getElementById('store-products-list').innerHTML = data?.map(p => {
-                    const pSafe = JSON.stringify(p).replace(/"/g, '&quot;');
-                    return `
-                    <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
-                        <div>
-                            <div style="font-weight:bold">${p.nome} ${p.promocao ? '<span style="color:red; font-size:0.7rem">(Promo)</span>' : ''}</div>
-                            <div class="text-xs text-muted">R$ ${p.preco.toFixed(2)}</div>
-                        </div>
-                        <div style="display:flex; gap:5px;">
-                            <button class="btn btn-sm btn-secondary" style="width:auto" onclick='App.store.openEditProduct(${pSafe})'>Editar</button>
-                            <button class="btn btn-sm btn-danger" style="width:auto; padding:5px 8px;" onclick="App.store.deleteProduct('${p.id}')"><i class="ri-delete-bin-line"></i></button>
-                        </div>
-                    </div>`;
-                }).join('');
-            },
-            deleteProduct: async (id) => {
-                if(confirm("Deseja realmente excluir este produto?")) {
-                    await _sb.from('products').delete().eq('id', id);
-                    App.utils.toast("Produto excluído!", "success");
-                    App.store.loadMyProducts();
-                    App.catalog.fetchPublic();
-                }
-            },
-            openProductModal: () => {
-                document.getElementById('prod-modal-title').innerText = "Adicionar Serviço/Produto";
-                document.getElementById('btn-save-prod').innerText = "Publicar Serviço";
-                document.getElementById('edit-prod-id').value = "";
-                document.getElementById('new-prod-name').value = "";
-                document.getElementById('new-prod-price').value = "";
-                document.getElementById('new-prod-promo').checked = false;
-                document.getElementById('gesso-price-m2').value = "";
-                document.getElementById('gesso-labor-val').value = "";
-                document.getElementById('delivery-fee-val').value = "";
-                document.getElementById('new-prod-file').value = ""; 
-                document.getElementById('new-prod-desc').value = "";
-                
-                // GERA QUADRADINHOS VAZIOS
-                App.store.renderAdminSizes("");
-                
-                document.getElementById('clothing-sizes').value = "";
-                
-                document.getElementById('new-prod-cat').value = CONFIG.categories[0];
-                App.store.checkCategory(CONFIG.categories[0]);
-                document.getElementById('product-modal').style.display = 'flex';
-            },
-            openEditProduct: (p) => {
-                document.getElementById('prod-modal-title').innerText = "Editar Serviço/Produto";
-                document.getElementById('btn-save-prod').innerText = "Salvar Alterações";
-                document.getElementById('edit-prod-id').value = p.id;
-                document.getElementById('new-prod-cat').value = p.categoria;
-                document.getElementById('new-prod-name').value = p.nome;
-                document.getElementById('new-prod-price').value = p.preco;
-                document.getElementById('new-prod-promo').checked = p.promocao;
-                document.getElementById('new-prod-desc').value = p.descricao || "";
-                
-                // CARREGA OS TAMANHOS EXISTENTES NOS QUADRADINHOS
-                App.store.renderAdminSizes(p.sizes || "");
+                    const id = document.getElementById('edit-prod-id').value;
+                    const nome = document.getElementById('new-prod-name').value;
+                    const preco = document.getElementById('new-prod-price').value;
+                    const cat = document.getElementById('new-prod-cat').value;
+                    const promo = document.getElementById('new-prod-promo').checked;
+                    const descricao = document.getElementById('new-prod-desc').value;
+                    
+                    // CAPTURA OS TAMANHOS DO CAMPO HIDDEN
+                    const sizes = document.getElementById('clothing-sizes').value;
 
-                if(p.gesso_info) {
-                    try {
-                        const g = typeof p.gesso_info === 'string' ? JSON.parse(p.gesso_info) : p.gesso_info;
-                        document.getElementById('gesso-price-m2').value = g.price_m2 || "";
-                        document.getElementById('gesso-labor-val').value = g.labor_val || "";
-                        document.getElementById('gesso-labor-type').value = g.labor_type || "fixed";
-                    } catch(e) {}
-                }
+                    const fileInput = document.getElementById('new-prod-file');
+                    const files = fileInput.files;
 
-                if(p.delivery_info) {
-                    try {
-                        const d = typeof p.delivery_info === 'string' ? JSON.parse(p.delivery_info) : p.delivery_info;
-                        document.getElementById('delivery-fee-val').value = d.fee_val || "";
-                        document.getElementById('delivery-fee-type').value = d.fee_type || "fixed";
-                    } catch(e) {}
-                }
-                
-                App.store.checkCategory(p.categoria);
-                document.getElementById('product-modal').style.display = 'flex';
-            },
-            closeProductModal: () => document.getElementById('product-modal').style.display = 'none',
-            checkCategory: (cat) => {
-                document.getElementById('hotel-dates-area').style.display = 'none';
-                document.getElementById('gesso-options-area').style.display = 'none';
-                document.getElementById('delivery-options-area').style.display = 'none';
-                document.getElementById('clothing-options-area').style.display = 'none';
-
-                if(cat === 'Hoteis/Pousadas') {
-                    document.getElementById('hotel-dates-area').style.display = 'block';
-                } else if (cat === 'Serviços de Gesso') {
-                    document.getElementById('gesso-options-area').style.display = 'block';
-                } else if (cat === 'Comidas' || cat === 'Bebidas') {
-                    document.getElementById('delivery-options-area').style.display = 'block';
-                } else if (cat === 'Roupas') {
-                    document.getElementById('clothing-options-area').style.display = 'block';
-                }
-            },
-            submitProduct: async () => {
-                if(!App.state.storeId) {
-                    alert("Erro crítico: ID da Loja não encontrado.");
-                    return;
-                }
-
-                const id = document.getElementById('edit-prod-id').value;
-                const nome = document.getElementById('new-prod-name').value;
-                const preco = document.getElementById('new-prod-price').value;
-                const cat = document.getElementById('new-prod-cat').value;
-                const promo = document.getElementById('new-prod-promo').checked;
-                const descricao = document.getElementById('new-prod-desc').value;
-                
-                // CAPTURA OS TAMANHOS DO CAMPO HIDDEN
-                const sizes = document.getElementById('clothing-sizes').value;
-
-                const fileInput = document.getElementById('new-prod-file');
-                const files = fileInput.files;
-
-                if (!nome || !preco) return App.utils.toast("Preencha nome e preço", "error");
-                
-                let galeriaUrls = [];
-                
-                if (files.length > 0) {
-                    App.utils.toast(`Enviando ${files.length} fotos... aguarde.`, "info");
-                    for (let i = 0; i < files.length; i++) {
-                        const file = files[i];
-                        const fileName = `${Date.now()}_${i}_${file.name.replace(/\s/g, '_')}`;
-                        const { error: upErr } = await _sb.storage.from('produtos').upload(fileName, file);
-                        
-                        if (!upErr) {
-                            const { data } = _sb.storage.from('produtos').getPublicUrl(fileName);
-                            galeriaUrls.push(data.publicUrl);
+                    if (!nome || !preco) return App.utils.toast("Preencha nome e preço", "error");
+                    
+                    let galeriaUrls = [];
+                    
+                    if (files.length > 0) {
+                        App.utils.toast(`Enviando ${files.length} fotos... aguarde.`, "info");
+                        for (let i = 0; i < files.length; i++) {
+                            const file = files[i];
+                            const fileName = `${Date.now()}_${i}_${file.name.replace(/\s/g, '_')}`;
+                            const { error: upErr } = await _sb.storage.from('produtos').upload(fileName, file);
+                            
+                            if (!upErr) {
+                                const { data } = _sb.storage.from('produtos').getPublicUrl(fileName);
+                                galeriaUrls.push(data.publicUrl);
+                            }
                         }
                     }
-                }
 
-                const dateStart = document.getElementById('hotel-start-date').value;
-                const dateEnd = document.getElementById('hotel-end-date').value;
-                let disp = null;
-                if(cat === 'Hoteis/Pousadas' && dateStart && dateEnd) disp = `${dateStart}|${dateEnd}`;
+                    const dateStart = document.getElementById('hotel-start-date').value;
+                    const dateEnd = document.getElementById('hotel-end-date').value;
+                    let disp = null;
+                    if(cat === 'Hoteis/Pousadas' && dateStart && dateEnd) disp = `${dateStart}|${dateEnd}`;
 
-                let gessoInfo = null;
-                if(cat === 'Serviços de Gesso') {
-                    gessoInfo = JSON.stringify({
-                        price_m2: document.getElementById('gesso-price-m2').value,
-                        labor_val: document.getElementById('gesso-labor-val').value,
-                        labor_type: document.getElementById('gesso-labor-type').value
-                    });
-                }
+                    let gessoInfo = null;
+                    if(cat === 'Serviços de Gesso') {
+                        gessoInfo = JSON.stringify({
+                            price_m2: document.getElementById('gesso-price-m2').value,
+                            labor_val: document.getElementById('gesso-labor-val').value,
+                            labor_type: document.getElementById('gesso-labor-type').value
+                        });
+                    }
 
-                let deliveryInfo = null;
-                if(cat === 'Comidas' || cat === 'Bebidas') {
-                    deliveryInfo = JSON.stringify({
-                        fee_val: document.getElementById('delivery-fee-val').value,
-                        fee_type: document.getElementById('delivery-fee-type').value
-                    });
-                }
-                
-                const payload = { 
-                    store_id: App.state.storeId, 
-                    nome, 
-                    preco: parseFloat(preco), 
-                    categoria: cat, 
-                    promocao: promo, 
-                    disponibilidade: disp,
-                    gesso_info: gessoInfo,
-                    delivery_info: deliveryInfo, 
-                    descricao: descricao,
-                    sizes: sizes
-                };
+                    let deliveryInfo = null;
+                    if(cat === 'Comidas' || cat === 'Bebidas') {
+                        deliveryInfo = JSON.stringify({
+                            fee_val: document.getElementById('delivery-fee-val').value,
+                            fee_type: document.getElementById('delivery-fee-type').value
+                        });
+                    }
+                    
+                    const payload = { 
+                        store_id: App.state.storeId, 
+                        nome, 
+                        preco: parseFloat(preco), 
+                        categoria: cat, 
+                        promocao: promo, 
+                        disponibilidade: disp,
+                        gesso_info: gessoInfo,
+                        delivery_info: deliveryInfo, 
+                        descricao: descricao,
+                        sizes: sizes
+                    };
 
-                if (galeriaUrls.length > 0) {
-                    payload.imagem_url = galeriaUrls[0]; 
-                    payload.galeria = galeriaUrls;       
-                }
+                    if (galeriaUrls.length > 0) {
+                        payload.imagem_url = galeriaUrls[0]; 
+                        payload.galeria = galeriaUrls;       
+                    }
 
-                let res;
-                if(id) {
-                    res = await _sb.from('products').update(payload).eq('id', id);
-                } else {
-                    if(galeriaUrls.length === 0 && !id) payload.imagem_url = 'https://placehold.co/400x300?text=NexLog';
-                    res = await _sb.from('products').insert(payload);
-                }
+                    let res;
+                    if(id) {
+                        res = await _sb.from('products').update(payload).eq('id', id);
+                    } else {
+                        if(galeriaUrls.length === 0 && !id) payload.imagem_url = 'https://placehold.co/400x300?text=NexLog';
+                        res = await _sb.from('products').insert(payload);
+                    }
 
-                if(res.error) { 
-                    alert("Erro ao salvar: " + res.error.message); 
-                } else {
-                    alert("Produto salvo com sucesso!");
-                    App.store.closeProductModal(); 
-                    App.catalog.fetchPublic(); 
+                    if(res.error) { 
+                        alert("Erro ao salvar: " + res.error.message); 
+                    } else {
+                        alert("Produto salvo com sucesso!");
+                        App.store.closeProductModal(); 
+                        App.catalog.fetchPublic(); 
+                        App.store.init();
+                    }
+                },
+                saveCredentials: async () => {
+                    const acc = document.getElementById('store-access-token').value.trim();
+                    const pub = document.getElementById('store-public-key').value.trim();
+                    if(!acc || !pub) return App.utils.toast("Preencha ambas as chaves!", "error");
+                    await _sb.from('stores').update({ mp_access_token: acc, mp_public_key: pub }).eq('id', App.state.storeId);
+                    App.utils.toast("Chaves salvas e protegidas!", "success");
                     App.store.init();
-                }
-            },
-            saveCredentials: async () => {
-                const acc = document.getElementById('store-access-token').value.trim();
-                const pub = document.getElementById('store-public-key').value.trim();
-                if(!acc || !pub) return App.utils.toast("Preencha ambas as chaves!", "error");
-                await _sb.from('stores').update({ mp_access_token: acc, mp_public_key: pub }).eq('id', App.state.storeId);
-                App.utils.toast("Chaves salvas e protegidas!", "success");
-                App.store.init();
-            },
-            resetKeys: async () => {
-                if(confirm("Isso pausará seus recebimentos. Continuar?")) {
-                    await _sb.from('stores').update({ mp_access_token: null, mp_public_key: null }).eq('id', App.state.storeId);
+                },
+                resetKeys: async () => {
+                    if(confirm("Isso pausará seus recebimentos. Continuar?")) {
+                        await _sb.from('stores').update({ mp_access_token: null, mp_public_key: null }).eq('id', App.state.storeId);
+                        App.store.init();
+                    }
+                },
+                linkPartner: async () => {
+                    const email = document.getElementById('partner-email-input').value.trim();
+                    if(!email) return App.utils.toast("Digite o email do motorista", "error");
+                    const { data: user } = await _sb.from('profiles').select('id').eq('email', email).single();
+                    if(!user) return App.utils.toast("Motorista não encontrado no sistema.", "error");
+                    await _sb.from('stores').update({ parceiro_exclusivo_id: user.id }).eq('id', App.state.storeId);
+                    App.utils.toast("Parceiro vinculado com sucesso!", "success");
                     App.store.init();
-                }
-            },
-            linkPartner: async () => {
-                const email = document.getElementById('partner-email-input').value.trim();
-                if(!email) return App.utils.toast("Digite o email do motorista", "error");
-                const { data: user } = await _sb.from('profiles').select('id').eq('email', email).single();
-                if(!user) return App.utils.toast("Motorista não encontrado no sistema.", "error");
-                await _sb.from('stores').update({ parceiro_exclusivo_id: user.id }).eq('id', App.state.storeId);
-                App.utils.toast("Parceiro vinculado com sucesso!", "success");
-                App.store.init();
-            },
-            dispatch: async (id) => {
-                await _sb.from('orders').update({ status: 'aguardando_prestador', data_agendada: new Date().toISOString() }).eq('id', id);
-                App.utils.toast('Despachado!', 'success'); App.store.init();
-            },
-            setupPrinter: () => {
-                window.print();
-            },
-            printOrder: (order) => {
-                const store = App.state.currentStore || {};
-                const content = `
-                    <div style="font-family: monospace; width: 300px; padding: 10px; text-align: center;">
-                        <h3>${store.nome_loja || 'NEXLOG PEDIDOS'}</h3>
-                        ${store.cnpj ? `<p style="font-size:0.8rem; margin:0;">CNPJ: ${store.cnpj}</p>` : ''}
-                        ${store.whatsapp ? `<p style="font-size:0.8rem; margin:0;">Tel: ${store.whatsapp}</p>` : ''}
-                        <p style="margin-top:5px; border-bottom: 1px dashed black; padding-bottom:5px;">${new Date().toLocaleString()}</p>
-                        <p><strong>Pedido #${order.id}</strong></p>
-                        <p>Cliente: ${order.profiles?.nome_completo}</p>
-                        <hr style="border-top: 1px dashed black;">
-                        <div style="text-align: left;">
-                            <p><strong>Item:</strong> ${order.products?.nome}</p>
-                            <p><strong>Valor:</strong> R$ ${(order.taxa_servico/0.15).toFixed(2)}</p>
+                },
+                dispatch: async (id) => {
+                    await _sb.from('orders').update({ status: 'aguardando_prestador', data_agendada: new Date().toISOString() }).eq('id', id);
+                    App.utils.toast('Despachado!', 'success'); App.store.init();
+                },
+                setupPrinter: () => {
+                    window.print();
+                },
+                printOrder: (order) => {
+                    const store = App.state.currentStore || {};
+                    const content = `
+                        <div style="font-family: monospace; width: 300px; padding: 10px; text-align: center;">
+                            <h3>${store.nome_loja || 'NEXLOG PEDIDOS'}</h3>
+                            ${store.cnpj ? `<p style="font-size:0.8rem; margin:0;">CNPJ: ${store.cnpj}</p>` : ''}
+                            ${store.whatsapp ? `<p style="font-size:0.8rem; margin:0;">Tel: ${store.whatsapp}</p>` : ''}
+                            <p style="margin-top:5px; border-bottom: 1px dashed black; padding-bottom:5px;">${new Date().toLocaleString()}</p>
+                            <p><strong>Pedido #${order.id}</strong></p>
+                            <p>Cliente: ${order.profiles?.nome_completo}</p>
+                            <hr style="border-top: 1px dashed black;">
+                            <div style="text-align: left;">
+                                <p><strong>Item:</strong> ${order.products?.nome}</p>
+                                <p><strong>Valor:</strong> R$ ${(order.taxa_servico/0.15).toFixed(2)}</p>
+                            </div>
+                            <hr style="border-top: 1px dashed black;">
+                            <h3>TOTAL: R$ ${(order.taxa_servico/0.15).toFixed(2)}</h3>
+                            <p style="font-size: 0.8rem;">Obrigado pela preferência!</p>
                         </div>
-                        <hr style="border-top: 1px dashed black;">
-                        <h3>TOTAL: R$ ${(order.taxa_servico/0.15).toFixed(2)}</h3>
-                        <p style="font-size: 0.8rem;">Obrigado pela preferência!</p>
-                    </div>
-                `;
-                const area = document.getElementById('printable-area');
-                area.innerHTML = content;
-                window.print(); 
-            },
-            createCoupon: async () => {
-                const code = document.getElementById('new-coupon-code').value.toUpperCase().trim();
-                const percent = parseInt(document.getElementById('new-coupon-percent').value);
-                
-                if(!code || !percent) return App.utils.toast("Preencha código e porcentagem", "error");
+                    `;
+                    const area = document.getElementById('printable-area');
+                    area.innerHTML = content;
+                    window.print(); 
+                },
+                createCoupon: async () => {
+                    const code = document.getElementById('new-coupon-code').value.toUpperCase().trim();
+                    const percent = parseInt(document.getElementById('new-coupon-percent').value);
+                    
+                    if(!code || !percent) return App.utils.toast("Preencha código e porcentagem", "error");
 
-                const { error } = await _sb.from('coupons').insert({
-                    store_id: App.state.storeId,
-                    code: code,
-                    percent: percent
-                });
+                    const { error } = await _sb.from('coupons').insert({
+                        store_id: App.state.storeId,
+                        code: code,
+                        percent: percent
+                    });
 
-                if(error) App.utils.toast("Erro ao criar cupom", "error");
-                else {
-                    App.utils.toast("Cupom criado!", "success");
-                    App.store.loadCoupons();
-                    document.getElementById('new-coupon-code').value = "";
+                    if(error) App.utils.toast("Erro ao criar cupom", "error");
+                    else {
+                        App.utils.toast("Cupom criado!", "success");
+                        App.store.loadCoupons();
+                        document.getElementById('new-coupon-code').value = "";
+                    }
+                },
+                loadCoupons: async () => {
+                    const { data } = await _sb.from('coupons').select('*').eq('store_id', App.state.storeId).eq('active', true);
+                    const div = document.getElementById('coupon-list-display');
+                    if(!data || data.length === 0) {
+                        div.innerHTML = '<span class="text-xs text-muted">Nenhum cupom ativo.</span>';
+                        return;
+                    }
+                    div.innerHTML = data.map(c => `
+                        <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:5px; font-size:0.8rem;">
+                            <strong>${c.code} (${c.percent}%)</strong>
+                            <span style="color:red; cursor:pointer;" onclick="App.store.deleteCoupon('${c.id}')">Excluir</span>
+                        </div>
+                    `).join('');
+                },
+                deleteCoupon: async (id) => {
+                    if(confirm("Excluir cupom?")) {
+                        await _sb.from('coupons').delete().eq('id', id);
+                        App.store.loadCoupons();
+                    }
                 }
             },
-            loadCoupons: async () => {
-                const { data } = await _sb.from('coupons').select('*').eq('store_id', App.state.storeId).eq('active', true);
-                const div = document.getElementById('coupon-list-display');
-                if(!data || data.length === 0) {
-                    div.innerHTML = '<span class="text-xs text-muted">Nenhum cupom ativo.</span>';
-                    return;
-                }
-                div.innerHTML = data.map(c => `
-                    <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:5px; font-size:0.8rem;">
-                        <strong>${c.code} (${c.percent}%)</strong>
-                        <span style="color:red; cursor:pointer;" onclick="App.store.deleteCoupon('${c.id}')">Excluir</span>
-                    </div>
-                `).join('');
-            },
-            deleteCoupon: async (id) => {
-                if(confirm("Excluir cupom?")) {
-                    await _sb.from('coupons').delete().eq('id', id);
-                    App.store.loadCoupons();
-                }
-            }
-        },
             
+            // --- O BLOCO ADMIN FOI REINSERIDO AQUI ---
+            admin: {
+                createComandas: async () => {
+                    const start = parseInt(document.getElementById('comanda-start').value);
+                    const end = parseInt(document.getElementById('comanda-end').value);
+                    if (!start || !end || end < start) return alert("Intervalo inválido");
+                    const rows = [];
+                    for(let i=start; i<=end; i++) rows.push({ store_id: App.state.storeId, numero: i, status: 'livre' });
+                    const { error } = await _sb.from('comandas').insert(rows);
+                    if(error) alert("Erro ao criar: " + error.message);
+                    else { alert(`${rows.length} comandas criadas!`); App.store.loadComandas(); }
+                },
+                registerStaff: async () => {
+                    const name = document.getElementById('staff-name').value;
+                    const email = document.getElementById('staff-email').value;
+                    const pass = document.getElementById('staff-pass').value;
+                    const role = document.getElementById('staff-role').value;
+                    const rate = document.getElementById('staff-rate').value;
+                    if(!name || !email || !pass) return alert("Preencha todos os campos");
+                    
+                    // 1. Cria o perfil de usuário
+                    const { data: newUser, error } = await _sb.from('profiles').insert({
+                        nome_completo: name, email: email, password: pass, role: role, is_verified: true
+                    }).select().single();
+                    
+                    if(error) return alert("Erro no perfil: " + error.message);
+                    
+                    // 2. Vincula à loja
+                    await _sb.from('store_staff').insert({ store_id: App.state.storeId, profile_id: newUser.id, cargo: role, taxa_servico: rate });
+                    alert("Funcionário cadastrado!");
+                }
+            },
+            // ------------------------------------------
+
             cart: {
                 activeCoupon: null,
                 storeSettings: null,
@@ -1995,7 +2051,6 @@
                     App.catalog.load();
                 },
 
-                // --- FUNÇÃO PARA SELECIONAR TAMANHO VISUALMENTE ---
                 selectSize: (element) => {
                     const parent = element.parentElement;
                     const boxes = parent.getElementsByClassName('size-box');
@@ -2020,7 +2075,7 @@
                     html += normal?.map(p => App.catalog.renderCard(p)).join('');
                     document.getElementById('public-catalog').innerHTML = html || '<p style="grid-column:1/-1; text-align:center">Nenhuma oferta nesta categoria.</p>';
                 },
-
+                
                 renderCard: (p) => {
                     let dispInfo = '';
                     let actionText = "Adicionar ao Carrinho"; 
@@ -2044,7 +2099,6 @@
                         onclick = `App.cart.add(${pSafe}, "${p.store_id}")`;
                     }
                     
-                    // --- RENDERIZAÇÃO DOS QUADRADINHOS (ROUPAS) ---
                     let sizeSelectorHtml = '';
                     const containerId = `size-container-${p.id}`; 
                     
@@ -2065,10 +2119,8 @@
                                 </div>
                             </div>
                         `;
-                        // Função especial para buscar o tamanho selecionado visualmente
                         onclick = `App.catalog.addToCartClothing('${p.id}', '${p.store_id}', '${containerId}')`;
                     }
-                    // ----------------------------------------------
                     
                     if(p.categoria === 'Hoteis/Pousadas' && p.disponibilidade) {
                          onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", null)`;
@@ -2093,7 +2145,7 @@
                             ${imagesHtml}
                             <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div>
                             <h4>${p.nome}</h4>
-                            <p class="text-sm text-muted" style="margin-bottom:5px;">${p.descricao || ''}</p>
+                            <p class="text-sm text-muted" style="margin-bottom:5px; line-height:1.2;">${p.descricao || ''}</p>
                             <h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
                             
                             ${sizeSelectorHtml} 
@@ -2106,7 +2158,6 @@
                 fetchPublic: async () => { App.catalog.load(); },
 
                 addToCartClothing: async (pid, sid, containerId) => {
-                    // Busca o elemento selecionado no HTML
                     const container = document.getElementById(containerId);
                     const selected = container ? container.querySelector('.selected') : null;
                     
@@ -2116,236 +2167,9 @@
                     }
                     const tamanho = selected.innerText;
 
-                    // Busca dados limpos do banco
                     const { data: p } = await _sb.from('products').select('*').eq('id', pid).single();
-                    
-                    // Adiciona com o tamanho no nome
                     const prodToAdd = { ...p, nome: `${p.nome} (Tam: ${tamanho})` };
                     App.cart.add(prodToAdd, sid);
-                }
-            },
-            chat: {
-                open: async (storeId, clientId = null) => {
-                    if(!App.state.user) return App.router.go('auth');
-                    
-                    App.state.activeChatStore = storeId;
-                    // Se não passar cliente, assume que sou eu (usuário logado)
-                    App.state.activeChatClient = clientId || App.state.user.id; 
-                    
-                    document.getElementById('chat-modal').style.display = 'flex';
-                    const msgs = document.getElementById('chat-msgs');
-                    msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Carregando histórico...</div>';
-                    
-                    // Busca histórico
-                    const { data } = await _sb.from('messages')
-                        .select('*')
-                        .eq('store_id', storeId)
-                        .eq('client_id', App.state.activeChatClient)
-                        .order('created_at', { ascending: true });
-                        
-                    msgs.innerHTML = '';
-                    if(data && data.length > 0) {
-                        data.forEach(m => App.chat.renderMsg(m));
-                    } else {
-                        msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Inicie a conversa...</div>';
-                    }
-
-                    // Inscreve no Realtime
-                    if(App.state.chatSub) _sb.removeChannel(App.state.chatSub);
-                    
-                    App.state.chatSub = _sb.channel('public:messages')
-                        .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `store_id=eq.${storeId}` }, (payload) => {
-                            // Só renderiza se a mensagem for deste chat específico
-                            if(payload.new.client_id === App.state.activeChatClient) {
-                                if (payload.eventType === 'INSERT') {
-                                    if(msgs.innerText.includes("Inicie a conversa")) msgs.innerHTML = "";
-                                    App.chat.renderMsg(payload.new);
-                                } else if (payload.eventType === 'UPDATE') {
-                                    const msgDiv = document.getElementById(`msg-${payload.new.id}`);
-                                    if(msgDiv) {
-                                        if (payload.new.is_deleted) {
-                                            msgDiv.innerHTML = `<span class="chat-deleted"><i class="ri-prohibited-line"></i> Mensagem apagada</span>`;
-                                        } else {
-                                            let contentHtml = payload.new.content;
-                                            if (payload.new.is_edited) contentHtml += `<span class="chat-edited-label"><i class="ri-pencil-line"></i> Editada</span>`;
-                                            
-                                            // Se for minha, recoloca o botão de opções
-                                            if (msgDiv.classList.contains('mine')) {
-                                                 const encodedContent = encodeURIComponent(payload.new.content);
-                                                 contentHtml += `<button class="chat-options-btn" onclick="App.chat.showOptions(${payload.new.id}, '${encodedContent}', ${payload.new.is_edited})"><i class="ri-more-2-fill"></i></button>`;
-                                            }
-                                            msgDiv.innerHTML = contentHtml;
-                                        }
-                                    }
-                                }
-                            }
-                        }).subscribe();
-                },
-                
-                close: () => {
-                    document.getElementById('chat-modal').style.display = 'none';
-                    if(App.state.chatSub) _sb.removeChannel(App.state.chatSub);
-                },
-                
-                send: async (content = null, type = 'text') => {
-                    const txtInput = document.getElementById('chat-input');
-                    const txt = content || txtInput.value;
-                    
-                    if(!txt && type === 'text') return;
-                    
-                    await _sb.from('messages').insert({ 
-                        store_id: App.state.activeChatStore, 
-                        client_id: App.state.activeChatClient, 
-                        sender_id: App.state.user.id, 
-                        content: txt 
-                    });
-                    
-                    if(type === 'text') txtInput.value = '';
-                },
-                
-                recordAudio: async () => {
-                    if (!navigator.mediaDevices) return alert("Navegador sem suporte a áudio.");
-                    
-                    if (!App.state.mediaRecorder) {
-                        try {
-                            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                            App.state.mediaRecorder = new MediaRecorder(stream);
-                            
-                            App.state.mediaRecorder.ondataavailable = e => App.state.audioChunks.push(e.data);
-                            
-                            App.state.mediaRecorder.onstop = async () => {
-                                const blob = new Blob(App.state.audioChunks, { type: 'audio/ogg; codecs=opus' });
-                                App.state.audioChunks = [];
-                                const fileName = `audio_${Date.now()}.ogg`;
-                                
-                                const { data, error } = await _sb.storage.from('chat_uploads').upload(fileName, blob);
-                                
-                                if(!error) {
-                                    const { data: url } = _sb.storage.from('chat_uploads').getPublicUrl(fileName);
-                                    App.chat.send(`<audio controls src="${url.publicUrl}"></audio>`, 'audio');
-                                } else {
-                                    alert("Erro upload áudio: " + error.message);
-                                }
-                            };
-                            
-                            App.state.mediaRecorder.start();
-                            App.utils.toast("Gravando... Toque de novo para enviar.", "info");
-                        } catch(err) {
-                            alert("Erro ao acessar microfone: " + err.message);
-                        }
-                    } else {
-                        if(App.state.mediaRecorder.state === 'recording') { 
-                            App.state.mediaRecorder.stop(); 
-                            App.utils.toast("Enviando...", "success"); 
-                        } else { 
-                            App.state.mediaRecorder.start(); 
-                            App.utils.toast("Gravando...", "info"); 
-                        }
-                    }
-                },
-                
-                showOptions: (msgId, encodedContent, isEdited) => {
-                    const currentContent = decodeURIComponent(encodedContent);
-                    
-                    if (currentContent.includes('<audio')) {
-                        if(confirm("Deseja apagar este áudio para todos?")) App.chat.deleteMsg(msgId);
-                        return;
-                    }
-                    
-                    const action = prompt("Digite 'apagar' para excluir ou digite o novo texto para editar:", currentContent);
-                    
-                    if (action === null) return; 
-                    
-                    if (action.toLowerCase() === 'apagar') {
-                        App.chat.deleteMsg(msgId);
-                    } else if (action !== currentContent) {
-                        if (isEdited) alert("Esta mensagem já foi editada uma vez e não pode ser alterada novamente.");
-                        else App.chat.editMsg(msgId, action);
-                    }
-                },
-                
-                deleteMsg: async (id) => {
-                    const { error } = await _sb.from('messages').update({ is_deleted: true, content: '🚫 Mensagem apagada' }).eq('id', id);
-                    if(error) alert("Erro ao apagar: " + error.message);
-                },
-                
-                editMsg: async (id, newContent) => {
-                    const { error } = await _sb.from('messages').update({ content: newContent, is_edited: true }).eq('id', id);
-                    if(error) alert("Erro ao editar: " + error.message);
-                },
-                
-                renderMsg: (msg) => {
-                    const div = document.createElement('div');
-                    const isMine = msg.sender_id === App.state.user.id;
-                    div.className = `chat-bubble ${isMine ? 'mine' : 'theirs'}`;
-                    div.id = `msg-${msg.id}`;
-                    
-                    if (msg.is_deleted) {
-                        div.innerHTML = `<span class="chat-deleted"><i class="ri-prohibited-line"></i> Mensagem apagada</span>`;
-                    } else {
-                        let contentHtml = msg.content;
-                        if (msg.is_edited) contentHtml += `<span class="chat-edited-label"><i class="ri-pencil-line"></i> Editada</span>`;
-                        
-                        if (isMine) {
-                             const encodedContent = encodeURIComponent(msg.content);
-                             contentHtml += `<button class="chat-options-btn" onclick="App.chat.showOptions(${msg.id}, '${encodedContent}', ${msg.is_edited})"><i class="ri-more-2-fill"></i></button>`;
-                        }
-                        div.innerHTML = contentHtml;
-                    }
-                    
-                    const status = document.createElement('div');
-                    status.className = 'chat-status';
-                    status.innerHTML = `<i class="ri-check-double-line" style="color:${isMine ? '#fff' : '#2563eb'}"></i>`;
-                    div.appendChild(status);
-                    
-                    const container = document.getElementById('chat-msgs');
-                    container.appendChild(div);
-                    container.scrollTop = container.scrollHeight;
-                },
-                
-                loadHistory: async (viewType) => {
-                    if (!App.state.user) return;
-                    const myId = App.state.user.id;
-                    let html = '';
-                    
-                    // Lógica para carregar lista de conversas no painel
-                    let query = _sb.from('messages')
-                        .select('*, profiles:sender_id(nome_completo), stores:store_id(nome_loja)')
-                        .order('created_at', {ascending:false})
-                        .limit(50);
-                        
-                    if(viewType === 'loja') query = query.eq('store_id', App.state.storeId);
-                    else query = query.eq('client_id', myId);
-                    
-                    const { data } = await query;
-                    
-                    if(!data || data.length === 0) {
-                        html = '<p class="text-sm text-muted">Nenhuma conversa.</p>';
-                    } else {
-                        const unique = new Set();
-                        data.forEach(msg => {
-                            let cid = (viewType === 'loja') ? msg.client_id : msg.store_id;
-                            if(!unique.has(cid)) {
-                                unique.add(cid);
-                                let name = (viewType === 'loja') 
-                                    ? (msg.sender_id !== myId ? msg.profiles?.nome_completo : 'Cliente') 
-                                    : (msg.stores?.nome_loja || 'Loja');
-                                    
-                                html += `
-                                <div class="chat-history-item" onclick="App.chat.open('${viewType==='loja'?App.state.storeId:cid}', '${viewType==='loja'?cid:myId}')">
-                                    <div class="chat-user-info">
-                                        <div><i class="ri-message-3-line"></i> ${name}</div>
-                                        <div class="text-xs">Abrir conversa</div>
-                                    </div>
-                                    <i class="ri-arrow-right-s-line"></i>
-                                </div>`;
-                            }
-                        });
-                    }
-                    
-                    const targetId = viewType === 'loja' ? 'store-chat-list' : 'client-chat-list';
-                    const el = document.getElementById(targetId);
-                    if(el) el.innerHTML = html;
                 }
             },
 
@@ -2431,7 +2255,6 @@
                 },
                 renderBrick: async (amount) => {
                     const builder = mpInstance.bricks();
-                    // CORREÇÃO ERRO EMAIL NULL
                     const userEmail = App.state.profile?.email || 'guest@nexlog.com';
                     
                     App.state.brickController = await builder.create("payment", "payment-brick_container", {
@@ -2473,13 +2296,14 @@
                     const { orderPayload } = App.state.pendingPayment;
                     await _sb.from('orders').insert({ cliente_id: App.state.user.id, product_id: orderPayload.product_id, store_id: orderPayload.store_id, endereco_destino: orderPayload.address, requer_montagem: orderPayload.requer_montagem, taxa_servico: orderPayload.taxa, status: 'pendente' });
                     App.utils.toast('Pedido realizado!', 'success'); App.router.go('cliente'); App.client.init();
+                    
                     if (orderPayload.address.includes("(Itens:")) {
                         const content = `<div style="font-family: monospace; width: 300px; padding: 10px;"><h3 style="text-align:center;">PEDIDO COZINHA</h3><p>Cliente: ${App.state.profile.nome_completo}</p><p>Endereço: ${orderPayload.address.split('(Itens:')[0]}</p><hr><p><strong>Itens:</strong></p><p>${orderPayload.address.split('(Itens:')[1].replace(')', '')}</p></div>`;
                         const area = document.getElementById('printable-area'); area.innerHTML = content; window.print();
                     }
                 }
             },
-
+            
             client: {
                 init: async () => {
                     const { data: orders } = await _sb.from('orders').select('*, products(nome)').eq('cliente_id', App.state.user.id).order('created_at', {ascending:false});
@@ -2684,6 +2508,151 @@
                     const area = document.getElementById('printable-area'); area.innerHTML = content; window.print();
                     document.getElementById('comanda-modal').style.display = 'none';
                     App.utils.toast("Enviado para cozinha!", "success");
+                }
+            },
+            
+            chat: {
+                open: async (storeId, clientId = null) => {
+                    if(!App.state.user) return App.router.go('auth');
+                    App.state.activeChatStore = storeId;
+                    App.state.activeChatClient = clientId || App.state.user.id; 
+                    document.getElementById('chat-modal').style.display = 'flex';
+                    const msgs = document.getElementById('chat-msgs');
+                    msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Carregando histórico...</div>';
+                    
+                    const { data } = await _sb.from('messages').select('*').eq('store_id', storeId).eq('client_id', App.state.activeChatClient).order('created_at', { ascending: true });
+                    msgs.innerHTML = '';
+                    if(data && data.length > 0) data.forEach(m => App.chat.renderMsg(m));
+                    else msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Inicie a conversa...</div>';
+
+                    if(App.state.chatSub) _sb.removeChannel(App.state.chatSub);
+                    App.state.chatSub = _sb.channel('public:messages')
+                        .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `store_id=eq.${storeId}` }, (payload) => {
+                            if(payload.new.client_id === App.state.activeChatClient) {
+                                if (payload.eventType === 'INSERT') {
+                                    if(msgs.innerText.includes("Inicie a conversa")) msgs.innerHTML = "";
+                                    App.chat.renderMsg(payload.new);
+                                } else if (payload.eventType === 'UPDATE') {
+                                    const msgDiv = document.getElementById(`msg-${payload.new.id}`);
+                                    if(msgDiv) {
+                                        if (payload.new.is_deleted) msgDiv.innerHTML = `<span class="chat-deleted"><i class="ri-prohibited-line"></i> Mensagem apagada</span>`;
+                                        else {
+                                            let contentHtml = payload.new.content;
+                                            if (payload.new.is_edited) contentHtml += `<span class="chat-edited-label"><i class="ri-pencil-line"></i> Editada</span>`;
+                                            if (msgDiv.classList.contains('mine')) {
+                                                 const encodedContent = encodeURIComponent(payload.new.content);
+                                                 contentHtml += `<button class="chat-options-btn" onclick="App.chat.showOptions(${payload.new.id}, '${encodedContent}', ${payload.new.is_edited})"><i class="ri-more-2-fill"></i></button>`;
+                                            }
+                                            msgDiv.innerHTML = contentHtml;
+                                        }
+                                    }
+                                }
+                            }
+                        }).subscribe();
+                },
+                close: () => {
+                    document.getElementById('chat-modal').style.display = 'none';
+                    if(App.state.chatSub) _sb.removeChannel(App.state.chatSub);
+                },
+                send: async (content = null, type = 'text') => {
+                    const txtInput = document.getElementById('chat-input');
+                    const txt = content || txtInput.value;
+                    if(!txt && type === 'text') return;
+                    await _sb.from('messages').insert({ store_id: App.state.activeChatStore, client_id: App.state.activeChatClient, sender_id: App.state.user.id, content: txt });
+                    if(type === 'text') txtInput.value = '';
+                },
+                recordAudio: async () => {
+                    if (!navigator.mediaDevices) return alert("Navegador sem suporte a áudio.");
+                    if (!App.state.mediaRecorder) {
+                        try {
+                            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                            App.state.mediaRecorder = new MediaRecorder(stream);
+                            App.state.mediaRecorder.ondataavailable = e => App.state.audioChunks.push(e.data);
+                            App.state.mediaRecorder.onstop = async () => {
+                                const blob = new Blob(App.state.audioChunks, { type: 'audio/ogg; codecs=opus' });
+                                App.state.audioChunks = [];
+                                const fileName = `audio_${Date.now()}.ogg`;
+                                const { data, error } = await _sb.storage.from('chat_uploads').upload(fileName, blob);
+                                if(!error) {
+                                    const { data: url } = _sb.storage.from('chat_uploads').getPublicUrl(fileName);
+                                    App.chat.send(`<audio controls src="${url.publicUrl}"></audio>`, 'audio');
+                                } else alert("Erro upload áudio");
+                            };
+                            App.state.mediaRecorder.start();
+                            App.utils.toast("Gravando... Toque de novo para enviar.", "info");
+                        } catch(err) { alert("Erro: " + err.message); }
+                    } else {
+                        if(App.state.mediaRecorder.state === 'recording') { App.state.mediaRecorder.stop(); App.utils.toast("Enviando...", "success"); }
+                        else { App.state.mediaRecorder.start(); App.utils.toast("Gravando...", "info"); }
+                    }
+                },
+                showOptions: (msgId, encodedContent, isEdited) => {
+                    const currentContent = decodeURIComponent(encodedContent);
+                    if (currentContent.includes('<audio')) {
+                        if(confirm("Deseja apagar este áudio para todos?")) App.chat.deleteMsg(msgId);
+                        return;
+                    }
+                    const action = prompt("Digite 'apagar' para excluir ou digite o novo texto para editar:", currentContent);
+                    if (action === null) return; 
+                    if (action.toLowerCase() === 'apagar') App.chat.deleteMsg(msgId);
+                    else if (action !== currentContent) {
+                        if (isEdited) alert("Esta mensagem já foi editada uma vez e não pode ser alterada novamente.");
+                        else App.chat.editMsg(msgId, action);
+                    }
+                },
+                deleteMsg: async (id) => {
+                    const { error } = await _sb.from('messages').update({ is_deleted: true, content: '🚫 Mensagem apagada' }).eq('id', id);
+                    if(error) alert("Erro ao apagar: " + error.message);
+                },
+                editMsg: async (id, newContent) => {
+                    const { error } = await _sb.from('messages').update({ content: newContent, is_edited: true }).eq('id', id);
+                    if(error) alert("Erro ao editar: " + error.message);
+                },
+                renderMsg: (msg) => {
+                    const div = document.createElement('div');
+                    const isMine = msg.sender_id === App.state.user.id;
+                    div.className = `chat-bubble ${isMine ? 'mine' : 'theirs'}`;
+                    div.id = `msg-${msg.id}`;
+                    if (msg.is_deleted) div.innerHTML = `<span class="chat-deleted"><i class="ri-prohibited-line"></i> Mensagem apagada</span>`;
+                    else {
+                        let contentHtml = msg.content;
+                        if (msg.is_edited) contentHtml += `<span class="chat-edited-label"><i class="ri-pencil-line"></i> Editada</span>`;
+                        if (isMine) {
+                             const encodedContent = encodeURIComponent(msg.content);
+                             contentHtml += `<button class="chat-options-btn" onclick="App.chat.showOptions(${msg.id}, '${encodedContent}', ${msg.is_edited})"><i class="ri-more-2-fill"></i></button>`;
+                        }
+                        div.innerHTML = contentHtml;
+                    }
+                    const status = document.createElement('div');
+                    status.className = 'chat-status';
+                    status.innerHTML = `<i class="ri-check-double-line" style="color:${isMine ? '#fff' : '#2563eb'}"></i>`;
+                    div.appendChild(status);
+                    const container = document.getElementById('chat-msgs');
+                    container.appendChild(div);
+                    container.scrollTop = container.scrollHeight;
+                },
+                loadHistory: async (viewType) => {
+                    if (!App.state.user) return;
+                    const myId = App.state.user.id;
+                    let html = '';
+                    let query = _sb.from('messages').select('*, profiles:sender_id(nome_completo), stores:store_id(nome_loja)').order('created_at', {ascending:false}).limit(50);
+                    if(viewType === 'loja') query = query.eq('store_id', App.state.storeId);
+                    else query = query.eq('client_id', myId);
+                    const { data } = await query;
+                    
+                    if(!data || data.length === 0) html = '<p class="text-sm text-muted">Nenhuma conversa.</p>';
+                    else {
+                        const unique = new Set();
+                        data.forEach(msg => {
+                            let cid = (viewType === 'loja') ? msg.client_id : msg.store_id;
+                            if(!unique.has(cid)) {
+                                unique.add(cid);
+                                let name = (viewType === 'loja') ? (msg.sender_id !== myId ? msg.profiles?.nome_completo : 'Cliente') : (msg.stores?.nome_loja || 'Loja');
+                                html += `<div class="chat-history-item" onclick="App.chat.open('${viewType==='loja'?App.state.storeId:cid}', '${viewType==='loja'?cid:myId}')"><div class="chat-user-info"><div><i class="ri-message-3-line"></i> ${name}</div><div class="text-xs">Abrir conversa</div></div><i class="ri-arrow-right-s-line"></i></div>`;
+                            }
+                        });
+                    }
+                    document.getElementById(viewType === 'loja' ? 'store-chat-list' : 'client-chat-list').innerHTML = html;
                 }
             },
             
