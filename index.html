@@ -284,32 +284,36 @@
                 z-index: 99999;
             }
             /* ESTILO DOS TAMANHOS (QUADRADINHOS) */
+            /* COLE NO FINAL DA TAG <style> */
 .size-selector-container {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 5px;
+    margin-top: 10px;
+    margin-bottom: 10px;
 }
 .size-box {
-    border: 1px solid var(--border);
-    padding: 8px 12px;
-    border-radius: 4px;
+    border: 1px solid #cbd5e1;
+    padding: 8px 16px;
+    border-radius: 6px;
     cursor: pointer;
     background: white;
-    font-size: 0.85rem;
+    color: #0f172a;
+    font-size: 0.9rem;
     font-weight: bold;
     transition: all 0.2s;
     user-select: none;
 }
 .size-box:hover {
-    border-color: var(--primary);
-    background: var(--primary-light);
+    border-color: #2563eb;
+    background: #eff6ff;
 }
 .size-box.selected {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+    background-color: #2563eb !important; /* Azul */
+    color: white !important; /* Texto Branco */
+    border-color: #2563eb !important;
+    box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+    transform: translateY(-1px);
 }
 /* Para o Admin (Multipla escolha) */
 .size-box.admin-selected {
@@ -1757,30 +1761,39 @@
                     if (App.state.brickController) App.state.brickController.unmount();
                     if (App.state.pixInterval) clearInterval(App.state.pixInterval); 
                 },
-                renderBrick: async (amount) => {
-                    const builder = mpInstance.bricks();
-                    App.state.brickController = await builder.create("payment", "payment-brick_container", {
-                        initialization: { amount: amount, payer: { email: App.state.profile.email || 'guest@nexlog.com' } },
-                        customization: { paymentMethods: { ticket: "all", bankTransfer: "all", creditCard: "all", debitCard: "all", maxInstallments: 3 }, visual: { style: { theme: 'default' } } },
-                        callbacks: {
-                            onReady: () => console.log("Brick Ready"),
-                            onError: (e) => console.error(e),
-                            onSubmit: async ({ formData }) => {
-                                formData.store_id = App.state.pendingPayment.orderPayload.store_id; 
-                                return new Promise((resolve, reject) => {
-                                    fetch("/api/pix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData) })
-                                    .then(async r => {
-                                        const data = await r.json();
-                                        if(!r.ok) { App.utils.toast(data.message || "Erro", "error"); reject(); return; }
-                                        if(data.status === 'approved') { App.utils.toast("Aprovado!", "success"); App.payment.finalizeSuccess(); resolve(); }
-                                        else if(data.status === 'pending' && data.payment_method_id === 'pix') { App.payment.showPixScreen(data); resolve(); }
-                                        else { App.utils.toast("Recusado.", "error"); reject(); }
-                                    }).catch(() => { App.utils.toast("Erro Conexão", "error"); reject(); });
-                                });
-                            }
+              renderBrick: async (amount) => {
+                const builder = mpInstance.bricks();
+                // CORREÇÃO: Usa '?.' para não quebrar se o perfil ainda não carregou
+                const userEmail = App.state.profile?.email || 'guest@nexlog.com';
+                
+                App.state.brickController = await builder.create("payment", "payment-brick_container", {
+                    initialization: { 
+                        amount: amount, 
+                        payer: { email: userEmail } 
+                    },
+                    customization: { 
+                        paymentMethods: { ticket: "all", bankTransfer: "all", creditCard: "all", debitCard: "all", maxInstallments: 3 }, 
+                        visual: { style: { theme: 'default' } } 
+                    },
+                    callbacks: {
+                        onReady: () => console.log("Brick Ready"),
+                        onError: (e) => console.error(e),
+                        onSubmit: async ({ formData }) => {
+                            formData.store_id = App.state.pendingPayment.orderPayload.store_id; 
+                            return new Promise((resolve, reject) => {
+                                fetch("/api/pix", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(formData) })
+                                .then(async r => {
+                                    const data = await r.json();
+                                    if(!r.ok) { App.utils.toast(data.message || "Erro", "error"); reject(); return; }
+                                    if(data.status === 'approved') { App.utils.toast("Aprovado!", "success"); App.payment.finalizeSuccess(); resolve(); }
+                                    else if(data.status === 'pending' && data.payment_method_id === 'pix') { App.payment.showPixScreen(data); resolve(); }
+                                    else { App.utils.toast("Recusado.", "error"); reject(); }
+                                }).catch(() => { App.utils.toast("Erro Conexão", "error"); reject(); });
+                            });
                         }
-                    });
-                },
+                    }
+                });
+            },
                 showPixScreen: (data) => {
                     document.getElementById('payment-brick_container').style.display = 'none';
                     const qr = data.point_of_interaction.transaction_data;
@@ -2098,55 +2111,40 @@
             activeCoupon: null,
             storeSettings: null,
 
-            // Ao abrir o carrinho
             open: async () => { 
                 document.getElementById('cart-modal').style.display = 'flex'; 
-                
-                // Busca configurações da loja (taxa e endereço) para exibir
                 if(App.state.cart.length > 0) {
                     const sid = App.state.cart[0].storeId;
                     const { data } = await _sb.from('stores').select('taxa_entrega_padrao, endereco_retirada').eq('id', sid).single();
                     App.cart.storeSettings = data;
-                    
-                    // Atualiza textos visuais do modal (Valor da taxa e Endereço de retirada)
                     const fee = data?.taxa_entrega_padrao || 0;
-                    const labelFee = document.getElementById('label-delivery-fee');
-                    if(labelFee) labelFee.innerText = `R$ ${parseFloat(fee).toFixed(2)}`;
-                    
-                    const txtPickup = document.getElementById('txt-pickup-addr');
-                    if(txtPickup) txtPickup.innerText = data?.endereco_retirada || "Endereço não configurado";
+                    document.getElementById('label-delivery-fee').innerText = `R$ ${parseFloat(fee).toFixed(2)}`;
+                    document.getElementById('txt-pickup-addr').innerText = data?.endereco_retirada || "Endereço não configurado";
                 }
-
-                // Reseta a visualização para o padrão (Entrega selecionada)
                 const radioDelivery = document.getElementById('method-delivery');
                 if(radioDelivery) radioDelivery.checked = true;
-                
-                App.cart.toggleAddressField(); // Chama para garantir que o campo de endereço apareça
+                App.cart.toggleAddressField(); 
                 App.cart.render(); 
                 App.cart.updateFloater(); 
             },
-
-            // NOVA FUNÇÃO: Controla a visibilidade do campo de endereço vs Info de retirada
+            
             toggleAddressField: () => {
                 const isDelivery = document.getElementById('method-delivery')?.checked;
                 const addrContainer = document.getElementById('delivery-address-container');
                 const pickupInfo = document.getElementById('pickup-info-display');
-                
                 if (isDelivery) {
-                    // Se for entrega: Mostra campo de endereço, esconde info da loja
                     if(addrContainer) addrContainer.style.display = 'block';
                     if(pickupInfo) pickupInfo.style.display = 'none';
                 } else {
-                    // Se for retirada: Esconde campo de endereço, mostra info da loja
                     if(addrContainer) addrContainer.style.display = 'none';
                     if(pickupInfo) pickupInfo.style.display = 'block';
                 }
-                App.cart.updateFloater(); // Recalcula o total (adiciona ou remove taxa)
+                App.cart.updateFloater(); 
             },
             
             add: (product, storeId) => {
                  if (App.state.cart.length > 0 && App.state.cart[0].storeId !== storeId) {
-                     if(!confirm("Você tem itens de outra loja. Limpar carrinho?")) return;
+                     if(!confirm("Itens de outra loja. Limpar carrinho?")) return;
                      App.state.cart = [];
                      App.cart.activeCoupon = null;
                  }
@@ -2161,10 +2159,8 @@
                 const code = document.getElementById('cart-coupon-input').value.toUpperCase().trim();
                 if(!code || App.state.cart.length === 0) return;
                 const storeId = App.state.cart[0].storeId;
-                
                 const { data, error } = await _sb.from('coupons').select('*').eq('code', code).eq('store_id', storeId).eq('active', true).single();
                 const msg = document.getElementById('coupon-msg');
-                
                 if(error || !data) {
                     msg.innerHTML = '<span style="color:red">Inválido.</span>';
                     App.cart.activeCoupon = null;
@@ -2175,6 +2171,105 @@
                     App.cart.render();
                 }
             },
+
+            render: () => {
+                 const container = document.getElementById('cart-items-list');
+                 if(App.state.cart.length === 0) {
+                     container.innerHTML = '<p class="text-center text-muted">Vazio.</p>';
+                     document.getElementById('cart-total-modal').innerText = "R$ 0,00";
+                     return;
+                 }
+                 container.innerHTML = App.state.cart.map((item, idx) => {
+                     let price = item.preco;
+                     let discountHtml = '';
+                     if(App.cart.activeCoupon && item.categoria === 'Roupas') {
+                         const discount = price * (App.cart.activeCoupon.percent / 100);
+                         price -= discount;
+                         discountHtml = `<span class="text-xs" style="color:green;">-${App.cart.activeCoupon.percent}%</span>`;
+                     }
+                     return `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;"><div><b>${item.nome}</b><br><span class="text-xs">R$ ${item.preco.toFixed(2)} ${discountHtml}</span></div><button class="btn btn-sm btn-danger" onclick="App.cart.remove(${idx})">X</button></div>`;
+                 }).join('');
+                 App.cart.updateFloater(); 
+            },
+
+            calculateTotal: () => {
+                let productsTotal = 0;
+                App.state.cart.forEach(item => {
+                    let p = item.preco;
+                    if(App.cart.activeCoupon && item.categoria === 'Roupas') p = p - (p * (App.cart.activeCoupon.percent / 100));
+                    productsTotal += p;
+                });
+                const isDelivery = document.getElementById('method-delivery')?.checked;
+                let deliveryFee = 0;
+                if(isDelivery && App.cart.storeSettings) deliveryFee = parseFloat(App.cart.storeSettings.taxa_entrega_padrao || 0);
+                return { productsTotal, deliveryFee, finalTotal: productsTotal + deliveryFee };
+            },
+
+            updateFloater: () => {
+                 const floater = document.getElementById('cart-floater');
+                 if(App.state.cart.length > 0) {
+                     floater.style.display = 'flex';
+                     const totals = App.cart.calculateTotal();
+                     document.getElementById('cart-count').innerText = `${App.state.cart.length} itens`;
+                     document.getElementById('cart-total').innerText = `R$ ${totals.finalTotal.toFixed(2)}`;
+                     const modalTotal = document.getElementById('cart-total-modal');
+                     if(modalTotal) modalTotal.innerText = `R$ ${totals.finalTotal.toFixed(2)}` + (totals.deliveryFee > 0 ? ` (Frete: R$ ${totals.deliveryFee})` : '');
+                 } else floater.style.display = 'none';
+            },
+
+            checkout: async () => {
+                 // --- CORREÇÃO: LOGIN OBRIGATÓRIO ---
+                 if(!App.state.user) {
+                     App.utils.toast("Faça login para finalizar a compra!", "warning");
+                     document.getElementById('cart-modal').style.display = 'none';
+                     App.router.go('auth');
+                     return;
+                 }
+                 // ------------------------------------
+
+                 if(App.state.cart.length === 0) return;
+                 
+                 const totals = App.cart.calculateTotal();
+                 const isDelivery = document.getElementById('method-delivery').checked;
+                 const storeId = App.state.cart[0].storeId;
+                 
+                 let address = "";
+                 
+                 if(isDelivery) {
+                     const inputAddr = document.getElementById('cart-delivery-address');
+                     const val = inputAddr ? inputAddr.value.trim() : "";
+                     if(!val) return alert("Por favor, preencha o endereço de entrega.");
+                     address = `ENTREGA: ${val}`;
+                 } else {
+                     const pickupAddr = App.cart.storeSettings?.endereco_retirada || "Loja";
+                     address = `RETIRADA NA LOJA (${pickupAddr})`;
+                     if(!confirm(`Confirma a RETIRADA em:\n${pickupAddr}\n\nTotal: R$ ${totals.finalTotal.toFixed(2)}`)) return;
+                 }
+
+                 document.getElementById('cart-modal').style.display = 'none';
+                 App.utils.toast("Iniciando pagamento...", "info");
+                 
+                 const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', storeId).single();
+                 const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
+                 mpInstance = new MercadoPago(publicKeyToUse);
+                 
+                 const itemsDesc = App.state.cart.map(i => i.nome).join(', ');
+                 
+                 App.payment.open(totals.finalTotal, { 
+                     product_id: App.state.cart[0].id, 
+                     store_id: storeId, 
+                     basePrice: totals.finalTotal, 
+                     address: `${address} (Itens: ${itemsDesc})`, 
+                     requer_montagem: false, 
+                     taxa: totals.finalTotal * 0.15 
+                 });
+                 
+                 App.state.cart = [];
+                 App.cart.activeCoupon = null;
+                 App.cart.updateFloater();
+                 if(document.getElementById('cart-delivery-address')) document.getElementById('cart-delivery-address').value = "";
+            }
+        },
 
             render: () => {
                  const container = document.getElementById('cart-items-list');
@@ -2283,7 +2378,7 @@
                  }
             }
         },
-          catalog: {
+         catalog: {
             currentCat: 'Todos',
             filter: (cat, btn) => {
                 document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
@@ -2291,13 +2386,28 @@
                 App.catalog.currentCat = cat;
                 App.catalog.load();
             },
+            
+            // --- FUNÇÃO PARA SELECIONAR TAMANHO (VISUAL) ---
+            selectSize: (element) => {
+                // Remove a classe 'selected' de todos os irmãos dentro do mesmo container
+                const container = element.parentElement;
+                const boxes = container.getElementsByClassName('size-box');
+                for (let box of boxes) {
+                    box.classList.remove('selected');
+                }
+                // Adiciona a classe 'selected' no clicado
+                element.classList.add('selected');
+            },
+
             load: async () => {
                 let query = _sb.from('products').select('*, stores(nome_loja)');
                 if(App.catalog.currentCat !== 'Todos') query = query.eq('categoria', App.catalog.currentCat);
                 const { data } = await query;
+                
                 const promos = data?.filter(p => p.promocao);
                 const normal = data?.filter(p => !p.promocao);
                 let html = '';
+                
                 if(promos && promos.length > 0) {
                     html += `<div style="grid-column:1/-1; margin-bottom:10px;"><h3 style="color:var(--danger)">🔥 Ofertas em Destaque</h3></div>`;
                     html += promos.map(p => App.catalog.renderCard(p)).join('');
@@ -2306,31 +2416,27 @@
                 html += normal?.map(p => App.catalog.renderCard(p)).join('');
                 document.getElementById('public-catalog').innerHTML = html || '<p style="grid-column:1/-1; text-align:center">Nenhuma oferta nesta categoria.</p>';
             },
-            
-            // --- FUNÇÃO DE SELEÇÃO VISUAL (CLIENTE) ---
-            selectSize: (element) => {
-                // Remove seleção dos outros irmãos
-                const parent = element.parentElement;
-                const siblings = parent.querySelectorAll('.size-box');
-                siblings.forEach(el => el.classList.remove('selected'));
-                // Seleciona o atual
-                element.classList.add('selected');
-            },
-            // -------------------------------------------
 
             renderCard: (p) => {
                 let dispInfo = '';
                 let actionText = "Adicionar ao Carrinho"; 
                 
-                // Tratamento Anti-Erro de Sintaxe
-                const pSafe = JSON.stringify(p).replace(/"/g, '&quot;').replace(/'/g, "&#39;").replace(/\n/g, " ");   
+                // TRATAMENTO DE TEXTO (SINTAXE SEGURA)
+                const pSafe = JSON.stringify(p)
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, "&#39;")
+                    .replace(/\n/g, " ");   
+                    
                 let dSafe = 'null';
-                if(p.delivery_info) dSafe = `'${JSON.stringify(p.delivery_info).replace(/"/g, '&quot;').replace(/'/g, "&#39;")}'`;
+                if(p.delivery_info) {
+                     dSafe = `'${JSON.stringify(p.delivery_info).replace(/"/g, '&quot;').replace(/'/g, "&#39;")}'`;
+                }
                 
-                const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Pedreiros', 'Jardinagem', 'Outros'];
+                const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Manutenção', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Fretes e Mudanças', 'Jardinagem', 'Outros'];
 
                 let onclick = '';
                 
+                // Lógica de Botão Principal
                 if (serviceCats.includes(p.categoria)) {
                     actionText = "Contratar Serviço";
                     onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${dSafe})`;
@@ -2339,85 +2445,85 @@
                     onclick = `App.cart.add(${pSafe}, "${p.store_id}")`;
                 }
                 
-                // --- RENDERIZAÇÃO DOS QUADRADINHOS DE TAMANHO ---
+                // --- QUADRADINHOS DE TAMANHO (ROUPAS) ---
                 let sizeSelectorHtml = '';
-                const containerId = `size-container-${p.id}`; // ID único para o container
+                const containerId = `size-container-${p.id}`; // ID Único para buscar depois
                 
                 if(p.categoria === 'Roupas') {
                     let chips = '';
                     if (p.sizes && p.sizes.trim() !== '') {
                         const sizesArr = p.sizes.split(',').map(s => s.trim());
-                        // Cria os quadradinhos clicáveis
+                        // Gera os quadradinhos HTML
                         chips = sizesArr.map(s => `<div class="size-box" onclick="App.catalog.selectSize(this)">${s}</div>`).join('');
                     } else {
+                        // Se não tem tamanho cadastrado, cria um "Único" já selecionado
                         chips = `<div class="size-box selected" onclick="App.catalog.selectSize(this)">Único</div>`;
                     }
 
                     sizeSelectorHtml = `
-                        <div style="margin-top:5px;">
-                            <label class="text-xs">Escolha o Tamanho:</label>
+                        <div style="margin-top:10px;">
+                            <label class="text-xs" style="font-weight:bold; color:#555;">Escolha o Tamanho:</label>
                             <div id="${containerId}" class="size-selector-container">
                                 ${chips}
                             </div>
                         </div>
                     `;
-                    // Passamos apenas o ID do produto e da loja. A função vai procurar o tamanho selecionado no HTML.
+                    // IMPORTANTE: Passamos o ID do container como string simples
                     onclick = `App.catalog.addToCartClothing('${p.id}', '${p.store_id}', '${containerId}')`;
                 }
-                // ------------------------------------------------
-
-                // ... (Lógica de Hoteis e Gesso continua igual) ...
+                
+                // Detalhes Específicos
                 if(p.categoria === 'Hoteis/Pousadas' && p.disponibilidade) {
+                     const [start, end] = p.disponibilidade.split('|');
+                     const fmt = d => d.split('-').reverse().join('/');
+                     dispInfo = `<div class="text-xs" style="background:#f0f9ff; padding:5px; border-radius:4px; margin-top:5px; color:#0369a1;">📅 Disp: ${fmt(start)} até ${fmt(end)}</div>`;
                      onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", null)`;
                 } 
                 else if (p.categoria === 'Serviços de Gesso' && p.gesso_info) {
                     actionText = "Orçamento";
                     onclick = `App.client.openBudget(${pSafe})`;
+                    dispInfo = `<div class="text-xs" style="color:#854d0e; margin-top:5px;">Orçamento por m²</div>`;
                 }
-
-                let imagesHtml = '';
-                if (p.galeria && Array.isArray(p.galeria) && p.galeria.length > 0) {
-                    const imgs = p.galeria.map(url => `<img src="${url}" class="gallery-img" loading="lazy">`).join('');
-                    imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery">${imgs}</div><div class="gallery-badge"><i class="ri-image-line"></i> ${p.galeria.length} fotos</div></div>`;
-                } else {
-                    const imgUrl = p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto';
-                    imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery"><img src="${imgUrl}" class="gallery-img"></div></div>`;
-                }
-
+                
+                const actionBtn = `<button class="btn ${serviceCats.includes(p.categoria)?'btn-secondary':'btn-success'} btn-full" style="margin-top:10px" onclick="${onclick}">${actionText}</button>`;
+                
+                const imgUrl = (p.galeria && p.galeria.length > 0) ? p.galeria[0] : (p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto');
+                
                 return `
                     <div class="card">
                         ${p.promocao ? '<div class="badge badge-promo">PROMOÇÃO</div>' : ''}
-                        ${imagesHtml}
+                        <div class="product-gallery-wrapper"><div class="product-gallery"><img src="${imgUrl}" class="gallery-img"></div></div>
                         <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div>
                         <h4>${p.nome}</h4>
-                        ${p.descricao ? `<p class="text-sm text-muted" style="margin-bottom:5px; line-height:1.2;">${p.descricao}</p>` : ''}
+                        <p class="text-sm text-muted" style="margin-bottom:5px;">${p.descricao || ''}</p>
                         <h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
+                        
                         ${sizeSelectorHtml} 
                         ${dispInfo}
-                        <button class="btn ${serviceCats.includes(p.categoria)?'btn-secondary':'btn-success'} btn-full" style="margin-top:10px" onclick="${onclick}">${actionText}</button>
+                        ${actionBtn}
                         <button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>
                     </div>`;
             },
             
             fetchPublic: async () => { App.catalog.load(); },
 
-            // --- FUNÇÃO CORRIGIDA DE ADICIONAR AO CARRINHO ---
+            // Adiciona roupa buscando o tamanho visualmente selecionado
             addToCartClothing: async (pid, sid, containerId) => {
-                // 1. Busca qual quadradinho está selecionado dentro do container específico deste card
                 const container = document.getElementById(containerId);
                 const selected = container ? container.querySelector('.selected') : null;
                 
                 if (!selected) {
-                    alert("Por favor, selecione um tamanho.");
+                    alert("Por favor, clique em um tamanho para selecionar.");
                     return;
                 }
                 const tamanho = selected.innerText;
 
-                // 2. Busca dados limpos do banco
+                // Busca dados limpos do produto no banco
                 const { data: p } = await _sb.from('products').select('*').eq('id', pid).single();
                 
-                // 3. Adiciona ao carrinho
+                // Cria o item com o tamanho no nome
                 const prodToAdd = { ...p, nome: `${p.nome} (Tam: ${tamanho})` };
+                
                 App.cart.add(prodToAdd, sid);
             }
         },// <--- AQUI FECHA O CATALOG
