@@ -2421,13 +2421,11 @@
                 html += normal?.map(p => App.catalog.renderCard(p)).join('');
                 document.getElementById('public-catalog').innerHTML = html || '<p style="grid-column:1/-1; text-align:center">Nenhuma oferta nesta categoria.</p>';
             },
-            renderCard: (p) => {
+          renderCard: (p) => {
                 let dispInfo = '';
                 let actionText = "Adicionar ao Carrinho"; 
                 
-                // --- CORREÇÃO DO ERRO DE SINTAXE ---
-                // Adicionamos .replace(/'/g, "&#39;") para aspas simples não quebrarem o HTML
-                // Adicionamos .replace(/\n/g, " ") para quebras de linha não quebrarem o JS
+                // Tratamento de texto para evitar quebra de HTML
                 const pSafe = JSON.stringify(p)
                     .replace(/"/g, '&quot;')
                     .replace(/'/g, "&#39;") 
@@ -2450,28 +2448,29 @@
                     onclick = `App.cart.add(${pSafe}, "${p.store_id}")`;
                 }
                 
-                // --- CORREÇÃO DOS TAMANHOS ---
+                // --- Lógica de Tamanhos ---
                 let sizeSelectorHtml = '';
-                // Removemos o "&& p.sizes" para garantir que entra aqui se for roupa
                 if(p.categoria === 'Roupas') {
                     let options = '<option value="Único">Único</option>';
-                    
-                    // Se o lojista cadastrou tamanhos, usa eles. Se não, fica "Único"
                     if (p.sizes && p.sizes.trim() !== '') {
                         const sizesArr = p.sizes.split(',').map(s => s.trim());
                         options = sizesArr.map(s => `<option value="${s}">${s}</option>`).join('');
                     }
 
+                    // ID único para o select
+                    const selectId = `size-select-${p.id}`;
+
                     sizeSelectorHtml = `
                         <div style="margin-top:5px;">
                             <label class="text-xs">Tamanho:</label>
-                            <select id="size-select-${p.id}" class="input-field" style="padding:5px; height:auto; font-size:0.9rem;">
+                            <select id="${selectId}" class="input-field" style="padding:5px; height:auto; font-size:0.9rem;">
                                 ${options}
                             </select>
                         </div>
                     `;
-                    // Força o uso da função especial de roupa
-                    onclick = `App.catalog.addToCartClothing('${p.id}', '${p.store_id}', this)`;
+                    
+                    // CORREÇÃO CRÍTICA AQUI: Passamos o ID do select como string simples
+                    onclick = `App.catalog.addToCartClothing('${p.id}', '${p.store_id}', '${selectId}')`;
                 }
                 
                 if(p.categoria === 'Hoteis/Pousadas') {
@@ -2488,7 +2487,7 @@
                     dispInfo = `<div class="text-xs" style="color:#854d0e; margin-top:5px;">Orçamento por m²</div>`;
                 }
                 
-                let actionBtn = `<button class="btn ${serviceCats.includes(p.categoria)?'btn-secondary':'btn-success'} btn-full" style="margin-top:10px" onclick='${onclick}'>${actionText}</button>`;
+                let actionBtn = `<button class="btn ${serviceCats.includes(p.categoria)?'btn-secondary':'btn-success'} btn-full" style="margin-top:10px" onclick="${onclick}">${actionText}</button>`;
                 let chatBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>`;
 
                 let imagesHtml = '';
