@@ -1241,7 +1241,6 @@
                 }
 
                 App.store.loadComandas();
-                // Carrega Cupons
                 App.store.loadCoupons();
 
                 const { data: orders } = await _sb.from('orders').select('*, products(nome, categoria, delivery_info), profiles!orders_cliente_id_fkey(nome_completo, email, cpf), prestador:profiles!orders_prestador_id_fkey(nome_completo, chave_pix)').eq('store_id', store.id).order('created_at', { ascending: false });
@@ -2426,28 +2425,30 @@
                 let dispInfo = '';
                 let actionText = "Adicionar ao Carrinho"; 
                 
-                // CORREÇÃO DO ERRO DE SINTAXE:
-                // Tratamento para impedir que aspas ou enter quebrem o site
+                // CORREÇÃO CRÍTICA AQUI:
+                // Tratamento robusto para aspas e quebras de linha que estavam quebrando o HTML
                 const pSafe = JSON.stringify(p)
                     .replace(/"/g, '&quot;')
                     .replace(/'/g, "&#39;") // Corrige erro da aspa simples
-                    .replace(/\n/g, " ");   // Remove quebras de linha
+                    .replace(/\n/g, " ");   // Remove quebras de linha que quebram o JS
                     
-                const dSafe = JSON.stringify(p.delivery_info || null)
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, "&#39;");
+                // Para o delivery info, passamos como string escapada para evitar erro no JSON.parse do client
+                let dSafe = 'null';
+                if(p.delivery_info) {
+                     dSafe = `'${JSON.stringify(p.delivery_info).replace(/"/g, '&quot;').replace(/'/g, "&#39;")}'`;
+                }
                 
-                // LISTA DE O QUE É SERVIÇO (Usa a caixa de diálogo antiga)
-                const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Manutenção', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Fretes e Mudanças', 'Jardinagem'];
+                // Lista de categorias que são SERVIÇOS (Usam Prompt/Dialogo)
+                const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Manutenção', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Fretes e Mudanças', 'Jardinagem', 'Outros'];
 
                 let onclick = '';
                 
                 if (serviceCats.includes(p.categoria)) {
                     // SE FOR SERVIÇO: Usa a lógica antiga (Prompt)
                     actionText = "Contratar Serviço";
-                    onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", '${dSafe}')`;
+                    onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${dSafe})`;
                 } else {
-                    // SE FOR PRODUTO (Qualquer outro): Vai pro Carrinho (Novo Campo)
+                    // SE FOR PRODUTO: Vai pro Carrinho
                     actionText = (p.categoria === 'Comidas' || p.categoria === 'Bebidas') ? "Fazer Pedido" : "Comprar";
                     onclick = `App.cart.add(${pSafe}, "${p.store_id}")`;
                 }
@@ -2465,7 +2466,7 @@
                             </select>
                         </div>
                     `;
-                    // Roupas usa função especial
+                    // Roupas usa função especial que busca o produto limpo do banco
                     onclick = `App.catalog.addToCartClothing('${p.id}', '${p.store_id}', this)`;
                 }
                 
@@ -2489,12 +2490,11 @@
                 let chatBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>`;
 
                 let imagesHtml = '';
-                if (p.galeria && Array.isArray(p.galeria) && p.galeria.length > 1) {
+                if (p.galeria && Array.isArray(p.galeria) && p.galeria.length > 0) {
                     const imgs = p.galeria.map(url => `<img src="${url}" class="gallery-img" loading="lazy">`).join('');
-                    imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery">${imgs}</div><div class="gallery-badge"><i class="ri-image-line"></i> ${p.galeria.length} fotos</div></div>`;
+                    imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery">${imgs}</div>${p.galeria.length > 1 ? '<div class="gallery-badge"><i class="ri-image-line"></i> ' + p.galeria.length + ' fotos</div>' : ''}</div>`;
                 } else {
-                    const imgUrl = (p.galeria && p.galeria.length > 0) ? p.galeria[0] : (p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto');
-                    imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery"><img src="${imgUrl}" class="gallery-img"></div></div>`;
+                    imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery"><img src="${p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto'}" class="gallery-img"></div></div>`;
                 }
 
                 return `
@@ -2530,7 +2530,7 @@
                 App.cart.add(prodToAdd, sid);
             }
 
-        }, // <--- AQUI FECHA O CATALOG
+        },// <--- AQUI FECHA O CATALOG
             
             chat: {
                 open: async (storeId, clientId = null) => {
