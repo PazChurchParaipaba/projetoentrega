@@ -2424,21 +2424,34 @@
             },
             renderCard: (p) => {
                 let dispInfo = '';
-                let actionText = "Contratar Serviço";
+                let actionText = "Adicionar ao Carrinho"; // Texto padrão para produtos
                 
-                // Define texto do botão baseado na categoria
-                if (p.categoria === 'Comidas' || p.categoria === 'Bebidas') actionText = "Fazer Pedido"; 
-                if (p.categoria === 'Serviços de Gesso') actionText = "Orçamento";
-                if (p.categoria === 'Roupas') actionText = "Comprar"; 
-
-                // Prepara dados seguros para passar no HTML
-                const pSafe = JSON.stringify(p).replace(/"/g, '&quot;');
+                // CORREÇÃO DO ERRO DE SINTAXE:
+                // Removemos quebras de linha e escapamos aspas simples para não quebrar o HTML
+                const pSafe = JSON.stringify(p)
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, "\\'")
+                    .replace(/\n/g, " "); 
+                    
                 const dSafe = JSON.stringify(p.delivery_info || null).replace(/"/g, '&quot;');
                 
-                // Onclick padrão
-                let onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${dSafe})`;
+                // Lista de categorias que são SERVIÇOS (Usam Prompt/Dialogo)
+                const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Manutenção', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Fretes e Mudanças', 'Jardinagem'];
+
+                // LÓGICA DE CLIQUE:
+                let onclick = '';
                 
-                // LÓGICA NOVA: Seletor de Tamanhos (Roupas)
+                if (serviceCats.includes(p.categoria)) {
+                    // SE FOR SERVIÇO: Usa a lógica antiga (Prompt)
+                    actionText = "Contratar Serviço";
+                    onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${dSafe})`;
+                } else {
+                    // SE FOR PRODUTO (Comida, Bebida, Eletronico, Material, Outros): Vai pro Carrinho (Novo Campo)
+                    actionText = (p.categoria === 'Comidas' || p.categoria === 'Bebidas') ? "Fazer Pedido" : "Comprar";
+                    onclick = `App.cart.add(${pSafe}, "${p.store_id}")`;
+                }
+                
+                // LÓGICA ESPECIAL PARA ROUPAS (Seletor de Tamanho)
                 let sizeSelectorHtml = '';
                 if(p.categoria === 'Roupas' && p.sizes) {
                     const sizesArr = p.sizes.split(',').map(s => s.trim());
@@ -2451,11 +2464,11 @@
                             </select>
                         </div>
                     `;
-                    // Atualiza o onclick para usar a função específica de roupas
+                    // Roupas usa função especial de carrinho
                     onclick = `App.catalog.addToCartClothing('${p.id}', '${p.store_id}', this)`;
                 }
                 
-                // Lógica para Hotéis
+                // LÓGICA ESPECIAL PARA HOTEIS (Datas)
                 if(p.categoria === 'Hoteis/Pousadas') {
                     if(p.disponibilidade) {
                         const [start, end] = p.disponibilidade.split('|');
@@ -2463,16 +2476,15 @@
                         dispInfo = `<div class="text-xs" style="background:#f0f9ff; padding:5px; border-radius:4px; margin-top:5px; color:#0369a1;">📅 Disp: ${fmt(start)} até ${fmt(end)}</div>`;
                         onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", null)`;
                     }
-                // Lógica para Gesso
-                } else if (p.categoria === 'Serviços de Gesso' && p.gesso_info) {
+                } 
+                // LÓGICA ESPECIAL PARA GESSO (Orçamento)
+                else if (p.categoria === 'Serviços de Gesso' && p.gesso_info) {
+                    actionText = "Orçamento";
                     onclick = `App.client.openBudget(${pSafe})`;
                     dispInfo = `<div class="text-xs" style="color:#854d0e; margin-top:5px;">Orçamento por m²</div>`;
-                // Lógica para Comidas/Bebidas
-                } else if (p.categoria === 'Comidas' || p.categoria === 'Bebidas') {
-                    onclick = `App.cart.add(${pSafe}, "${p.store_id}")`;
                 }
                 
-                let actionBtn = `<button class="btn ${p.categoria==='Comidas'?'btn-success':'btn-secondary'} btn-full" style="margin-top:10px" onclick='${onclick}'>${p.categoria==='Comidas'?'Adicionar ao Carrinho':actionText}</button>`;
+                let actionBtn = `<button class="btn ${serviceCats.includes(p.categoria)?'btn-secondary':'btn-success'} btn-full" style="margin-top:10px" onclick='${onclick}'>${actionText}</button>`;
                 let chatBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>`;
 
                 // Monta a galeria de imagens
@@ -2484,7 +2496,6 @@
                     imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery"><img src="${p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto'}" class="gallery-img"></div></div>`;
                 }
 
-                // RETORNO ÚNICO DO CARD COMPLETO
                 return `
                     <div class="card">
                         ${p.promocao ? '<div class="badge badge-promo">PROMOÇÃO</div>' : ''}
@@ -2506,7 +2517,6 @@
             
             fetchPublic: async () => { App.catalog.load(); },
 
-            // AGORA SIM, DENTRO DO CATALOG (note a vírgula acima)
             addToCartClothing: async (pid, sid, btnElement) => {
                 const { data: p } = await _sb.from('products').select('*').eq('id', pid).single();
                 
