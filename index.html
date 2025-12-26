@@ -2423,24 +2423,21 @@
             },
             renderCard: (p) => {
                 let dispInfo = '';
-                let actionText = "Adicionar ao Carrinho"; 
+                let actionText = "Adicionar ao Carrinho"; // Texto padrão para produtos
                 
-                // CORREÇÃO CRÍTICA AQUI:
-                // Tratamento robusto para aspas e quebras de linha que estavam quebrando o HTML
+                // CORREÇÃO DO ERRO DE SINTAXE:
+                // Removemos quebras de linha e escapamos aspas simples para não quebrar o HTML
                 const pSafe = JSON.stringify(p)
                     .replace(/"/g, '&quot;')
-                    .replace(/'/g, "&#39;") // Corrige erro da aspa simples
-                    .replace(/\n/g, " ");   // Remove quebras de linha que quebram o JS
+                    .replace(/'/g, "\\'")
+                    .replace(/\n/g, " "); 
                     
-                // Para o delivery info, passamos como string escapada para evitar erro no JSON.parse do client
-                let dSafe = 'null';
-                if(p.delivery_info) {
-                     dSafe = `'${JSON.stringify(p.delivery_info).replace(/"/g, '&quot;').replace(/'/g, "&#39;")}'`;
-                }
+                const dSafe = JSON.stringify(p.delivery_info || null).replace(/"/g, '&quot;');
                 
                 // Lista de categorias que são SERVIÇOS (Usam Prompt/Dialogo)
-                const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Manutenção', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Fretes e Mudanças', 'Jardinagem', 'Outros'];
+                const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Manutenção', 'Serviços de Pedreiros', 'Serviços de Pintores', 'Fretes e Mudanças', 'Jardinagem'];
 
+                // LÓGICA DE CLIQUE:
                 let onclick = '';
                 
                 if (serviceCats.includes(p.categoria)) {
@@ -2448,12 +2445,12 @@
                     actionText = "Contratar Serviço";
                     onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${dSafe})`;
                 } else {
-                    // SE FOR PRODUTO: Vai pro Carrinho
+                    // SE FOR PRODUTO (Comida, Bebida, Eletronico, Material, Outros): Vai pro Carrinho (Novo Campo)
                     actionText = (p.categoria === 'Comidas' || p.categoria === 'Bebidas') ? "Fazer Pedido" : "Comprar";
                     onclick = `App.cart.add(${pSafe}, "${p.store_id}")`;
                 }
                 
-                // LÓGICA ESPECIAL PARA ROUPAS
+                // LÓGICA ESPECIAL PARA ROUPAS (Seletor de Tamanho)
                 let sizeSelectorHtml = '';
                 if(p.categoria === 'Roupas' && p.sizes) {
                     const sizesArr = p.sizes.split(',').map(s => s.trim());
@@ -2466,11 +2463,11 @@
                             </select>
                         </div>
                     `;
-                    // Roupas usa função especial que busca o produto limpo do banco
+                    // Roupas usa função especial de carrinho
                     onclick = `App.catalog.addToCartClothing('${p.id}', '${p.store_id}', this)`;
                 }
                 
-                // LÓGICA ESPECIAL PARA HOTEIS
+                // LÓGICA ESPECIAL PARA HOTEIS (Datas)
                 if(p.categoria === 'Hoteis/Pousadas') {
                     if(p.disponibilidade) {
                         const [start, end] = p.disponibilidade.split('|');
@@ -2479,7 +2476,7 @@
                         onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", null)`;
                     }
                 } 
-                // LÓGICA ESPECIAL PARA GESSO
+                // LÓGICA ESPECIAL PARA GESSO (Orçamento)
                 else if (p.categoria === 'Serviços de Gesso' && p.gesso_info) {
                     actionText = "Orçamento";
                     onclick = `App.client.openBudget(${pSafe})`;
@@ -2489,6 +2486,7 @@
                 let actionBtn = `<button class="btn ${serviceCats.includes(p.categoria)?'btn-secondary':'btn-success'} btn-full" style="margin-top:10px" onclick='${onclick}'>${actionText}</button>`;
                 let chatBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>`;
 
+                // Monta a galeria de imagens
                 let imagesHtml = '';
                 if (p.galeria && Array.isArray(p.galeria) && p.galeria.length > 0) {
                     const imgs = p.galeria.map(url => `<img src="${url}" class="gallery-img" loading="lazy">`).join('');
