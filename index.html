@@ -1994,16 +1994,16 @@
                 }
             },
             
-         catalog: {
+       catalog: {
             currentCat: 'Todos',
-            
+
             filter: (cat, btn) => {
                 document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
                 if(btn) btn.classList.add('active');
                 App.catalog.currentCat = cat;
                 App.catalog.load();
             },
-            
+
             selectSize: (element) => {
                 const parent = element.parentElement;
                 const boxes = parent.getElementsByClassName('size-box');
@@ -2011,14 +2011,14 @@
                 element.classList.add('selected');
             },
 
-            // --- FUNÇÃO DE CLIQUE SEGURO (RESOLVE O ERRO DE SINTAXE) ---
+            // --- FUNÇÃO DE CLIQUE SEGURO ---
             safeClick: (pEncoded, dEncoded) => {
                 const p = JSON.parse(decodeURIComponent(pEncoded));
                 const d = dEncoded !== 'null' ? JSON.parse(decodeURIComponent(dEncoded)) : null;
                 const cat = p.categoria;
                 
                 const serviceCats = ['Serviços de Gesso', 'Hoteis/Pousadas', 'Manutenção Eletrodomésticos', 'Serviços de Pedreiros', 'Jardinagem', 'Outros'];
-                const foodCats = ['Comidas', 'Bebidas']; // Comidas entra aqui para perguntar da bebida
+                const foodCats = ['Comidas', 'Bebidas']; 
 
                 // Se for Roupa, usa a lógica do tamanho
                 if (cat === 'Roupas') {
@@ -2027,7 +2027,7 @@
                     return;
                 }
 
-                // Se for Serviço, Comida ou Bebida -> Vai para confirmação (Endereço/Bebida)
+                // Se for Serviço, Comida ou Bebida -> Vai para confirmação
                 if (serviceCats.includes(cat) || foodCats.includes(cat)) {
                     App.client.confirmOrder(p.id, p.store_id, p.preco, cat, d ? JSON.stringify(d) : null);
                 } else {
@@ -2035,7 +2035,6 @@
                     App.cart.add(p, p.store_id);
                 }
             },
-            // -----------------------------------------------------------
 
             load: async () => {
                 let query = _sb.from('products').select('*, stores(nome_loja)');
@@ -2095,20 +2094,54 @@
                     dispInfo = `<div class="text-xs" style="color:#854d0e; margin-top:5px;">Orçamento por m²</div>`;
                 }
                 
-                // AQUI ESTÁ O TRUQUE: Passamos a string codificada para a função safeClick
                 const onclick = `App.catalog.safeClick('${pEncoded}', '${dEncoded}')`;
 
-                // Verifica se tem Gesso para mudar a chamada para openBudget se necessário (exceção à regra)
                 let finalOnclick = onclick;
                 if(p.categoria === 'Serviços de Gesso') {
-                    // Para gesso, ainda usamos o openBudget direto pois precisa dos dados de gesso
                      const pSafe = JSON.stringify(p).replace(/"/g, '&quot;').replace(/'/g, "&#39;").replace(/\n/g, " ");
                      finalOnclick = `App.client.openBudget(${pSafe})`;
                 }
 
-                const imgUrl = (p.galeria && p.galeria.length > 0) ? p.galeria[0] : (p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto');
-                
-                return `<div class="card">${p.promocao ? '<div class="badge badge-promo">PROMOÇÃO</div>' : ''}<div class="product-gallery-wrapper"><div class="product-gallery"><img src="${imgUrl}" class="gallery-img"></div></div><div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div><h4>${p.nome}</h4><p class="text-sm text-muted" style="margin-bottom:5px;">${p.descricao || ''}</p><h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>${sizeSelectorHtml}${dispInfo}<button class="btn ${serviceCats.includes(p.categoria)?'btn-secondary':'btn-success'} btn-full" style="margin-top:10px" onclick="${finalOnclick}">${actionText}</button><button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button></div>`;
+                // ============================================================
+                // CORREÇÃO DA GALERIA DE FOTOS
+                // ============================================================
+                let imagesHtml = '';
+                let badgeHtml = '';
+
+                // Verifica se existe galeria e se tem itens
+                if (p.galeria && p.galeria.length > 0) {
+                    // Cria uma tag <img> para CADA link na galeria
+                    imagesHtml = p.galeria.map(url => `<img src="${url}" class="gallery-img" loading="lazy">`).join('');
+                    
+                    // Se tiver mais de 1 foto, cria o contador (badge)
+                    if (p.galeria.length > 1) {
+                        badgeHtml = `<div class="gallery-badge"><i class="ri-camera-fill"></i> ${p.galeria.length}</div>`;
+                    }
+                } else {
+                    // Se não tiver galeria, usa a imagem única antiga ou placeholder
+                    const fallbackUrl = p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto';
+                    imagesHtml = `<img src="${fallbackUrl}" class="gallery-img">`;
+                }
+                // ============================================================
+
+                return `
+                <div class="card">
+                    ${p.promocao ? '<div class="badge badge-promo">PROMOÇÃO</div>' : ''}
+                    
+                    <div class="product-gallery-wrapper">
+                        <div class="product-gallery">
+                            ${imagesHtml} </div>
+                        ${badgeHtml} </div>
+
+                    <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div>
+                    <h4>${p.nome}</h4>
+                    <p class="text-sm text-muted" style="margin-bottom:5px;">${p.descricao || ''}</p>
+                    <h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
+                    ${sizeSelectorHtml}
+                    ${dispInfo}
+                    <button class="btn ${serviceCats.includes(p.categoria)?'btn-secondary':'btn-success'} btn-full" style="margin-top:10px" onclick="${finalOnclick}">${actionText}</button>
+                    <button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>
+                </div>`;
             },
             
             fetchPublic: async () => { App.catalog.load(); },
