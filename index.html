@@ -2387,27 +2387,24 @@
                 App.catalog.load();
             },
             
-            // --- FUNÇÃO PARA SELECIONAR TAMANHO (VISUAL) ---
+            // --- FUNÇÃO PARA SELECIONAR TAMANHO VISUALMENTE ---
             selectSize: (element) => {
-                // Remove a classe 'selected' de todos os irmãos dentro do mesmo container
-                const container = element.parentElement;
-                const boxes = container.getElementsByClassName('size-box');
-                for (let box of boxes) {
-                    box.classList.remove('selected');
-                }
-                // Adiciona a classe 'selected' no clicado
+                // Remove a classe 'selected' dos irmãos
+                const parent = element.parentElement;
+                const siblings = parent.querySelectorAll('.size-box');
+                siblings.forEach(el => el.classList.remove('selected'));
+                // Adiciona no clicado
                 element.classList.add('selected');
             },
+            // --------------------------------------------------
 
             load: async () => {
                 let query = _sb.from('products').select('*, stores(nome_loja)');
                 if(App.catalog.currentCat !== 'Todos') query = query.eq('categoria', App.catalog.currentCat);
                 const { data } = await query;
-                
                 const promos = data?.filter(p => p.promocao);
                 const normal = data?.filter(p => !p.promocao);
                 let html = '';
-                
                 if(promos && promos.length > 0) {
                     html += `<div style="grid-column:1/-1; margin-bottom:10px;"><h3 style="color:var(--danger)">🔥 Ofertas em Destaque</h3></div>`;
                     html += promos.map(p => App.catalog.renderCard(p)).join('');
@@ -2416,7 +2413,7 @@
                 html += normal?.map(p => App.catalog.renderCard(p)).join('');
                 document.getElementById('public-catalog').innerHTML = html || '<p style="grid-column:1/-1; text-align:center">Nenhuma oferta nesta categoria.</p>';
             },
-
+            
             renderCard: (p) => {
                 let dispInfo = '';
                 let actionText = "Adicionar ao Carrinho"; 
@@ -2436,94 +2433,94 @@
 
                 let onclick = '';
                 
-                // Lógica de Botão Principal
                 if (serviceCats.includes(p.categoria)) {
+                    // SERVIÇOS
                     actionText = "Contratar Serviço";
                     onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", ${dSafe})`;
                 } else {
+                    // PRODUTOS
                     actionText = (p.categoria === 'Comidas' || p.categoria === 'Bebidas') ? "Fazer Pedido" : "Comprar";
                     onclick = `App.cart.add(${pSafe}, "${p.store_id}")`;
                 }
                 
-                // --- QUADRADINHOS DE TAMANHO (ROUPAS) ---
+                // --- RENDERIZAÇÃO DOS QUADRADINHOS (ROUPAS) ---
                 let sizeSelectorHtml = '';
-                const containerId = `size-container-${p.id}`; // ID Único para buscar depois
+                const containerId = `size-container-${p.id}`; // ID único
                 
                 if(p.categoria === 'Roupas') {
                     let chips = '';
                     if (p.sizes && p.sizes.trim() !== '') {
                         const sizesArr = p.sizes.split(',').map(s => s.trim());
-                        // Gera os quadradinhos HTML
+                        // Cria os quadradinhos clicáveis
                         chips = sizesArr.map(s => `<div class="size-box" onclick="App.catalog.selectSize(this)">${s}</div>`).join('');
                     } else {
-                        // Se não tem tamanho cadastrado, cria um "Único" já selecionado
                         chips = `<div class="size-box selected" onclick="App.catalog.selectSize(this)">Único</div>`;
                     }
 
                     sizeSelectorHtml = `
-                        <div style="margin-top:10px;">
+                        <div style="margin-top:5px;">
                             <label class="text-xs" style="font-weight:bold; color:#555;">Escolha o Tamanho:</label>
                             <div id="${containerId}" class="size-selector-container">
                                 ${chips}
                             </div>
                         </div>
                     `;
-                    // IMPORTANTE: Passamos o ID do container como string simples
+                    // Função especial para buscar o tamanho selecionado visualmente
                     onclick = `App.catalog.addToCartClothing('${p.id}', '${p.store_id}', '${containerId}')`;
                 }
+                // ----------------------------------------------
                 
-                // Detalhes Específicos
                 if(p.categoria === 'Hoteis/Pousadas' && p.disponibilidade) {
-                     const [start, end] = p.disponibilidade.split('|');
-                     const fmt = d => d.split('-').reverse().join('/');
-                     dispInfo = `<div class="text-xs" style="background:#f0f9ff; padding:5px; border-radius:4px; margin-top:5px; color:#0369a1;">📅 Disp: ${fmt(start)} até ${fmt(end)}</div>`;
                      onclick = `App.client.confirmOrder("${p.id}", "${p.store_id}", ${p.preco}, "${p.categoria}", null)`;
                 } 
                 else if (p.categoria === 'Serviços de Gesso' && p.gesso_info) {
                     actionText = "Orçamento";
                     onclick = `App.client.openBudget(${pSafe})`;
-                    dispInfo = `<div class="text-xs" style="color:#854d0e; margin-top:5px;">Orçamento por m²</div>`;
                 }
-                
-                const actionBtn = `<button class="btn ${serviceCats.includes(p.categoria)?'btn-secondary':'btn-success'} btn-full" style="margin-top:10px" onclick="${onclick}">${actionText}</button>`;
-                
-                const imgUrl = (p.galeria && p.galeria.length > 0) ? p.galeria[0] : (p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto');
-                
+
+                let imagesHtml = '';
+                if (p.galeria && Array.isArray(p.galeria) && p.galeria.length > 0) {
+                    const imgs = p.galeria.map(url => `<img src="${url}" class="gallery-img" loading="lazy">`).join('');
+                    imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery">${imgs}</div><div class="gallery-badge"><i class="ri-image-line"></i> ${p.galeria.length} fotos</div></div>`;
+                } else {
+                    const imgUrl = p.imagem_url || 'https://placehold.co/400x300?text=Sem+Foto';
+                    imagesHtml = `<div class="product-gallery-wrapper"><div class="product-gallery"><img src="${imgUrl}" class="gallery-img"></div></div>`;
+                }
+
                 return `
                     <div class="card">
                         ${p.promocao ? '<div class="badge badge-promo">PROMOÇÃO</div>' : ''}
-                        <div class="product-gallery-wrapper"><div class="product-gallery"><img src="${imgUrl}" class="gallery-img"></div></div>
+                        ${imagesHtml}
                         <div class="badge status-aceito" style="margin-bottom:0.5rem">${p.stores?.nome_loja}</div>
                         <h4>${p.nome}</h4>
-                        <p class="text-sm text-muted" style="margin-bottom:5px;">${p.descricao || ''}</p>
+                        <p class="text-sm text-muted" style="margin-bottom:5px; line-height:1.2;">${p.descricao || ''}</p>
                         <h2 style="color:var(--primary)">R$ ${p.preco.toFixed(2)}</h2>
                         
                         ${sizeSelectorHtml} 
                         ${dispInfo}
-                        ${actionBtn}
+                        <button class="btn ${serviceCats.includes(p.categoria)?'btn-secondary':'btn-success'} btn-full" style="margin-top:10px" onclick="${onclick}">${actionText}</button>
                         <button class="btn btn-sm btn-info" style="margin-top:5px; width:100%;" onclick="App.chat.open('${p.store_id}')"><i class="ri-chat-1-line"></i> Dúvidas</button>
                     </div>`;
             },
             
             fetchPublic: async () => { App.catalog.load(); },
 
-            // Adiciona roupa buscando o tamanho visualmente selecionado
             addToCartClothing: async (pid, sid, containerId) => {
+                // Busca o elemento selecionado no HTML
                 const container = document.getElementById(containerId);
                 const selected = container ? container.querySelector('.selected') : null;
                 
                 if (!selected) {
-                    alert("Por favor, clique em um tamanho para selecionar.");
+                    alert("Por favor, selecione um tamanho clicando na opção desejada.");
                     return;
                 }
                 const tamanho = selected.innerText;
 
-                // Busca dados limpos do produto no banco
+                // Busca dados limpos do banco
                 const { data: p } = await _sb.from('products').select('*').eq('id', pid).single();
                 
-                // Cria o item com o tamanho no nome
+                // Adiciona com o tamanho no nome
                 const prodToAdd = { ...p, nome: `${p.nome} (Tam: ${tamanho})` };
-                
                 App.cart.add(prodToAdd, sid);
             }
         },// <--- AQUI FECHA O CATALOG
