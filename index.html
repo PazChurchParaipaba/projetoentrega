@@ -1302,7 +1302,7 @@
 
                     const { data: orders } = await _sb.from('orders').select('*, products(nome, categoria, delivery_info), profiles!orders_cliente_id_fkey(nome_completo, email, cpf), prestador:profiles!orders_prestador_id_fkey(nome_completo, chave_pix)').eq('store_id', store.id).order('created_at', { ascending: false });
                     App.store.calcMetrics(orders || []);
-                    App.store.(orders);
+                    App.store.renderOrders(orders)
                     
                     App.store.loadMyProducts();
                     App.store.listenMessages();
