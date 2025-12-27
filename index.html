@@ -1302,7 +1302,7 @@
 
                     const { data: orders } = await _sb.from('orders').select('*, products(nome, categoria, delivery_info), profiles!orders_cliente_id_fkey(nome_completo, email, cpf), prestador:profiles!orders_prestador_id_fkey(nome_completo, chave_pix)').eq('store_id', store.id).order('created_at', { ascending: false });
                     App.store.calcMetrics(orders || []);
-                    App.store.renderOrders(orders);
+                    App.store.(orders);
                     
                     App.store.loadMyProducts();
                     App.store.listenMessages();
@@ -1429,29 +1429,35 @@
                     container.innerHTML = `<div style="background:var(--success-bg); color:var(--success-dark); padding:10px; border-radius:8px; margin-bottom:10px; font-weight:bold; text-align:center;">Total em ${dateStr.split('-').reverse().join('/')}: R$ ${totalDay.toFixed(2)}</div>${list}`;
                 },
                 renderOrders: (orders) => {
-                        document.getElementById('store-orders-list').innerHTML = orders?.map(o => {
-                        let providerHtml = '';
-                        if(o.prestador) {
-                            providerHtml = `<div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:8px; margin-top:10px; font-size:0.85rem;"><strong>Prestador:</strong> ${o.prestador.nome_completo}<br><strong>Chave Pix:</strong> ${o.prestador.chave_pix || 'Não inf.'}</div>`;
-                        }
-                        
-                        let printBtn = '';
-                        if(o.products?.categoria === 'Comidas' || o.products?.categoria === 'Bebidas') {
-                            const oSafe = JSON.stringify(o).replace(/"/g, '&quot;');
-                            printBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:auto; float:right;" onclick='App.store.printOrder(${oSafe})'><i class="ri-printer-line"></i> Imprimir</button>`;
-                        }
+    document.getElementById('store-orders-list').innerHTML = orders?.map(o => {
+    let providerHtml = '';
+    if(o.prestador) {
+        providerHtml = `<div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:8px; margin-top:10px; font-size:0.85rem;"><strong>Prestador:</strong> ${o.prestador.nome_completo}<br><strong>Chave Pix:</strong> ${o.prestador.chave_pix || 'Não inf.'}</div>`;
+    }
+    
+    let printBtn = '';
+    if(o.products?.categoria === 'Comidas' || o.products?.categoria === 'Bebidas') {
+        const oSafe = JSON.stringify(o).replace(/"/g, '&quot;');
+        printBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:auto; float:right;" onclick='App.store.printOrder(${oSafe})'><i class="ri-printer-line"></i> Imprimir</button>`;
+    }
 
-                        return `
-                        <div class="card" style="margin-bottom:1rem; border-left: 4px solid ${o.status==='pendente'?'var(--warning)':'var(--success)'};">
-                            <div style="display:flex; justify-content:space-between"><strong>${o.products?.nome}</strong><span class="badge status-${o.status}">${o.status}</span></div>
-                            <p class="text-sm">Cliente: ${o.profiles?.nome_completo}</p>
-                            ${printBtn}
-                            <div style="clear:both;"></div>
-                            ${o.status === 'pendente' ? `<button class="btn btn-primary btn-sm btn-full" onclick="App.store.dispatch('${o.id}')">Liberar para Entrega</button>` : ''}
-                            ${providerHtml}
-                        </div>`;
-                    }).join('') || '<p class="text-sm">Nenhum pedido.</p>';
-                },
+    // AQUI ESTÁ A MUDANÇA: Adicionei o campo de endereço abaixo do nome do cliente
+    return `<br>
+    <div class="card" style="margin-bottom:1rem; border-left: 4px solid ${o.status==='pendente'?'var(--warning)':'var(--success)'};"><br>
+        <div style="display:flex; justify-content:space-between"><strong>${o.products?.nome}</strong><span class="badge status-${o.status}">${o.status}</span></div><br>
+        <p class="text-sm">Cliente: ${o.profiles?.nome_completo}</p><br>
+        
+        <p class="text-xs" style="background: #eff6ff; padding: 5px; border-radius: 4px; color: var(--primary-dark); margin-bottom: 10px;">
+            <i class="ri-map-pin-line"></i> <strong>Entrega:</strong> ${o.endereco_destino || 'Retirada / Balcão'}
+        </p>
+
+        ${printBtn}<br>
+        <div style="clear:both;"></div><br>
+        ${o.status === 'pendente' ? `<button class="btn btn-primary btn-sm btn-full" onclick="App.store.dispatch('${o.id}')">Liberar para Entrega</button>` : ''}<br>
+        ${providerHtml}<br>
+    </div>`;
+}).join('') || '<p class="text-sm">Nenhum pedido.</p>';
+},
                 listenMessages: () => {
                     const myStoreId = App.state.storeId;
                     _sb.channel('store-notifications')
@@ -1711,30 +1717,34 @@
                 setupPrinter: () => {
                     window.print();
                 },
-                printOrder: (order) => {
-                    const store = App.state.currentStore || {};
-                    const content = `
-                        <div style="font-family: monospace; width: 300px; padding: 10px; text-align: center;">
-                            <h3>${store.nome_loja || 'NEXLOG PEDIDOS'}</h3>
-                            ${store.cnpj ? `<p style="font-size:0.8rem; margin:0;">CNPJ: ${store.cnpj}</p>` : ''}
-                            ${store.whatsapp ? `<p style="font-size:0.8rem; margin:0;">Tel: ${store.whatsapp}</p>` : ''}
-                            <p style="margin-top:5px; border-bottom: 1px dashed black; padding-bottom:5px;">${new Date().toLocaleString()}</p>
-                            <p><strong>Pedido #${order.id}</strong></p>
-                            <p>Cliente: ${order.profiles?.nome_completo}</p>
-                            <hr style="border-top: 1px dashed black;">
-                            <div style="text-align: left;">
-                                <p><strong>Item:</strong> ${order.products?.nome}</p>
-                                <p><strong>Valor:</strong> R$ ${(order.taxa_servico/0.15).toFixed(2)}</p>
-                            </div>
-                            <hr style="border-top: 1px dashed black;">
-                            <h3>TOTAL: R$ ${(order.taxa_servico/0.15).toFixed(2)}</h3>
-                            <p style="font-size: 0.8rem;">Obrigado pela preferência!</p>
-                        </div>
-                    `;
-                    const area = document.getElementById('printable-area');
-                    area.innerHTML = content;
-                    window.print(); 
-                },
+              printOrder: (order) => {
+    const store = App.state.currentStore || {};
+    // AQUI ESTÁ A MUDANÇA: Inseri o parágrafo do endereço no template HTML
+    const content = `<br>
+        <div style="font-family: monospace; width: 300px; padding: 10px; text-align: center;"><br>
+            <h3>${store.nome_loja || 'NEXLOG PEDIDOS'}</h3><br>
+            ${store.cnpj ? `<p style="font-size:0.8rem; margin:0;">CNPJ: ${store.cnpj}</p>` : ''}<br>
+            ${store.whatsapp ? `<p style="font-size:0.8rem; margin:0;">Tel: ${store.whatsapp}</p>` : ''}<br>
+            <p style="margin-top:5px; border-bottom: 1px dashed black; padding-bottom:5px;">${new Date().toLocaleString()}</p><br>
+            <p><strong>Pedido #${order.id}</strong></p><br>
+            <p>Cliente: ${order.profiles?.nome_completo}</p><br>
+            
+            <p style="font-size:0.9rem; text-align:left; margin-top:5px;"><strong>Endereço:</strong><br>${order.endereco_destino || 'Retirada no Balcão'}</p>
+
+            <hr style="border-top: 1px dashed black;"><br>
+            <div style="text-align: left;"><br>
+                <p><strong>Item:</strong> ${order.products?.nome}</p><br>
+                <p><strong>Valor:</strong> R$ ${(order.taxa_servico/0.15).toFixed(2)}</p><br>
+            </div><br>
+            <hr style="border-top: 1px dashed black;"><br>
+            <h3>TOTAL: R$ ${(order.taxa_servico/0.15).toFixed(2)}</h3><br>
+            <p style="font-size: 0.8rem;">Obrigado pela preferência!</p><br>
+        </div><br>
+    `;
+    const area = document.getElementById('printable-area');
+    area.innerHTML = content;
+    window.print(); 
+},
                 createCoupon: async () => {
                     const code = document.getElementById('new-coupon-code').value.toUpperCase().trim();
                     const percent = parseInt(document.getElementById('new-coupon-percent').value);
