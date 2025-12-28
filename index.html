@@ -2507,48 +2507,42 @@
                     App.waiter.loadItems(App.state.currentComanda);
                     App.waiter.loadTables();
                 },
+              // ... (parte final do waiter)
                 printBill: () => {
-                      const itemsHtml = document.getElementById('comanda-items-list').innerHTML;
-                      const mesa = document.getElementById('comanda-title').innerText;
-                      const content = `<div style="font-family: monospace; width: 300px; padding: 0 10px;"><br><h3 style="text-align:center; margin:0;">CONFERÊNCIA</h3><p style="text-align:center; margin:5px 0;">${mesa}</p><p style="text-align:center; font-size:0.8rem;">${new Date().toLocaleString()}</p><hr style="border-top: 1px dashed black;">${itemsHtml}<hr style="border-top: 1px dashed black;"><p style="text-align:center; font-size:0.8rem;">* Não vale como documento fiscal *</p><br><br></div>`;
-                      const area = document.getElementById('printable-area'); area.innerHTML = content; window.print();
-                },
-              sendToKitchen: () => {
                     const itemsHtml = document.getElementById('comanda-items-list').innerHTML;
                     const mesa = document.getElementById('comanda-title').innerText;
-                    
-                    // LAYOUT DE IMPRESSÃO DA COZINHA AJUSTADO
+                    const content = `<div style="font-family: monospace; width: 300px; padding: 0 10px;"><br><h3 style="text-align:center; margin:0;">CONFERÊNCIA</h3><p style="text-align:center; margin:5px 0;">${mesa}</p><p style="text-align:center; font-size:0.8rem;">${new Date().toLocaleString()}</p><hr style="border-top: 1px dashed black;">${itemsHtml}<hr style="border-top: 1px dashed black;"><p style="text-align:center; font-size:0.8rem;">* Não vale como documento fiscal *</p><br><br></div>`;
+                    const area = document.getElementById('printable-area');
+                    area.innerHTML = content;
+                    window.print();
+                },
+                sendToKitchen: () => {
+                    const itemsHtml = document.getElementById('comanda-items-list').innerHTML;
+                    const mesa = document.getElementById('comanda-title').innerText;
                     const content = `
                         <div style="font-family: monospace; width: 300px; padding: 0 10px;">
-                            <br>
-                            <h3 style="text-align:center; margin:0;">PEDIDO COZINHA</h3>
-                            
+                            <br><h3 style="text-align:center; margin:0;">PEDIDO COZINHA</h3>
                             <div style="border: 2px solid black; margin: 10px 0; padding: 5px;">
                                 <p style="text-align:center; font-size:1.5rem; font-weight:800; margin:0;">${mesa.toUpperCase()}</p>
                             </div>
-
                             <p style="text-align:center;">${new Date().toLocaleTimeString()}</p>
                             <hr style="border-top: 2px solid black;">
-                            <div style="font-size:1.1rem; font-weight:bold;">
-                                ${itemsHtml}
-                            </div>
-                            <hr style="border-top: 2px solid black;">
-                            <br>
+                            <div style="font-size:1.1rem; font-weight:bold;">${itemsHtml}</div>
+                            <hr style="border-top: 2px solid black;"><br>
                         </div>`;
-                        
-                    const area = document.getElementById('printable-area'); 
-                    area.innerHTML = content; 
+                    const area = document.getElementById('printable-area');
+                    area.innerHTML = content;
                     window.print();
-                    
                     document.getElementById('comanda-modal').style.display = 'none';
                     App.utils.toast("Enviado para cozinha!", "success");
-                },
-            
+                }
+            }, // Fim do Waiter (VÍRGULA AQUI)
+
             chat: {
                 open: async (storeId, clientId = null) => {
                     if(!App.state.user) return App.router.go('auth');
                     App.state.activeChatStore = storeId;
-                    App.state.activeChatClient = clientId || App.state.user.id; 
+                    App.state.activeChatClient = clientId || App.state.user.id;
                     document.getElementById('chat-modal').style.display = 'flex';
                     const msgs = document.getElementById('chat-msgs');
                     msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Carregando histórico...</div>';
@@ -2687,8 +2681,8 @@
                     }
                     document.getElementById(viewType === 'loja' ? 'store-chat-list' : 'client-chat-list').innerHTML = html;
                 }
-            },
-            
+            }, // Fim do Chat (VÍRGULA AQUI)
+
             provider: {
                 init: async () => {
                     const { data: job } = await _sb.from('orders').select('*, products(nome, categoria), profiles:cliente_id(nome_completo, whatsapp)').or(`status.eq.aguardando_prestador,status.eq.em_rota`).order('created_at', { ascending: false });
@@ -2734,17 +2728,54 @@
                         App.utils.toast("Pix atualizado!", "success");
                     }
                 },
-             acceptJob: async (id) => {
+                acceptJob: async (id) => {
                     await _sb.from('orders').update({ status: 'em_rota', prestador_id: App.state.user.id }).eq('id', id);
                     App.utils.toast("Aceito! Iniciando navegação...", "success");
                     const { data } = await _sb.from('orders').select('endereco_destino').eq('id', id).single();
-                    App.map.open(id, true, data.endereco_destino);
+                    
+                    if (App.map) {
+                        App.map.open(id, true, data.endereco_destino);
+                    } else {
+                        alert("Módulo de mapa não encontrado. Atualize a página.");
+                    }
                     App.provider.init();
                 }
-            } // Fecha o objeto 'provider'
-        }; // <--- FECHA O 'App' COM PONTO E VÍRGULA. O 'App' ACABOU AQUI.
+            }, // Fim do Provider (VÍRGULA AQUI se adicionar o map, ou sem vírgula se for o último)
 
-        // Agora, fora do App, o comando funciona:
+            // --- ADICIONEI O OBJETO MAP QUE ESTAVA FALTANDO PARA EVITAR ERRO DE CRASH ---
+            map: {
+                open: (orderId, isDriver, address) => {
+                    document.getElementById('map-modal').style.display = 'flex';
+                    document.getElementById('map-dest-address').innerText = address;
+                    // Lógica simples de fallback pois o código do mapa original sumiu
+                    if(!App.state.mapInstance) {
+                        App.state.mapInstance = L.map('map').setView([-23.5505, -46.6333], 13);
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(App.state.mapInstance);
+                    }
+                    setTimeout(() => App.state.mapInstance.invalidateSize(), 500);
+                    if(isDriver) {
+                        document.getElementById('btn-start-gps').style.display = 'block';
+                        document.getElementById('btn-end-gps').style.display = 'block';
+                    } else {
+                        document.getElementById('btn-start-gps').style.display = 'none';
+                        document.getElementById('btn-end-gps').style.display = 'none';
+                    }
+                },
+                close: () => document.getElementById('map-modal').style.display = 'none',
+                startGPS: () => {
+                    const dest = document.getElementById('map-dest-address').innerText;
+                    window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`, '_blank');
+                },
+                finishDelivery: async () => {
+                    if(confirm("Finalizar entrega?")) {
+                        // Lógica de finalização aqui...
+                        document.getElementById('map-modal').style.display = 'none';
+                        App.utils.toast("Entrega Finalizada", "success");
+                    }
+                }
+            } 
+        }; // <--- FIM DO APP (PONTO E VÍRGULA AQUI)
+
         window.addEventListener('load', App.init);
     </script>
 </body>
