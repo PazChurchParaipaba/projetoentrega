@@ -2413,38 +2413,64 @@
                     alert(`O valor total é R$ ${total.toFixed(2)}. Você pagará 50% (R$ ${downPayment.toFixed(2)}) agora.`);
                 }
             },
-                waiter: {
-                   init: async () => {
-                    if (!App.state.user) return;
-                    const res = await _sb
-                        .from('store_staff')
-                        .select('store_id')
-                        .eq('profile_id', App.state.user.id)
-                        .maybeSingle();
+              waiter: {
+                init: async () => {
+                    console.log("Iniciando Waiter..."); // Log para saber se começou
+                    try {
+                        if (!App.state.user) {
+                            console.log("Usuário não logado no Waiter.");
+                            return;
+                        }
 
-                    const staffData = res.data;
-                    const error = res.error;
-                    // ----------------------------------------
+                        // --- MUDANÇA: Sintaxe simplificada para evitar erro de 'Missing initializer' ---
+                        const response = await _sb
+                            .from('store_staff')
+                            .select('store_id')
+                            .eq('profile_id', App.state.user.id)
+                            .maybeSingle();
+                        
+                        // Atribuição manual para garantir que não falte valor
+                        const staffData = response.data;
+                        const error = response.error;
 
-                    if (error) {
-                        console.error("Erro staff:", error);
-                        return;
+                        if (error) {
+                            console.error("Erro detalhado ao buscar staff:", error);
+                            alert("Erro de banco de dados: " + error.message);
+                            return;
+                        }
+
+                        if (!staffData) {
+                            console.log("Usuário não é da equipe.");
+                            return;
+                        }
+
+                        App.state.storeId = staffData.store_id; 
+                        
+                        // Carrega mesas se a função existir
+                        if (typeof App.waiter.loadTables === 'function') {
+                            App.waiter.loadTables(); 
+                        }
+
+                        // Monitoramento em tempo real
+                        _sb.channel('waiter-updates')
+                            .on('postgres_changes', 
+                                { event: '*', schema: 'public', table: 'comandas', filter: `store_id=eq.${App.state.storeId}` }, 
+                                () => { 
+                                    if(typeof App.waiter.loadTables === 'function') App.waiter.loadTables(); 
+                                }
+                            )
+                            .subscribe();
+
+                    } catch (e) {
+                        // AQUI ESTÁ O LOG DETALHADO DO ERRO
+                        console.error("CRITICAL ERROR IN WAITER:", e);
+                        alert("ERRO CRÍTICO NO GARÇOM: " + e.message + "\nVerifique o Console (F12) para detalhes.");
                     }
-                    
-                    // Se não for staff, para aqui sem travar o app
-                    if (!staffData) return;
-
-                    App.state.storeId = staffData.store_id;
-                    
-                    if(App.waiter.loadTables) App.waiter.loadTables(); 
-                    
-                    _sb.channel('waiter-updates')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: `store_id=eq.${App.state.storeId}` }, 
-                    () => { if(App.waiter.loadTables) App.waiter.loadTables(); })
-                    .subscribe();
                 },
                 loadTables: async () => {
-                    const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', {ascending: true});
+                    const res = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', {ascending: true});
+                    const data = res.data;
+                    
                     const container = document.getElementById('comanda-list-container');
                     if (data) {
                         container.innerHTML = data.map(c => `
@@ -2463,7 +2489,8 @@
                     App.waiter.loadItems(id);
                 },
                 loadItems: async (comandaId) => {
-                    const { data } = await _sb.from('comandas').select('items').eq('id', comandaId).single();
+                    const res = await _sb.from('comandas').select('items').eq('id', comandaId).single();
+                    const data = res.data;
                     const list = document.getElementById('comanda-items-list');
                     if(data && data.items && data.items.length > 0) {
                         list.innerHTML = data.items.map(item => `
@@ -2483,11 +2510,12 @@
                     if(!term) return alert("Digite o nome ou código");
                     App.utils.toast("Buscando...", "info");
                     
-                    const { data } = await _sb.from('products')
+                    const res = await _sb.from('products')
                         .select('*')
                         .eq('store_id', App.state.storeId)
                         .or(`nome.ilike.%${term}%,codigo_cardapio.eq.${term}`)
                         .limit(5);
+                    const data = res.data;
 
                     const resultBox = document.getElementById('waiter-search-results');
                     if(data && data.length > 0) {
@@ -2502,8 +2530,9 @@
                     }
                 },
                 confirmAdd: async (id, nome, price) => {
-                    const { data: current } = await _sb.from('comandas').select('items').eq('id', App.state.currentComanda).single();
-                    let currentItems = current.items || [];
+                    const res = await _sb.from('comandas').select('items').eq('id', App.state.currentComanda).single();
+                    const data = res.data;
+                    let currentItems = data.items || [];
                     
                     const garcomName = App.state.profile ? App.state.profile.nome_completo.split(' ')[0] : 'Sistema';
 
@@ -2532,7 +2561,7 @@
                         <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #000; padding:4px 0;">
                             <div style="display:flex; flex-direction:column;">
                                 <span style="font-weight:bold;">${item.qtd}x ${item.nome}</span>
-                                <span style="font-size:0.75rem; font-style:italic;">(Garçom: ${item.garcom || 'Geral'})</span>
+                                <span style="font-size:0.75rem; font-style:italic; color:#444;">(Garçom: ${item.garcom || 'Geral'})</span>
                             </div>
                             <span style="font-weight:bold;">R$ ${(item.price * item.qtd).toFixed(2)}</span>
                         </div>
