@@ -1303,7 +1303,7 @@
                 logout: () => { localStorage.removeItem('logimoveis_session'); location.reload(); }
             },
 
-           store: {
+         store: {
                 init: async () => {
                     if (!App.state.user) return;
                     let { data: store } = await _sb.from('stores').select('*').eq('admin_id', App.state.user.id).maybeSingle();
@@ -1317,27 +1317,20 @@
                     App.state.currentStore = store;
 
                     document.getElementById('store-pickup-address').value = store.endereco_retirada || '';
-                 // ... código anterior ...
                     document.getElementById('store-delivery-fee').value = store.taxa_entrega_padrao || '';
 
-                    // --- INÍCIO DA CORREÇÃO OBRIGATÓRIA ---
-                    // Força aparecer se for nulo OU se for Restaurante
+                    // --- CORREÇÃO: PAINEL RESTAURANTE ---
+                    const panel = document.getElementById('admin-restaurant-panel');
+                    // Se for "Restaurante" OU se estiver vazio/nulo, mostra o painel
                     if (!store.tipo_loja || store.tipo_loja.trim() === 'Restaurante') {
-                        const panel = document.getElementById('admin-restaurant-panel');
                         if(panel) panel.style.display = 'block';
-
-                        // Se estava vazio, corrige no banco agora
+                        // Auto-correção no banco
                         if(!store.tipo_loja) {
                              await _sb.from('stores').update({ tipo_loja: 'Restaurante' }).eq('id', store.id);
                         }
                     } else {
-                        const panel = document.getElementById('admin-restaurant-panel');
                         if(panel) panel.style.display = 'none';
                     }
-                    // --- FIM DA CORREÇÃO ---
-                    // ============================================================
-                    // FIM DA CORREÇÃO
-                    // ============================================================
 
                     if(store.mp_access_token) {
                         document.getElementById('store-keys-area').style.display = 'none';
@@ -1348,7 +1341,7 @@
                     }
 
                     if(store.parceiro_exclusivo_id) {
-                        const {data: p} = await _sb.from('profiles').select('nome_completo, email').eq('id', store.parceiro_exclusivo_id).single();
+                        const {data: p} = await _sb.from('profiles').select('nome_completo, email').eq('id', store.parceiro_exclusivo_id).maybeSingle();
                         if(p) document.getElementById('active-partner-display').innerText = `Parceiro Vinculado: ${p.nome_completo} (${p.email})`;
                     }
 
@@ -1357,20 +1350,49 @@
 
                     const { data: orders } = await _sb.from('orders').select('*, products(nome, categoria, delivery_info), profiles!orders_cliente_id_fkey(nome_completo, email, cpf), prestador:profiles!orders_prestador_id_fkey(nome_completo, chave_pix)').eq('store_id', store.id).order('created_at', { ascending: false });
                     App.store.calcMetrics(orders || []);
-                    App.store.renderOrders(orders)
+                    App.store.renderOrders(orders);
                     
                     App.store.loadMyProducts();
                     App.store.listenMessages();
                     App.chat.loadHistory('loja');
                 },
+                calcMetrics: async (orders) => {
+                    const now = new Date();
+                    let dayTotal = 0, weekTotal = 0, monthTotal = 0;
+                    
+                    orders.forEach(o => {
+                        if(['aceito', 'concluido', 'em_rota', 'aguardando_prestador'].includes(o.status)) {
+                            // CORREÇÃO VALOR: Dividir por 0.10 para desfazer a taxa de 10% e pegar valor cheio
+                            const val = o.taxa_servico / 0.10; 
+                            const orderDate = new Date(o.created_at);
+                            if(orderDate.toDateString() === now.toDateString()) dayTotal += val;
+                            if(orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear()) monthTotal += val;
+                            const diffTime = Math.abs(now - orderDate);
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                            if(diffDays <= 7) weekTotal += val;
+                        }
+                    });
 
+                    const { data: comandas } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).eq('status', 'fechada');
+                    if(comandas) {
+                        comandas.forEach(c => {
+                            const val = c.total_pago || 0;
+                            const cDate = new Date(c.created_at);
+                            if(cDate.toDateString() === now.toDateString()) dayTotal += val;
+                            if(cDate.getMonth() === now.getMonth()) monthTotal += val;
+                        });
+                    }
+                    
+                    document.getElementById('metric-day').innerText = `R$ ${dayTotal.toFixed(2)}`;
+                    document.getElementById('metric-week').innerText = `R$ ${weekTotal.toFixed(2)}`;
+                    document.getElementById('metric-month').innerText = `R$ ${monthTotal.toFixed(2)}`;
+                },
                 renderAdminSizes: (existingSizesStr = "") => {
                     const sizes = ['PP', 'P', 'M', 'G', 'GG', 'XG', '34', '36', '38', '40', '42', '44', '46', '48', '50', 'Único'];
                     const container = document.getElementById('admin-size-list');
                     if(container) {
                         container.innerHTML = '';
                         const existing = existingSizesStr ? existingSizesStr.split(',').map(s => s.trim()) : [];
-                        
                         sizes.forEach(s => {
                             const div = document.createElement('div');
                             div.className = `size-box ${existing.includes(s) ? 'admin-selected' : ''}`;
@@ -1388,7 +1410,6 @@
                     const selected = Array.from(document.querySelectorAll('.size-box.admin-selected')).map(el => el.innerText);
                     document.getElementById('clothing-sizes').value = selected.join(',');
                 },
-                
                 saveLogistics: async () => {
                     const addr = document.getElementById('store-pickup-address').value;
                     const fee = document.getElementById('store-delivery-fee').value;
@@ -1417,7 +1438,6 @@
                 },
                 manageComanda: (id, items, num, status) => {
                     if (status === 'livre') return alert("Comanda livre. Garçom deve abrir lançando pedidos.");
-                    
                     App.state.currentComanda = id;
                     App.state.currentComandaItems = items;
                     App.state.currentMesaNum = num;
@@ -1437,15 +1457,12 @@
                     `).join('');
 
                     App.payment.openSplitModal(id, items, num);
-                    
                     const modalBody = document.querySelector('#split-pay-modal .modal-body');
                     const editDiv = document.createElement('div');
                     editDiv.id = 'admin-comanda-edit-list';
                     editDiv.innerHTML = `<h5>Itens da Mesa ${num}</h5><div style="max-height:150px; overflow-y:auto; margin-bottom:15px; border:1px solid #eee;">${itemsHtml}</div>`;
-                    
                     const old = document.getElementById('admin-comanda-edit-list');
                     if(old) old.remove();
-                    
                     modalBody.insertBefore(editDiv, modalBody.firstChild);
                 },
                 removeItemFromComanda: async (index) => {
@@ -1459,118 +1476,41 @@
                 filterHistory: async () => {
                     const dateStr = document.getElementById('history-date').value;
                     if(!dateStr) return alert("Selecione uma data");
-
-                    const { data } = await _sb.from('comandas')
-                        .select('*')
-                        .eq('store_id', App.state.storeId)
-                        .eq('status', 'fechada')
-                        .gte('created_at', `${dateStr}T00:00:00`)
-                        .lte('created_at', `${dateStr}T23:59:59`);
-
+                    const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).eq('status', 'fechada').gte('created_at', `${dateStr}T00:00:00`).lte('created_at', `${dateStr}T23:59:59`);
                     const container = document.getElementById('history-results');
-                    
                     if(!data || data.length === 0) {
                         container.innerHTML = '<p class="text-sm text-muted">Nenhuma venda encontrada neste dia.</p>';
                         return;
                     }
-
                     let totalDay = 0;
                     const list = data.map(c => {
                         const val = c.total_pago || 0;
                         totalDay += val;
                         return `<div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px 0; font-size:0.9rem;"><span>Mesa ${c.numero}</span><strong>R$ ${val.toFixed(2)}</strong></div>`;
                     }).join('');
-
                     container.innerHTML = `<div style="background:var(--success-bg); color:var(--success-dark); padding:10px; border-radius:8px; margin-bottom:10px; font-weight:bold; text-align:center;">Total em ${dateStr.split('-').reverse().join('/')}: R$ ${totalDay.toFixed(2)}</div>${list}`;
                 },
                 renderOrders: (orders) => {
-    document.getElementById('store-orders-list').innerHTML = orders?.map(o => {
-    let providerHtml = '';
-    if(o.prestador) {
-        providerHtml = `<div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:8px; margin-top:10px; font-size:0.85rem;"><strong>Prestador:</strong> ${o.prestador.nome_completo}<br><strong>Chave Pix:</strong> ${o.prestador.chave_pix || 'Não inf.'}</div>`;
-    }
-    
-    let printBtn = '';
-    if(o.products?.categoria === 'Comidas' || o.products?.categoria === 'Bebidas') {
-        const oSafe = JSON.stringify(o).replace(/"/g, '&quot;');
-        printBtn = `<button class="btn btn-sm btn-info" style="margin-top:5px; width:auto; float:right;" onclick='App.store.printOrder(${oSafe})'><i class="ri-printer-line"></i> Imprimir</button>`;
-    }
-
-    // AQUI ESTÁ A MUDANÇA: Adicionei o campo de endereço abaixo do nome do cliente
-    return `<br>
-    <div class="card" style="margin-bottom:1rem; border-left: 4px solid ${o.status==='pendente'?'var(--warning)':'var(--success)'};"><br>
-        <div style="display:flex; justify-content:space-between"><strong>${o.products?.nome}</strong><span class="badge status-${o.status}">${o.status}</span></div><br>
-        <p class="text-sm">Cliente: ${o.profiles?.nome_completo}</p><br>
-        
-        <p class="text-xs" style="background: #eff6ff; padding: 5px; border-radius: 4px; color: var(--primary-dark); margin-bottom: 10px;">
-            <i class="ri-map-pin-line"></i> <strong>Entrega:</strong> ${o.endereco_destino || 'Retirada / Balcão'}
-        </p>
-
-        ${printBtn}<br>
-        <div style="clear:both;"></div><br>
-        ${o.status === 'pendente' ? `<button class="btn btn-primary btn-sm btn-full" onclick="App.store.dispatch('${o.id}')">Liberar para Entrega</button>` : ''}<br>
-        ${providerHtml}<br>
-    </div>`;
-}).join('') || '<p class="text-sm">Nenhum pedido.</p>';
-},
+                    document.getElementById('store-orders-list').innerHTML = orders?.map(o => {
+                        let providerHtml = o.prestador ? `<div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:8px; margin-top:10px; font-size:0.85rem;"><strong>Prestador:</strong> ${o.prestador.nome_completo}<br><strong>Chave Pix:</strong> ${o.prestador.chave_pix || 'Não inf.'}</div>` : '';
+                        let printBtn = (o.products?.categoria === 'Comidas' || o.products?.categoria === 'Bebidas') ? `<button class="btn btn-sm btn-info" style="margin-top:5px; width:auto; float:right;" onclick='App.store.printOrder(${JSON.stringify(o).replace(/"/g, '&quot;')})'><i class="ri-printer-line"></i> Imprimir</button>` : '';
+                        return `<br><div class="card" style="margin-bottom:1rem; border-left: 4px solid ${o.status==='pendente'?'var(--warning)':'var(--success)'};"><br><div style="display:flex; justify-content:space-between"><strong>${o.products?.nome}</strong><span class="badge status-${o.status}">${o.status}</span></div><br><p class="text-sm">Cliente: ${o.profiles?.nome_completo}</p><br><p class="text-xs" style="background: #eff6ff; padding: 5px; border-radius: 4px; color: var(--primary-dark); margin-bottom: 10px;"><i class="ri-map-pin-line"></i> <strong>Entrega:</strong> ${o.endereco_destino || 'Retirada / Balcão'}</p>${printBtn}<br><div style="clear:both;"></div><br>${o.status === 'pendente' ? `<button class="btn btn-primary btn-sm btn-full" onclick="App.store.dispatch('${o.id}')">Liberar para Entrega</button>` : ''}<br>${providerHtml}<br></div>`;
+                    }).join('') || '<p class="text-sm">Nenhum pedido.</p>';
+                },
                 listenMessages: () => {
                     const myStoreId = App.state.storeId;
-                    _sb.channel('store-notifications')
-                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `store_id=eq.${myStoreId}` }, 
-                    async (payload) => {
+                    _sb.channel('store-notifications').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `store_id=eq.${myStoreId}` }, async (payload) => {
                         if(payload.new.sender_id !== App.state.user.id) {
                             const { data: sender } = await _sb.from('profiles').select('nome_completo').eq('id', payload.new.sender_id).single();
                             App.utils.showChatNotification(sender.nome_completo, payload.new.content, payload.new.client_id);
                         }
-                    })
-                    .subscribe();
-                },
-                calcMetrics: async (orders) => {
-                    const now = new Date();
-                    let dayTotal = 0, weekTotal = 0, monthTotal = 0;
-                    
-                    orders.forEach(o => {
-                        if(['aceito', 'concluido', 'em_rota', 'aguardando_prestador'].includes(o.status)) {
-                            const val = o.taxa_servico / 0.10; 
-                            const orderDate = new Date(o.created_at);
-                            if(orderDate.toDateString() === now.toDateString()) dayTotal += val;
-                            if(orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear()) monthTotal += val;
-                            const diffTime = Math.abs(now - orderDate);
-                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-                            if(diffDays <= 7) weekTotal += val;
-                        }
-                    });
-
-                    const { data: comandas } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).eq('status', 'fechada');
-                    
-                    if(comandas) {
-                        comandas.forEach(c => {
-                            const val = c.total_pago || 0;
-                            const cDate = new Date(c.created_at);
-                            if(cDate.toDateString() === now.toDateString()) dayTotal += val;
-                            if(cDate.getMonth() === now.getMonth()) monthTotal += val;
-                        });
-                    }
-                    
-                    document.getElementById('metric-day').innerText = `R$ ${dayTotal.toFixed(2)}`;
-                    document.getElementById('metric-week').innerText = `R$ ${weekTotal.toFixed(2)}`;
-                    document.getElementById('metric-month').innerText = `R$ ${monthTotal.toFixed(2)}`;
+                    }).subscribe();
                 },
                 loadMyProducts: async () => {
                     const { data } = await _sb.from('products').select('*').eq('store_id', App.state.storeId);
                     document.getElementById('store-products-list').innerHTML = data?.map(p => {
                         const pSafe = JSON.stringify(p).replace(/"/g, '&quot;');
-                        return `
-                        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;">
-                            <div>
-                                <div style="font-weight:bold">${p.nome} ${p.promocao ? '<span style="color:red; font-size:0.7rem">(Promo)</span>' : ''}</div>
-                                <div class="text-xs text-muted">R$ ${p.preco.toFixed(2)}</div>
-                            </div>
-                            <div style="display:flex; gap:5px;">
-                                <button class="btn btn-sm btn-secondary" style="width:auto" onclick='App.store.openEditProduct(${pSafe})'>Editar</button>
-                                <button class="btn btn-sm btn-danger" style="width:auto; padding:5px 8px;" onclick="App.store.deleteProduct('${p.id}')"><i class="ri-delete-bin-line"></i></button>
-                            </div>
-                        </div>`;
+                        return `<div style="display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #eee;"><div><div style="font-weight:bold">${p.nome} ${p.promocao ? '<span style="color:red; font-size:0.7rem">(Promo)</span>' : ''}</div><div class="text-xs text-muted">R$ ${p.preco.toFixed(2)}</div></div><div style="display:flex; gap:5px;"><button class="btn btn-sm btn-secondary" style="width:auto" onclick='App.store.openEditProduct(${pSafe})'>Editar</button><button class="btn btn-sm btn-danger" style="width:auto; padding:5px 8px;" onclick="App.store.deleteProduct('${p.id}')"><i class="ri-delete-bin-line"></i></button></div></div>`;
                     }).join('');
                 },
                 deleteProduct: async (id) => {
@@ -1581,15 +1521,13 @@
                         App.catalog.fetchPublic();
                     }
                 },
-               openProductModal: () => {
+                openProductModal: () => {
                     document.getElementById('prod-modal-title').innerText = "Adicionar Serviço/Produto";
                     document.getElementById('btn-save-prod').innerText = "Publicar Serviço";
                     document.getElementById('edit-prod-id').value = "";
-                    
                     document.getElementById('new-prod-name').value = "";
-
-                    // --- NOVO: INJETAR CAMPO DE CÓDIGO (SE NÃO EXISTIR) E LIMPAR ---
-                    // Verifica se o campo já existe. Se não, cria e insere abaixo da Categoria.
+                    
+                    // CRIA CAMPO DE CÓDIGO SE NÃO EXISTIR
                     if(!document.getElementById('new-prod-code')) {
                         const catWrapper = document.getElementById('new-prod-cat').parentElement;
                         const div = document.createElement('div');
@@ -1597,9 +1535,7 @@
                         div.innerHTML = '<label>Código no Cardápio (Opcional)</label><input type="text" id="new-prod-code" class="input-field" placeholder="Ex: A12, 05, B3">';
                         catWrapper.insertAdjacentElement('afterend', div);
                     }
-                    // Limpa o campo
                     document.getElementById('new-prod-code').value = "";
-                    // ---------------------------------------------------------------
 
                     document.getElementById('new-prod-price').value = "";
                     document.getElementById('new-prod-promo').checked = false;
@@ -1611,7 +1547,6 @@
                     
                     App.store.renderAdminSizes(""); 
                     document.getElementById('clothing-sizes').value = "";
-                    
                     document.getElementById('new-prod-cat').value = CONFIG.categories[0];
                     App.store.checkCategory(CONFIG.categories[0]);
                     document.getElementById('product-modal').style.display = 'flex';
@@ -1622,12 +1557,21 @@
                     document.getElementById('edit-prod-id').value = p.id;
                     document.getElementById('new-prod-cat').value = p.categoria;
                     document.getElementById('new-prod-name').value = p.nome;
+                    
+                    if(!document.getElementById('new-prod-code')) {
+                        const catWrapper = document.getElementById('new-prod-cat').parentElement;
+                        const div = document.createElement('div');
+                        div.className = 'input-wrapper';
+                        div.innerHTML = '<label>Código no Cardápio (Opcional)</label><input type="text" id="new-prod-code" class="input-field" placeholder="Ex: A12, 05, B3">';
+                        catWrapper.insertAdjacentElement('afterend', div);
+                    }
+                    document.getElementById('new-prod-code').value = p.codigo_cardapio || "";
+
                     document.getElementById('new-prod-price').value = p.preco;
                     document.getElementById('new-prod-promo').checked = p.promocao;
                     document.getElementById('new-prod-desc').value = p.descricao || "";
                     
                     App.store.renderAdminSizes(p.sizes || "");
-
                     if(p.gesso_info) {
                         try {
                             const g = typeof p.gesso_info === 'string' ? JSON.parse(p.gesso_info) : p.gesso_info;
@@ -1636,7 +1580,6 @@
                             document.getElementById('gesso-labor-type').value = g.labor_type || "fixed";
                         } catch(e) {}
                     }
-
                     if(p.delivery_info) {
                         try {
                             const d = typeof p.delivery_info === 'string' ? JSON.parse(p.delivery_info) : p.delivery_info;
@@ -1644,7 +1587,6 @@
                             document.getElementById('delivery-fee-type').value = d.fee_type || "fixed";
                         } catch(e) {}
                     }
-                    
                     App.store.checkCategory(p.categoria);
                     document.getElementById('product-modal').style.display = 'flex';
                 },
@@ -1654,28 +1596,19 @@
                     document.getElementById('gesso-options-area').style.display = 'none';
                     document.getElementById('delivery-options-area').style.display = 'none';
                     document.getElementById('clothing-options-area').style.display = 'none';
-
-                    if(cat === 'Hoteis/Pousadas') {
-                        document.getElementById('hotel-dates-area').style.display = 'block';
-                    } else if (cat === 'Serviços de Gesso') {
-                        document.getElementById('gesso-options-area').style.display = 'block';
-                    } else if (cat === 'Comidas' || cat === 'Bebidas') {
-                        document.getElementById('delivery-options-area').style.display = 'block';
-                    } else if (cat === 'Roupas') {
-                        document.getElementById('clothing-options-area').style.display = 'block';
-                    }
+                    if(cat === 'Hoteis/Pousadas') document.getElementById('hotel-dates-area').style.display = 'block';
+                    else if (cat === 'Serviços de Gesso') document.getElementById('gesso-options-area').style.display = 'block';
+                    else if (cat === 'Comidas' || cat === 'Bebidas') document.getElementById('delivery-options-area').style.display = 'block';
+                    else if (cat === 'Roupas') document.getElementById('clothing-options-area').style.display = 'block';
                 },
-            submitProduct: async () => {
-                    // 1. Validação inicial
+                submitProduct: async () => {
                     if(!App.state.storeId) {
                         alert("Erro crítico: ID da Loja não encontrado.");
                         return;
                     }
-
-                    // 2. Coleta dos valores do formulário
                     const id = document.getElementById('edit-prod-id').value;
                     const nome = document.getElementById('new-prod-name').value;
-                    // Captura o código (verifica se o campo existe para não dar erro)
+                    // PEGA O CÓDIGO
                     const codigo = document.getElementById('new-prod-code') ? document.getElementById('new-prod-code').value : null;
                     
                     const preco = document.getElementById('new-prod-price').value;
@@ -1683,22 +1616,18 @@
                     const promo = document.getElementById('new-prod-promo').checked;
                     const descricao = document.getElementById('new-prod-desc').value;
                     const sizes = document.getElementById('clothing-sizes').value;
-
                     const fileInput = document.getElementById('new-prod-file');
                     const files = fileInput.files;
 
                     if (!nome || !preco) return App.utils.toast("Preencha nome e preço", "error");
                     
-                    // 3. Upload das Imagens
                     let galeriaUrls = [];
-                    
                     if (files.length > 0) {
                         App.utils.toast(`Enviando ${files.length} fotos... aguarde.`, "info");
                         for (let i = 0; i < files.length; i++) {
                             const file = files[i];
                             const fileName = `${Date.now()}_${i}_${file.name.replace(/\s/g, '_')}`;
                             const { error: upErr } = await _sb.storage.from('produtos').upload(fileName, file);
-                            
                             if (!upErr) {
                                 const { data } = _sb.storage.from('produtos').getPublicUrl(fileName);
                                 galeriaUrls.push(data.publicUrl);
@@ -1706,7 +1635,6 @@
                         }
                     }
 
-                    // 4. Lógica específica de categorias (Hotel, Gesso, Delivery)
                     const dateStart = document.getElementById('hotel-start-date').value;
                     const dateEnd = document.getElementById('hotel-end-date').value;
                     let disp = null;
@@ -1720,7 +1648,6 @@
                             labor_type: document.getElementById('gesso-labor-type').value
                         });
                     }
-
                     let deliveryInfo = null;
                     if(cat === 'Comidas' || cat === 'Bebidas') {
                         deliveryInfo = JSON.stringify({
@@ -1729,42 +1656,29 @@
                         });
                     }
                     
-                    // 5. Montagem do Payload (Objeto para salvar)
                     const payload = { 
                         store_id: App.state.storeId, 
                         nome, 
-                        codigo_cardapio: codigo, // Salva o código
+                        codigo_cardapio: codigo, // SALVA NO BANCO
                         preco: parseFloat(preco), 
-                        categoria: cat, 
-                        promocao: promo, 
-                        disponibilidade: disp,
-                        gesso_info: gessoInfo,
-                        delivery_info: deliveryInfo, 
-                        descricao: descricao,
-                        sizes: sizes
+                        categoria: cat, promocao: promo, disponibilidade: disp, gesso_info: gessoInfo,
+                        delivery_info: deliveryInfo, descricao: descricao, sizes: sizes
                     };
 
-                    // --- AQUI ESTAVA O PROBLEMA ANTES: O IF TEM QUE FICAR AQUI DENTRO ---
                     if (galeriaUrls.length > 0) {
                         payload.imagem_url = galeriaUrls[0]; 
                         payload.galeria = galeriaUrls;        
                     }
-                    // ------------------------------------------------------------------
 
-                    // 6. Envio para o Banco de Dados (Insert ou Update)
                     let res;
-                    if(id) {
-                        res = await _sb.from('products').update(payload).eq('id', id);
-                    } else {
-                        // Se não tiver imagem nova e for novo produto, põe placeholder
+                    if(id) res = await _sb.from('products').update(payload).eq('id', id);
+                    else {
                         if(galeriaUrls.length === 0 && !id) payload.imagem_url = 'https://placehold.co/400x300?text=NexLog';
                         res = await _sb.from('products').insert(payload);
                     }
 
-                    // 7. Resposta final
-                    if(res.error) { 
-                        alert("Erro ao salvar: " + res.error.message); 
-                    } else {
+                    if(res.error) alert("Erro ao salvar: " + res.error.message); 
+                    else {
                         alert("Produto salvo com sucesso!");
                         App.store.closeProductModal(); 
                         App.catalog.fetchPublic(); 
@@ -1785,30 +1699,13 @@
                         App.store.init();
                     }
                 },
-               linkPartner: async () => {
+                linkPartner: async () => {
                     const email = document.getElementById('partner-email-input').value.trim();
                     if(!email) return App.utils.toast("Digite o email do motorista", "error");
-                    
-                    // CORREÇÃO: Usar .maybeSingle() em vez de .single()
-                    // Também puxei o 'nome_completo' para mostrar na tela depois
-                    const { data: user, error } = await _sb
-                        .from('profiles')
-                        .select('id, nome_completo')
-                        .eq('email', email)
-                        .maybeSingle(); 
-
-                    if (error) {
-                        console.log(error); // Para você ver no F12 se der erro
-                        return App.utils.toast("Erro ao buscar. Verifique as regras do banco.", "error");
-                    }
-
-                    if(!user) {
-                        return App.utils.toast("Motorista não encontrado no sistema.", "error");
-                    }
-
+                    const { data: user, error } = await _sb.from('profiles').select('id, nome_completo').eq('email', email).maybeSingle(); 
+                    if (error) return App.utils.toast("Erro ao buscar.", "error");
+                    if(!user) return App.utils.toast("Motorista não encontrado no sistema.", "error");
                     await _sb.from('stores').update({ parceiro_exclusivo_id: user.id }).eq('id', App.state.storeId);
-                    
-                    // Atualiza o texto na tela na hora, sem precisar recarregar tudo com init()
                     document.getElementById('active-partner-display').innerText = `Vinculado: ${user.nome_completo}`;
                     App.utils.toast("Parceiro vinculado com sucesso!", "success");
                 },
@@ -1816,55 +1713,21 @@
                     await _sb.from('orders').update({ status: 'aguardando_prestador', data_agendada: new Date().toISOString() }).eq('id', id);
                     App.utils.toast('Despachado!', 'success'); App.store.init();
                 },
-                setupPrinter: () => {
-                    window.print();
+                setupPrinter: () => window.print(),
+                printOrder: (order) => {
+                    const store = App.state.currentStore || {};
+                    // CORREÇÃO: Taxa 0.10
+                    const totalCalculado = (order.taxa_servico / 0.10); 
+                    const content = `<br><div style="font-family: monospace; width: 300px; padding: 10px; text-align: center;"><br><h3>${store.nome_loja || 'NEXLOG PEDIDOS'}</h3><br>${store.cnpj ? `<p style="font-size:0.8rem; margin:0;">CNPJ: ${store.cnpj}</p>` : ''}<br>${store.whatsapp ? `<p style="font-size:0.8rem; margin:0;">Tel: ${store.whatsapp}</p>` : ''}<br><p style="margin-top:5px; border-bottom: 1px dashed black; padding-bottom:5px;">${new Date().toLocaleString()}</p><br><p><strong>Pedido #${order.id}</strong></p><br><p>Cliente: ${order.profiles?.nome_completo}</p><br><p style="font-size:0.9rem; text-align:left; margin-top:5px;"><strong>Endereço:</strong><br>${order.endereco_destino || 'Retirada no Balcão'}</p><p style="font-size:0.9rem; text-align:left; margin-top:5px;"><strong>Pagamento:</strong><br>Online / Pix (App)</p><hr style="border-top: 1px dashed black;"><br><div style="text-align: left;"><br><p><strong>Item:</strong> ${order.products?.nome}</p><br><p><strong>Valor:</strong> R$ ${totalCalculado.toFixed(2)}</p><br></div><br><hr style="border-top: 1px dashed black;"><br><h3>TOTAL: R$ ${totalCalculado.toFixed(2)}</h3><br><p style="font-size: 0.8rem;">Obrigado pela preferência!</p><br></div><br>`;
+                    const area = document.getElementById('printable-area');
+                    area.innerHTML = content;
+                    window.print(); 
                 },
-            printOrder: (order) => {
-                const store = App.state.currentStore || {};
-                
-                // CORREÇÃO DO CÁLCULO (1.00 virando 0.67):
-                // Como você salva 10% de taxa no finalizeCart, devemos dividir por 0.10 para recuperar o total.
-                const totalCalculado = (order.taxa_servico / 0.10); 
-
-                const content = `<br>
-                    <div style="font-family: monospace; width: 300px; padding: 10px; text-align: center;"><br>
-                        <h3>${store.nome_loja || 'NEXLOG PEDIDOS'}</h3><br>
-                        ${store.cnpj ? `<p style="font-size:0.8rem; margin:0;">CNPJ: ${store.cnpj}</p>` : ''}<br>
-                        ${store.whatsapp ? `<p style="font-size:0.8rem; margin:0;">Tel: ${store.whatsapp}</p>` : ''}<br>
-                        <p style="margin-top:5px; border-bottom: 1px dashed black; padding-bottom:5px;">${new Date().toLocaleString()}</p><br>
-                        <p><strong>Pedido #${order.id}</strong></p><br>
-                        <p>Cliente: ${order.profiles?.nome_completo}</p><br>
-                        
-                        <p style="font-size:0.9rem; text-align:left; margin-top:5px;"><strong>Endereço:</strong><br>${order.endereco_destino || 'Retirada no Balcão'}</p>
-
-                        <p style="font-size:0.9rem; text-align:left; margin-top:5px;"><strong>Pagamento:</strong><br>Online / Pix (App)</p>
-
-                        <hr style="border-top: 1px dashed black;"><br>
-                        <div style="text-align: left;"><br>
-                            <p><strong>Item:</strong> ${order.products?.nome}</p><br>
-                            <p><strong>Valor:</strong> R$ ${totalCalculado.toFixed(2)}</p><br>
-                        </div><br>
-                        <hr style="border-top: 1px dashed black;"><br>
-                        <h3>TOTAL: R$ ${totalCalculado.toFixed(2)}</h3><br>
-                        <p style="font-size: 0.8rem;">Obrigado pela preferência!</p><br>
-                    </div><br>
-                `;
-                const area = document.getElementById('printable-area');
-                area.innerHTML = content;
-                window.print(); 
-            },
                 createCoupon: async () => {
                     const code = document.getElementById('new-coupon-code').value.toUpperCase().trim();
                     const percent = parseInt(document.getElementById('new-coupon-percent').value);
-                    
                     if(!code || !percent) return App.utils.toast("Preencha código e porcentagem", "error");
-
-                    const { error } = await _sb.from('coupons').insert({
-                        store_id: App.state.storeId,
-                        code: code,
-                        percent: percent
-                    });
-
+                    const { error } = await _sb.from('coupons').insert({ store_id: App.state.storeId, code: code, percent: percent });
                     if(error) App.utils.toast("Erro ao criar cupom", "error");
                     else {
                         App.utils.toast("Cupom criado!", "success");
@@ -1879,12 +1742,7 @@
                         div.innerHTML = '<span class="text-xs text-muted">Nenhum cupom ativo.</span>';
                         return;
                     }
-                    div.innerHTML = data.map(c => `
-                        <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:5px; font-size:0.8rem;">
-                            <strong>${c.code} (${c.percent}%)</strong>
-                            <span style="color:red; cursor:pointer;" onclick="App.store.deleteCoupon('${c.id}')">Excluir</span>
-                        </div>
-                    `).join('');
+                    div.innerHTML = data.map(c => `<div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:5px; font-size:0.8rem;"><strong>${c.code} (${c.percent}%)</strong><span style="color:red; cursor:pointer;" onclick="App.store.deleteCoupon('${c.id}')">Excluir</span></div>`).join('');
                 },
                 deleteCoupon: async (id) => {
                     if(confirm("Excluir cupom?")) {
@@ -2556,31 +2414,16 @@
                 }
             },
             
-        waiter: {
+       waiter: {
                 init: async () => {
                     if (!App.state.user) return;
+                    // Proteção maybeSingle
+                    const { data: staffData, error } = await _sb.from('store_staff').select('store_id').eq('profile_id', App.state.user.id).maybeSingle();
+                    if (error || !staffData) return;
 
-                    const { data: staffData, error } = await _sb
-                        .from('store_staff')
-                        .select('store_id')
-                        .eq('profile_id', App.state.user.id)
-                        .maybeSingle();
-
-                    if (error) {
-                        console.error("Erro staff:", error);
-                        return;
-                    }
-
-                    if (!staffData) return;
-
-                    App.state.storeId = staffData.store_id;
-                    
-                    if(App.waiter.loadTables) App.waiter.loadTables();
-                    
-                    _sb.channel('waiter-updates')
-                        .on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: `store_id=eq.${App.state.storeId}` }, 
-                        () => { if(App.waiter.loadTables) App.waiter.loadTables(); })
-                        .subscribe();
+                    App.state.storeId = staffData.store_id; 
+                    if(App.waiter.loadTables) App.waiter.loadTables(); 
+                    _sb.channel('waiter-updates').on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: `store_id=eq.${App.state.storeId}` }, () => { if(App.waiter.loadTables) App.waiter.loadTables(); }).subscribe();
                 },
                 loadTables: async () => {
                     const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', {ascending: true});
@@ -2595,7 +2438,7 @@
                 },
                 openComanda: async (id, numero) => {
                     App.state.currentComanda = id;
-                    document.getElementById('comanda-title').innerText = `Mesa ${numero}`;
+                    document.getElementById('comanda-title').innerText = `Mesa ${numero}`; 
                     document.getElementById('waiter-prod-search').value = "";
                     document.getElementById('waiter-search-results').style.display = 'none';
                     document.getElementById('comanda-modal').style.display = 'flex';
@@ -2622,19 +2465,15 @@
                     if(!term) return alert("Digite o nome ou código");
                     App.utils.toast("Buscando...", "info");
                     
-                    const { data } = await _sb.from('products')
-                        .select('*')
-                        .eq('store_id', App.state.storeId)
-                        .or(`nome.ilike.%${term}%,codigo_cardapio.eq.${term}`)
-                        .limit(5);
-
+                    // Busca por Nome OU Código
+                    const { data } = await _sb.from('products').select('*').eq('store_id', App.state.storeId).or(`nome.ilike.%${term}%,codigo_cardapio.eq.${term}`).limit(5);
                     const resultBox = document.getElementById('waiter-search-results');
                     if(data && data.length > 0) {
                         resultBox.style.display = 'block';
                         resultBox.innerHTML = data.map(p => `
-                            <div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; background:#fff;" onclick="App.waiter.confirmAdd('${p.id}', '${p.nome}', ${p.preco})">
-                                <strong>${p.codigo_cardapio ? '['+p.codigo_cardapio+'] ' : ''}${p.nome}</strong> - R$ ${p.preco.toFixed(2)}
-                            </div>`).join('');
+                        <div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; background:#fff;" onclick="App.waiter.confirmAdd('${p.id}', '${p.nome}', ${p.preco})">
+                            <strong>${p.codigo_cardapio ? '['+p.codigo_cardapio+'] ' : ''}${p.nome}</strong> - R$ ${p.preco.toFixed(2)}
+                        </div>`).join('');
                     } else {
                         alert("Produto não encontrado");
                         resultBox.style.display = 'none';
@@ -2643,13 +2482,12 @@
                 confirmAdd: async (id, nome, price) => {
                     const { data: current } = await _sb.from('comandas').select('items').eq('id', App.state.currentComanda).single();
                     let currentItems = current.items || [];
-                    
                     const garcomName = App.state.profile ? App.state.profile.nome_completo.split(' ')[0] : 'Sistema';
 
                     const existing = currentItems.find(i => i.id === id);
                     if(existing) {
                         existing.qtd += 1;
-                        existing.garcom = garcomName;
+                        existing.garcom = garcomName; 
                     } else {
                         currentItems.push({ id: id, nome: nome, price: price, qtd: 1, garcom: garcomName });
                     }
@@ -2658,6 +2496,7 @@
                     
                     document.getElementById('waiter-search-results').style.display = 'none';
                     document.getElementById('waiter-prod-search').value = '';
+                    
                     App.utils.toast(`Adicionado: ${nome}`, 'success');
                     App.waiter.loadItems(App.state.currentComanda);
                     App.waiter.loadTables();
