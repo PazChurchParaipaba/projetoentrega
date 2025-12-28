@@ -2556,43 +2556,33 @@
                 }
             },
             
-           waiter: {
+         waiter: {
                 init: async () => {
-                    // Proteção: Se não tiver usuário logado, para aqui
                     if (!App.state.user) return;
-
-                    // CORREÇÃO: Busca vínculo com a loja de forma segura
+                    
+                    // CORREÇÃO DO ERRO DE SINTAXE AQUI (Faltava o sinal de igual ou estrutura incorreta)
                     const { data: staffData, error } = await _sb
                         .from('store_staff')
                         .select('store_id')
                         .eq('profile_id', App.state.user.id)
-                        .maybeSingle(); // Usa maybeSingle para não dar erro se não encontrar
+                        .maybeSingle();
 
-                    if (error) {
-                        console.error("Erro ao buscar staff:", error);
+                    if (error || !staffData) {
+                        // Se der erro ou não achar, para a execução sem travar a tela
                         return;
                     }
 
-                    if (!staffData) {
-                        // Se não é staff, apenas retorna silenciosamente (ou use alert se preferir)
-                        return;
-                    }
-
-                    App.state.storeId = staffData.store_id; 
+                    App.state.storeId = staffData.store_id;
                     
-                    // Carrega as mesas
-                    if(App.waiter.loadTables) App.waiter.loadTables(); 
+                    if (App.waiter.loadTables) App.waiter.loadTables();
                     
-                    // Ativa atualização em tempo real
                     _sb.channel('waiter-updates')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: `store_id=eq.${App.state.storeId}` }, 
-                    () => { 
-                        if(App.waiter.loadTables) App.waiter.loadTables(); 
-                    })
-                    .subscribe();
+                        .on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: `store_id=eq.${App.state.storeId}` }, 
+                        () => { if (App.waiter.loadTables) App.waiter.loadTables(); })
+                        .subscribe();
                 },
                 loadTables: async () => {
-                    const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', {ascending: true});
+                    const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', { ascending: true });
                     const container = document.getElementById('comanda-list-container');
                     if (data) {
                         container.innerHTML = data.map(c => `
@@ -2604,7 +2594,7 @@
                 },
                 openComanda: async (id, numero) => {
                     App.state.currentComanda = id;
-                    document.getElementById('comanda-title').innerText = `Mesa ${numero}`; 
+                    document.getElementById('comanda-title').innerText = `Mesa ${numero}`;
                     document.getElementById('waiter-prod-search').value = "";
                     document.getElementById('waiter-search-results').style.display = 'none';
                     document.getElementById('comanda-modal').style.display = 'flex';
@@ -2613,10 +2603,13 @@
                 loadItems: async (comandaId) => {
                     const { data } = await _sb.from('comandas').select('items').eq('id', comandaId).single();
                     const list = document.getElementById('comanda-items-list');
-                    if(data && data.items && data.items.length > 0) {
+                    if (data && data.items && data.items.length > 0) {
                         list.innerHTML = data.items.map(item => `
                             <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px;">
-                                <span style="font-weight:bold;">${item.qtd}x ${item.nome}</span>
+                                <div>
+                                    <span style="font-weight:bold;">${item.qtd}x ${item.nome}</span>
+                                    <div class="text-xs text-muted">Garçom: ${item.garcom || 'Geral'}</div>
+                                </div>
                                 <span>R$ ${(item.price * item.qtd).toFixed(2)}</span>
                             </div>`).join('');
                     } else {
@@ -2625,10 +2618,11 @@
                 },
                 addItem: async () => {
                     const term = document.getElementById('waiter-prod-search').value;
-                    if(!term) return alert("Digite o nome ou código");
+                    if (!term) return alert("Digite o nome ou código");
+                    
                     App.utils.toast("Buscando...", "info");
                     
-                    // Busca por nome OU código_cardapio
+                    // Busca por Nome OU Código
                     const { data } = await _sb.from('products')
                         .select('*')
                         .eq('store_id', App.state.storeId)
@@ -2636,11 +2630,11 @@
                         .limit(5);
 
                     const resultBox = document.getElementById('waiter-search-results');
-                    if(data && data.length > 0) {
+                    if (data && data.length > 0) {
                         resultBox.style.display = 'block';
                         resultBox.innerHTML = data.map(p => `
                             <div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; background:#fff;" onclick="App.waiter.confirmAdd('${p.id}', '${p.nome}', ${p.preco})">
-                                <strong>${p.codigo_cardapio ? '['+p.codigo_cardapio+'] ' : ''}${p.nome}</strong> - R$ ${p.preco.toFixed(2)}
+                                <strong>${p.codigo_cardapio ? '[' + p.codigo_cardapio + '] ' : ''}${p.nome}</strong> - R$ ${p.preco.toFixed(2)}
                             </div>`).join('');
                     } else {
                         alert("Produto não encontrado");
@@ -2651,13 +2645,13 @@
                     const { data: current } = await _sb.from('comandas').select('items').eq('id', App.state.currentComanda).single();
                     let currentItems = current.items || [];
                     
-                    // Pega nome do garçom
+                    // Pega o nome do Garçom logado
                     const garcomName = App.state.profile ? App.state.profile.nome_completo.split(' ')[0] : 'Sistema';
 
                     const existing = currentItems.find(i => i.id === id);
-                    if(existing) {
+                    if (existing) {
                         existing.qtd += 1;
-                        existing.garcom = garcomName; 
+                        existing.garcom = garcomName;
                     } else {
                         currentItems.push({ id: id, nome: nome, price: price, qtd: 1, garcom: garcomName });
                     }
@@ -2675,11 +2669,12 @@
                     const items = App.state.currentComandaItems || [];
                     const mesa = document.getElementById('comanda-title').innerText;
                     
+                    // Gera HTML com o nome do garçom
                     const itemsHtml = items.map(item => `
                         <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #000; padding:4px 0;">
                             <div style="display:flex; flex-direction:column;">
                                 <span style="font-weight:bold;">${item.qtd}x ${item.nome}</span>
-                                <span style="font-size:0.75rem; font-style:italic; color:#444;">(Garçom: ${item.garcom || 'Geral'})</span>
+                                <span style="font-size:0.75rem; font-style:italic;">(Garçom: ${item.garcom || 'Geral'})</span>
                             </div>
                             <span style="font-weight:bold;">R$ ${(item.price * item.qtd).toFixed(2)}</span>
                         </div>
