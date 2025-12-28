@@ -1531,7 +1531,7 @@
                     
                     orders.forEach(o => {
                         if(['aceito', 'concluido', 'em_rota', 'aguardando_prestador'].includes(o.status)) {
-                            const val = o.taxa_servico / 0.15; 
+                            const val = o.taxa_servico / 0.10; 
                             const orderDate = new Date(o.created_at);
                             if(orderDate.toDateString() === now.toDateString()) dayTotal += val;
                             if(orderDate.getMonth() === now.getMonth() && orderDate.getFullYear() === now.getFullYear()) monthTotal += val;
@@ -1581,11 +1581,26 @@
                         App.catalog.fetchPublic();
                     }
                 },
-                openProductModal: () => {
+               openProductModal: () => {
                     document.getElementById('prod-modal-title').innerText = "Adicionar Serviço/Produto";
                     document.getElementById('btn-save-prod').innerText = "Publicar Serviço";
                     document.getElementById('edit-prod-id').value = "";
+                    
                     document.getElementById('new-prod-name').value = "";
+
+                    // --- NOVO: INJETAR CAMPO DE CÓDIGO (SE NÃO EXISTIR) E LIMPAR ---
+                    // Verifica se o campo já existe. Se não, cria e insere abaixo da Categoria.
+                    if(!document.getElementById('new-prod-code')) {
+                        const catWrapper = document.getElementById('new-prod-cat').parentElement;
+                        const div = document.createElement('div');
+                        div.className = 'input-wrapper';
+                        div.innerHTML = '<label>Código no Cardápio (Opcional)</label><input type="text" id="new-prod-code" class="input-field" placeholder="Ex: A12, 05, B3">';
+                        catWrapper.insertAdjacentElement('afterend', div);
+                    }
+                    // Limpa o campo
+                    document.getElementById('new-prod-code').value = "";
+                    // ---------------------------------------------------------------
+
                     document.getElementById('new-prod-price').value = "";
                     document.getElementById('new-prod-promo').checked = false;
                     document.getElementById('gesso-price-m2').value = "";
@@ -1650,7 +1665,7 @@
                         document.getElementById('clothing-options-area').style.display = 'block';
                     }
                 },
-                submitProduct: async () => {
+               submitProduct: async () => {
                     if(!App.state.storeId) {
                         alert("Erro crítico: ID da Loja não encontrado.");
                         return;
@@ -1658,6 +1673,12 @@
 
                     const id = document.getElementById('edit-prod-id').value;
                     const nome = document.getElementById('new-prod-name').value;
+                    
+                    // --- NOVO: Captura o código do produto ---
+                    // O '?' garante que não quebre se o campo ainda não existir no HTML
+                    const codigo = document.getElementById('new-prod-code') ? document.getElementById('new-prod-code').value : null;
+                    // ----------------------------------------
+
                     const preco = document.getElementById('new-prod-price').value;
                     const cat = document.getElementById('new-prod-cat').value;
                     const promo = document.getElementById('new-prod-promo').checked;
@@ -1709,7 +1730,10 @@
                     
                     const payload = { 
                         store_id: App.state.storeId, 
-                        nome, 
+                        nome,
+                        // --- NOVO: Envia o código para o banco ---
+                        codigo_cardapio: codigo,
+                        // ----------------------------------------
                         preco: parseFloat(preco), 
                         categoria: cat, 
                         promocao: promo, 
@@ -1719,6 +1743,29 @@
                         descricao: descricao,
                         sizes: sizes
                     };
+
+                    if (galeriaUrls.length > 0) {
+                        payload.imagem_url = galeriaUrls[0]; 
+                        payload.galeria = galeriaUrls;        
+                    }
+
+                    let res;
+                    if(id) {
+                        res = await _sb.from('products').update(payload).eq('id', id);
+                    } else {
+                        if(galeriaUrls.length === 0 && !id) payload.imagem_url = 'https://placehold.co/400x300?text=NexLog';
+                        res = await _sb.from('products').insert(payload);
+                    }
+
+                    if(res.error) { 
+                        alert("Erro ao salvar: " + res.error.message); 
+                    } else {
+                        alert("Produto salvo com sucesso!");
+                        App.store.closeProductModal(); 
+                        App.catalog.fetchPublic(); 
+                        App.store.init();
+                    }
+                },
 
                     if (galeriaUrls.length > 0) {
                         payload.imagem_url = galeriaUrls[0]; 
@@ -2378,11 +2425,25 @@
                 }
             },
             
-            client: {
+           client: {
                 init: async () => {
-                    const { data: orders } = await _sb.from('orders').select('*, products(nome)').eq('cliente_id', App.state.user.id).order('created_at', {ascending:false});
+                    // CORREÇÃO: Adicionado .neq('status', 'concluido') para esconder pedidos velhos
+                    const { data: orders } = await _sb.from('orders')
+                        .select('*, products(nome)')
+                        .eq('cliente_id', App.state.user.id)
+                        .neq('status', 'concluido') 
+                        .order('created_at', {ascending:false});
+                        
                     document.getElementById('client-orders-list').innerHTML = orders?.map(o => `
-                        <div class="card" style="margin-bottom:1rem"><div style="display:flex; justify-content:space-between; margin-bottom:0.5rem"><strong>${o.products?.nome}</strong><span class="badge status-${o.status}">${o.status}</span></div><p class="text-sm">${o.endereco_destino}</p>${['em_rota', 'aceito', 'concluido'].includes(o.status) ? `<button class="btn btn-success btn-sm btn-full" onclick="App.map.open('${o.id}', false)">Rastrear Entrega</button>` : ''}</div>`).join('') || '<p>Nenhum pedido.</p>';
+                        <div class="card" style="margin-bottom:1rem">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:0.5rem">
+                                <strong>${o.products?.nome}</strong>
+                                <span class="badge status-${o.status}">${o.status}</span>
+                            </div>
+                            <p class="text-sm">${o.endereco_destino}</p>
+                            ${['em_rota', 'aceito', 'concluido'].includes(o.status) ? `<button class="btn btn-success btn-sm btn-full" onclick="App.map.open('${o.id}', false)">Rastrear Entrega</button>` : ''}
+                        </div>`).join('') || '<p>Nenhum pedido ativo.</p>';
+                    
                     App.chat.loadHistory('client');
                 },
                 checkTableBill: async () => {
@@ -2394,6 +2455,7 @@
                          if(confirm(`Mesa ${num}: Total R$ ${total.toFixed(2)}. Pagar agora online?`)) {
                              const pk = data.stores?.mp_public_key || CONFIG.adminPublicKey;
                              mpInstance = new MercadoPago(pk);
+                             // Taxa 0 para pagamento de mesa
                              App.payment.open(total, { store_id: data.store_id, basePrice: total, address: `MESA ${num} (Pagto Online)`, requer_montagem: false, taxa: 0 });
                          }
                      } else { alert("Mesa não encontrada ou fechada."); }
@@ -2451,6 +2513,8 @@
                     const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', sid).single();
                     const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
                     mpInstance = new MercadoPago(publicKeyToUse);
+                    
+                    // CORREÇÃO DO VALOR: Taxa é 10%
                     const commission = finalPrice * 0.10;
                     App.payment.open(finalPrice, { product_id: pid, store_id: sid, basePrice: finalPrice, address, requer_montagem: false, taxa: commission });
                 },
@@ -2458,9 +2522,12 @@
                      const { data: storeData } = await _sb.from('stores').select('mp_public_key').eq('id', sid).single();
                      const publicKeyToUse = (storeData && storeData.mp_public_key) ? storeData.mp_public_key : CONFIG.adminPublicKey;
                      mpInstance = new MercadoPago(publicKeyToUse);
+                     
+                     // CORREÇÃO DO VALOR: Taxa é 10%
                      const commission = price * 0.10;
                      App.payment.open(price, { product_id: pid, store_id: sid, basePrice: price, address, requer_montagem: false, taxa: commission });
                 },
+            },
                 openBudget: (p) => {
                     if(!App.state.user) { App.router.go('auth'); return; }
                     const g = typeof p.gesso_info === 'string' ? JSON.parse(p.gesso_info) : p.gesso_info;
@@ -2567,24 +2634,69 @@
                         resultBox.style.display = 'none';
                     }
                 },
-                confirmAdd: async (id, nome, price) => {
+               confirmAdd: async (id, nome, price) => {
                     const { data: current } = await _sb.from('comandas').select('items').eq('id', App.state.currentComanda).single();
                     let currentItems = current.items || [];
+                    
+                    // --- NOVO: Pega o primeiro nome do garçom logado ---
+                    const garcomName = App.state.profile ? App.state.profile.nome_completo.split(' ')[0] : 'Sistema';
+
                     const existing = currentItems.find(i => i.id === id);
-                    if(existing) existing.qtd += 1;
-                    else currentItems.push({ id: id, nome: nome, price: price, qtd: 1 });
+                    if(existing) {
+                        existing.qtd += 1;
+                        existing.garcom = garcomName; // Atualiza quem pediu a última unidade
+                    } else {
+                        // Adiciona o item com o nome do garçom
+                        currentItems.push({ id: id, nome: nome, price: price, qtd: 1, garcom: garcomName });
+                    }
+
                     await _sb.from('comandas').update({ items: currentItems, status: 'aberta' }).eq('id', App.state.currentComanda);
+                    
                     document.getElementById('waiter-search-results').style.display = 'none';
                     document.getElementById('waiter-prod-search').value = '';
+                    
                     App.utils.toast(`Adicionado: ${nome}`, 'success');
                     App.waiter.loadItems(App.state.currentComanda);
                     App.waiter.loadTables();
                 },
               // ... (parte final do waiter)
-                printBill: () => {
-                    const itemsHtml = document.getElementById('comanda-items-list').innerHTML;
+               printBill: () => {
+                    // Pega os itens da memória do App (mais seguro que pegar do HTML)
+                    const items = App.state.currentComandaItems || [];
                     const mesa = document.getElementById('comanda-title').innerText;
-                    const content = `<div style="font-family: monospace; width: 300px; padding: 0 10px;"><br><h3 style="text-align:center; margin:0;">CONFERÊNCIA</h3><p style="text-align:center; margin:5px 0;">${mesa}</p><p style="text-align:center; font-size:0.8rem;">${new Date().toLocaleString()}</p><hr style="border-top: 1px dashed black;">${itemsHtml}<hr style="border-top: 1px dashed black;"><p style="text-align:center; font-size:0.8rem;">* Não vale como documento fiscal *</p><br><br></div>`;
+                    
+                    // Gera o HTML da lista, incluindo o nome do garçom embaixo do item
+                    const itemsHtml = items.map(item => `
+                        <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #000; padding:4px 0;">
+                            <div style="display:flex; flex-direction:column;">
+                                <span style="font-weight:bold;">${item.qtd}x ${item.nome}</span>
+                                <span style="font-size:0.75rem; font-style:italic; color:#444;">(Garçom: ${item.garcom || 'Geral'})</span>
+                            </div>
+                            <span style="font-weight:bold;">R$ ${(item.price * item.qtd).toFixed(2)}</span>
+                        </div>
+                    `).join('');
+
+                    // Calcula o total na hora para garantir precisão
+                    const total = items.reduce((acc, i) => acc + (i.price * i.qtd), 0);
+
+                    const content = `
+                        <div style="font-family: monospace; width: 300px; padding: 0 5px;">
+                            <br>
+                            <h3 style="text-align:center; margin:0;">CONFERÊNCIA</h3>
+                            <h2 style="text-align:center; margin:5px 0;">${mesa}</h2>
+                            <p style="text-align:center; font-size:0.8rem; margin-bottom:10px;">${new Date().toLocaleString()}</p>
+                            
+                            <hr style="border-top: 1px dashed black;">
+                            ${itemsHtml}
+                            <hr style="border-top: 1px dashed black;">
+                            
+                            <h3 style="text-align:right; margin-top:10px;">TOTAL: R$ ${total.toFixed(2)}</h3>
+                            
+                            <p style="text-align:center; font-size:0.8rem; margin-top:20px;">* Não vale como documento fiscal *</p>
+                            <br><br>
+                        </div>
+                    `;
+                    
                     const area = document.getElementById('printable-area');
                     area.innerHTML = content;
                     window.print();
