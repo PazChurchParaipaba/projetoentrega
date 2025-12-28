@@ -1717,34 +1717,40 @@
                 setupPrinter: () => {
                     window.print();
                 },
-              printOrder: (order) => {
-    const store = App.state.currentStore || {};
-    // AQUI ESTÁ A MUDANÇA: Inseri o parágrafo do endereço no template HTML
-    const content = `<br>
-        <div style="font-family: monospace; width: 300px; padding: 10px; text-align: center;"><br>
-            <h3>${store.nome_loja || 'NEXLOG PEDIDOS'}</h3><br>
-            ${store.cnpj ? `<p style="font-size:0.8rem; margin:0;">CNPJ: ${store.cnpj}</p>` : ''}<br>
-            ${store.whatsapp ? `<p style="font-size:0.8rem; margin:0;">Tel: ${store.whatsapp}</p>` : ''}<br>
-            <p style="margin-top:5px; border-bottom: 1px dashed black; padding-bottom:5px;">${new Date().toLocaleString()}</p><br>
-            <p><strong>Pedido #${order.id}</strong></p><br>
-            <p>Cliente: ${order.profiles?.nome_completo}</p><br>
-            
-            <p style="font-size:0.9rem; text-align:left; margin-top:5px;"><strong>Endereço:</strong><br>${order.endereco_destino || 'Retirada no Balcão'}</p>
+            printOrder: (order) => {
+                const store = App.state.currentStore || {};
+                
+                // CORREÇÃO DO CÁLCULO (1.00 virando 0.67):
+                // Como você salva 10% de taxa no finalizeCart, devemos dividir por 0.10 para recuperar o total.
+                const totalCalculado = (order.taxa_servico / 0.10); 
 
-            <hr style="border-top: 1px dashed black;"><br>
-            <div style="text-align: left;"><br>
-                <p><strong>Item:</strong> ${order.products?.nome}</p><br>
-                <p><strong>Valor:</strong> R$ ${(order.taxa_servico/0.15).toFixed(2)}</p><br>
-            </div><br>
-            <hr style="border-top: 1px dashed black;"><br>
-            <h3>TOTAL: R$ ${(order.taxa_servico/0.15).toFixed(2)}</h3><br>
-            <p style="font-size: 0.8rem;">Obrigado pela preferência!</p><br>
-        </div><br>
-    `;
-    const area = document.getElementById('printable-area');
-    area.innerHTML = content;
-    window.print(); 
-},
+                const content = `<br>
+                    <div style="font-family: monospace; width: 300px; padding: 10px; text-align: center;"><br>
+                        <h3>${store.nome_loja || 'NEXLOG PEDIDOS'}</h3><br>
+                        ${store.cnpj ? `<p style="font-size:0.8rem; margin:0;">CNPJ: ${store.cnpj}</p>` : ''}<br>
+                        ${store.whatsapp ? `<p style="font-size:0.8rem; margin:0;">Tel: ${store.whatsapp}</p>` : ''}<br>
+                        <p style="margin-top:5px; border-bottom: 1px dashed black; padding-bottom:5px;">${new Date().toLocaleString()}</p><br>
+                        <p><strong>Pedido #${order.id}</strong></p><br>
+                        <p>Cliente: ${order.profiles?.nome_completo}</p><br>
+                        
+                        <p style="font-size:0.9rem; text-align:left; margin-top:5px;"><strong>Endereço:</strong><br>${order.endereco_destino || 'Retirada no Balcão'}</p>
+
+                        <p style="font-size:0.9rem; text-align:left; margin-top:5px;"><strong>Pagamento:</strong><br>Online / Pix (App)</p>
+
+                        <hr style="border-top: 1px dashed black;"><br>
+                        <div style="text-align: left;"><br>
+                            <p><strong>Item:</strong> ${order.products?.nome}</p><br>
+                            <p><strong>Valor:</strong> R$ ${totalCalculado.toFixed(2)}</p><br>
+                        </div><br>
+                        <hr style="border-top: 1px dashed black;"><br>
+                        <h3>TOTAL: R$ ${totalCalculado.toFixed(2)}</h3><br>
+                        <p style="font-size: 0.8rem;">Obrigado pela preferência!</p><br>
+                    </div><br>
+                `;
+                const area = document.getElementById('printable-area');
+                area.innerHTML = content;
+                window.print(); 
+            },
                 createCoupon: async () => {
                     const code = document.getElementById('new-coupon-code').value.toUpperCase().trim();
                     const percent = parseInt(document.getElementById('new-coupon-percent').value);
@@ -2507,15 +2513,36 @@
                       const content = `<div style="font-family: monospace; width: 300px; padding: 0 10px;"><br><h3 style="text-align:center; margin:0;">CONFERÊNCIA</h3><p style="text-align:center; margin:5px 0;">${mesa}</p><p style="text-align:center; font-size:0.8rem;">${new Date().toLocaleString()}</p><hr style="border-top: 1px dashed black;">${itemsHtml}<hr style="border-top: 1px dashed black;"><p style="text-align:center; font-size:0.8rem;">* Não vale como documento fiscal *</p><br><br></div>`;
                       const area = document.getElementById('printable-area'); area.innerHTML = content; window.print();
                 },
-                sendToKitchen: () => {
+              sendToKitchen: () => {
                     const itemsHtml = document.getElementById('comanda-items-list').innerHTML;
                     const mesa = document.getElementById('comanda-title').innerText;
-                    const content = `<div style="font-family: monospace; width: 300px; padding: 0 10px;"><br><h3 style="text-align:center; margin:0;">PEDIDO COZINHA</h3><p style="text-align:center; font-size:1.2rem; font-weight:bold; margin:5px 0;">${mesa}</p><p style="text-align:center;">${new Date().toLocaleTimeString()}</p><hr style="border-top: 2px solid black;"><div style="font-size:1.1rem; font-weight:bold;">${itemsHtml}</div><hr style="border-top: 2px solid black;"><br></div>`;
-                    const area = document.getElementById('printable-area'); area.innerHTML = content; window.print();
+                    
+                    // LAYOUT DE IMPRESSÃO DA COZINHA AJUSTADO
+                    const content = `
+                        <div style="font-family: monospace; width: 300px; padding: 0 10px;">
+                            <br>
+                            <h3 style="text-align:center; margin:0;">PEDIDO COZINHA</h3>
+                            
+                            <div style="border: 2px solid black; margin: 10px 0; padding: 5px;">
+                                <p style="text-align:center; font-size:1.5rem; font-weight:800; margin:0;">${mesa.toUpperCase()}</p>
+                            </div>
+
+                            <p style="text-align:center;">${new Date().toLocaleTimeString()}</p>
+                            <hr style="border-top: 2px solid black;">
+                            <div style="font-size:1.1rem; font-weight:bold;">
+                                ${itemsHtml}
+                            </div>
+                            <hr style="border-top: 2px solid black;">
+                            <br>
+                        </div>`;
+                        
+                    const area = document.getElementById('printable-area'); 
+                    area.innerHTML = content; 
+                    window.print();
+                    
                     document.getElementById('comanda-modal').style.display = 'none';
                     App.utils.toast("Enviado para cozinha!", "success");
                 }
-            },
             
             chat: {
                 open: async (storeId, clientId = null) => {
