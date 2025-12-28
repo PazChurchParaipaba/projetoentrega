@@ -1169,7 +1169,7 @@
                 }
             },
 
-            auth: {
+          auth: {
                 switchView: (view) => {
                     ['login', 'roles', 'register', 'recover'].forEach(v => document.getElementById(`auth-state-${v}`).style.display = 'none');
                     document.getElementById(`auth-state-${view}`).style.display = 'block';
@@ -1180,8 +1180,24 @@
                     App.auth.switchView('register');
                     const container = document.getElementById('reg-dynamic-fields');
                     let html = '';
+                    
                     if(role === 'loja_admin') {
-                        html = `<div class="input-wrapper"><label>Nome da Loja</label><input id="reg-store-name" class="input-field" placeholder="Ex: NexLog Center"></div><div class="input-wrapper"><label>WhatsApp da Loja</label><input id="reg-whatsapp" class="input-field" placeholder="(00) 00000-0000"></div><div class="input-wrapper"><label>CNPJ</label><input id="reg-cnpj" class="input-field" placeholder="00.000.000/0000-00"></div><div class="input-wrapper" style="border: 2px dashed var(--primary); padding: 10px; border-radius: 8px; background: var(--info-bg);"><label style="color:var(--primary)">🔑 Token de Autorização</label><input id="reg-token" class="input-field" placeholder="Código fornecido pelo Admin"><p class="text-xs text-muted">Cadastro restrito. Insira sua matrícula/token.</p></div>`;
+                        html = `
+                            <div class="input-wrapper"><label>Nome da Loja</label><input id="reg-store-name" class="input-field" placeholder="Ex: NexLog Center"></div>
+                            <div class="input-wrapper"><label>Ramo da Loja</label>
+                                <select id="reg-store-type" class="input-field">
+                                    <option value="Restaurante">Restaurante/Bebidas</option>
+                                    <option value="Roupas">Roupas/Varejo</option>
+                                    <option value="Serviços">Prestação de Serviços</option>
+                                    <option value="Outros">Outros</option>
+                                </select>
+                            </div>
+                            <div class="input-wrapper"><label>WhatsApp da Loja</label><input id="reg-whatsapp" class="input-field" placeholder="(00) 00000-0000"></div>
+                            <div class="input-wrapper"><label>CNPJ</label><input id="reg-cnpj" class="input-field" placeholder="00.000.000/0000-00"></div>
+                        `;
+                    } else if (role === 'cliente') {
+                         // AGORA PEDE O WHATSAPP DO CLIENTE TAMBÉM
+                         html = `<div class="input-wrapper"><label>Seu WhatsApp</label><input id="reg-whatsapp-client" class="input-field" placeholder="(00) 00000-0000"></div>`;
                     } else if (role === 'motorista' || role === 'montador') {
                         html = `<div class="input-wrapper"><label>CPF</label><input id="reg-cpf" class="input-field" placeholder="000.000.000-00"></div><div class="input-wrapper"><label>Sua Chave Pix (Para Receber)</label><input id="reg-pix" class="input-field" placeholder="Email, CPF ou Aleatória"></div><div class="camera-container" id="cam-box"><video id="cam-video" autoplay playsinline></video><div class="camera-overlay">Selfie com capacete (validação facial)</div></div><div id="verified-msg" style="display:none; color:var(--success); font-weight:bold; margin-bottom:1rem;">✅ Identidade Confirmada</div><button class="btn btn-secondary btn-full" id="btn-cam" onclick="App.auth.runCamera()">Validar Identidade (Obrigatório)</button>`;
                     } else {
@@ -1216,31 +1232,40 @@
                     if(!email || !pass || !name) return App.utils.toast('Preencha os campos corretamente', 'error');
                     
                     try {
-                        if (role === 'loja_admin') {
-                            const token = document.getElementById('reg-token').value.trim();
-                            if (!token) throw new Error("Token de autorização é obrigatório");
-                            const { error: tokenError } = await _sb.rpc('validate_store_token', { token_input: token });
-                            if (tokenError) throw new Error(tokenError.message);
-                        }
+                        // Captura o WhatsApp do cliente se for cliente
+                        const wppClient = document.getElementById('reg-whatsapp-client')?.value || null;
+
                         const { data: newUser, error } = await _sb.from('profiles').insert({
                             nome_completo: name, email: email, password: pass, role: role,
                             cpf: document.getElementById('reg-cpf')?.value || null,
                             cnpj: document.getElementById('reg-cnpj')?.value || null,
                             chave_pix: document.getElementById('reg-pix')?.value || null, 
+                            whatsapp: wppClient, // Salva o zap do cliente na tabela profiles
                             is_verified: document.getElementById('verified-msg')?.style.display === 'block'
                         }).select().single();
+                        
                         if(error) throw error;
+                        
                         if(role === 'loja_admin') {
                             const storeName = document.getElementById('reg-store-name').value.trim();
-                            const whatsApp = document.getElementById('reg-whatsapp').value.trim();
+                            const storeType = document.getElementById('reg-store-type').value; // Pega o Ramo selecionado
+                            const whatsAppStore = document.getElementById('reg-whatsapp').value.trim();
                             const cnpj = document.getElementById('reg-cnpj').value.trim();
-                            const { error: storeError } = await _sb.from('stores').insert({ admin_id: newUser.id, nome_loja: storeName || "Minha Loja Nova", cnpj: cnpj, whatsapp: whatsApp });
+                            
+                            const { error: storeError } = await _sb.from('stores').insert({ 
+                                admin_id: newUser.id, 
+                                nome_loja: storeName || "Minha Loja Nova", 
+                                tipo_loja: storeType, // Salva o Ramo no banco
+                                cnpj: cnpj, 
+                                whatsapp: whatsAppStore 
+                            });
+                            
                             if(storeError) {
                                 alert("Usuário criado, mas erro ao criar loja: " + storeError.message);
                                 return; 
                             }
                         }
-                        if (document.getElementById('reg-token')) document.getElementById('reg-token').value = "";
+                        
                         App.utils.toast('Cadastro realizado com sucesso!', 'success');
                         App.auth.switchView('login');
                     } catch(e) { App.utils.toast('Erro: ' + e.message, 'error'); }
@@ -2719,7 +2744,7 @@
                 init: async () => {
                     const myId = App.state.user.id;
                     
-                    // 1. Busca os pedidos no banco
+                    // 1. Busca os pedidos no banco (ADICIONEI 'whatsapp' no select de profiles)
                     const { data: job, error: jobError } = await _sb.from('orders')
                         .select('*, products(nome, categoria), profiles:cliente_id(nome_completo, whatsapp)')
                         .or(`status.eq.aguardando_prestador,status.eq.em_rota`)
@@ -2732,23 +2757,22 @@
 
                     if(job && job.length > 0) {
                         for(let j of job) {
-                            // 2. Busca dados da loja de forma segura (maybeSingle evita o crash 406)
+                            // 2. Busca dados da loja
                             const { data: store, error: storeError } = await _sb
                                 .from('stores')
                                 .select('parceiro_exclusivo_id')
                                 .eq('id', j.store_id)
                                 .maybeSingle();
 
-                            if (storeError) {
-                                console.log("Erro ao ler loja do pedido:", j.id);
-                                continue; 
-                            }
+                            if (storeError) { console.log("Erro loja:", j.id); continue; }
 
-                            // 3. Verifica Exclusividade
-                            // Se a loja tem um parceiro definido e NÃO é você, pula este pedido
+                            // Variável para saber se este motorista é exclusivo desta loja
+                            const isExclusive = (store && store.parceiro_exclusivo_id === myId);
+
+                            // 3. Verifica Exclusividade (Filtro)
                             if(store && store.parceiro_exclusivo_id) {
-                                if(store.parceiro_exclusivo_id !== myId) {
-                                    console.log(`Pedido ${j.id} oculto. Exclusivo para outro ID.`);
+                                if(!isExclusive) {
+                                    // Se tem dono e não sou eu, esconde
                                     continue; 
                                 }
                             }
@@ -2761,7 +2785,18 @@
                                 actionBtn = `<button class="btn btn-info btn-sm btn-full" onclick="App.map.open('${j.id}', true, '${j.endereco_destino}')">Continuar Rota</button>`;
                             }
 
-                            // 5. Gera o HTML se tiver ação disponível
+                            // 5. Lógica de Exibição da Comissão e WhatsApp
+                            // Se for exclusivo, NÃO mostra o valor. Se for livre, mostra.
+                            let earningsHtml = isExclusive 
+                                ? `<div style="font-size:0.8rem; color:var(--info-dark); margin-bottom:5px;"><i class="ri-briefcase-line"></i> Entrega da Loja (Fixo/Salário)</div>`
+                                : `<div style="font-weight:bold; color:var(--success-dark); margin-bottom:5px;">Ganho: R$ ${(j.taxa_servico || 0).toFixed(2)}</div>`;
+                            
+                            // Mostra WhatsApp do Cliente se disponível
+                            let clientWppHtml = '';
+                            if(j.profiles?.whatsapp) {
+                                clientWppHtml = `<a href="https://wa.me/55${j.profiles.whatsapp.replace(/\D/g,'')}" target="_blank" class="btn btn-sm btn-secondary" style="margin-top:5px; text-decoration:none; display:inline-flex;"><i class="ri-whatsapp-line"></i> Falar com Cliente</a>`;
+                            }
+
                             if(actionBtn) {
                                 html += `
                                 <div class="card" style="margin-bottom:1rem">
@@ -2770,10 +2805,11 @@
                                         <span class="badge status-${j.status}">${j.status}</span>
                                     </div>
                                     <p class="text-sm">Destino: ${j.endereco_destino}</p>
-                                    <div style="font-weight:bold; color:var(--success-dark); margin-bottom:5px;">
-                                        Ganho: R$ ${(j.taxa_servico || 0).toFixed(2)}
-                                    </div>
-                                    ${actionBtn}
+                                    
+                                    ${earningsHtml}
+                                    ${clientWppHtml}
+                                    
+                                    <div style="margin-top:10px;">${actionBtn}</div>
                                 </div>`;
                             }
                         }
@@ -2781,7 +2817,6 @@
                     
                     container.innerHTML = html || '<div style="text-align:center; padding:20px; color:#aaa;">Nenhum serviço disponível no momento.</div>';
                     
-                    // Atualiza informações do perfil na tela
                     if(document.getElementById('provider-role-label')) {
                         document.getElementById('provider-role-label').innerText = App.state.profile.role ? App.state.profile.role.toUpperCase() : 'PARCEIRO';
                     }
@@ -2789,8 +2824,6 @@
                         document.getElementById('provider-pix-display').innerText = App.state.profile.chave_pix || 'Não cadastrada';
                     }
                 },
-                
-                // Mantenha as outras funções (updatePix, acceptJob) abaixo exatamente como estavam...
                 updatePix: async () => {
                     const pix = prompt("Informe sua chave Pix para recebimento:");
                     if(pix) {
@@ -2804,27 +2837,30 @@
                     await _sb.from('orders').update({ status: 'em_rota', prestador_id: App.state.user.id }).eq('id', id);
                     App.utils.toast("Aceito! Iniciando navegação...", "success");
                     const { data } = await _sb.from('orders').select('endereco_destino').eq('id', id).single();
-                    
                     if (App.map) {
                         App.map.open(id, true, data.endereco_destino);
                     } else {
-                        alert("Módulo de mapa não encontrado. Atualize a página.");
+                        alert("Módulo de mapa não encontrado.");
                     }
                     App.provider.init();
                 }
             }, // Fim do Provider (VÍRGULA AQUI se adicionar o map, ou sem vírgula se for o último)
 
             // --- ADICIONEI O OBJETO MAP QUE ESTAVA FALTANDO PARA EVITAR ERRO DE CRASH ---
-            map: {
+         map: {
                 open: (orderId, isDriver, address) => {
+                    // Guarda o ID do pedido que está sendo visualizado no mapa
+                    App.state.activeOrder = orderId; 
+                    
                     document.getElementById('map-modal').style.display = 'flex';
                     document.getElementById('map-dest-address').innerText = address;
-                    // Lógica simples de fallback pois o código do mapa original sumiu
+                    
                     if(!App.state.mapInstance) {
                         App.state.mapInstance = L.map('map').setView([-23.5505, -46.6333], 13);
                         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(App.state.mapInstance);
                     }
                     setTimeout(() => App.state.mapInstance.invalidateSize(), 500);
+                    
                     if(isDriver) {
                         document.getElementById('btn-start-gps').style.display = 'block';
                         document.getElementById('btn-end-gps').style.display = 'block';
@@ -2839,14 +2875,24 @@
                     window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`, '_blank');
                 },
                 finishDelivery: async () => {
-                    if(confirm("Finalizar entrega?")) {
-                        // Lógica de finalização aqui...
-                        document.getElementById('map-modal').style.display = 'none';
-                        App.utils.toast("Entrega Finalizada", "success");
+                    if(confirm("Confirmar que a entrega foi realizada?")) {
+                        const oid = App.state.activeOrder;
+                        if(!oid) return alert("Erro: Pedido não identificado.");
+
+                        // CORREÇÃO: Atualiza o status no banco de dados
+                        const { error } = await _sb.from('orders').update({ status: 'concluido' }).eq('id', oid);
+                        
+                        if(error) {
+                            alert("Erro ao finalizar: " + error.message);
+                        } else {
+                            document.getElementById('map-modal').style.display = 'none';
+                            App.utils.toast("Entrega Finalizada com Sucesso!", "success");
+                            // Atualiza a lista
+                            if(App.provider && App.provider.init) App.provider.init();
+                        }
                     }
                 }
-            } 
-        }; // <--- FIM DO APP (PONTO E VÍRGULA AQUI)
+            }// <--- FIM DO APP (PONTO E VÍRGULA AQUI)
 
         window.addEventListener('load', App.init);
     </script>
