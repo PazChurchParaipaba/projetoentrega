@@ -1715,14 +1715,32 @@
                         App.store.init();
                     }
                 },
-                linkPartner: async () => {
+               linkPartner: async () => {
                     const email = document.getElementById('partner-email-input').value.trim();
                     if(!email) return App.utils.toast("Digite o email do motorista", "error");
-                    const { data: user } = await _sb.from('profiles').select('id').eq('email', email).single();
-                    if(!user) return App.utils.toast("Motorista não encontrado no sistema.", "error");
+                    
+                    // CORREÇÃO: Usar .maybeSingle() em vez de .single()
+                    // Também puxei o 'nome_completo' para mostrar na tela depois
+                    const { data: user, error } = await _sb
+                        .from('profiles')
+                        .select('id, nome_completo')
+                        .eq('email', email)
+                        .maybeSingle(); 
+
+                    if (error) {
+                        console.log(error); // Para você ver no F12 se der erro
+                        return App.utils.toast("Erro ao buscar. Verifique as regras do banco.", "error");
+                    }
+
+                    if(!user) {
+                        return App.utils.toast("Motorista não encontrado no sistema.", "error");
+                    }
+
                     await _sb.from('stores').update({ parceiro_exclusivo_id: user.id }).eq('id', App.state.storeId);
+                    
+                    // Atualiza o texto na tela na hora, sem precisar recarregar tudo com init()
+                    document.getElementById('active-partner-display').innerText = `Vinculado: ${user.nome_completo}`;
                     App.utils.toast("Parceiro vinculado com sucesso!", "success");
-                    App.store.init();
                 },
                 dispatch: async (id) => {
                     await _sb.from('orders').update({ status: 'aguardando_prestador', data_agendada: new Date().toISOString() }).eq('id', id);
