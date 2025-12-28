@@ -2847,7 +2847,7 @@
             }, // Fim do Provider (VÍRGULA AQUI se adicionar o map, ou sem vírgula se for o último)
 
             // --- ADICIONEI O OBJETO MAP QUE ESTAVA FALTANDO PARA EVITAR ERRO DE CRASH ---
-         map: {
+        map: {
                 open: (orderId, isDriver, address) => {
                     // Guarda o ID do pedido que está sendo visualizado no mapa
                     App.state.activeOrder = orderId; 
@@ -2879,7 +2879,7 @@
                         const oid = App.state.activeOrder;
                         if(!oid) return alert("Erro: Pedido não identificado.");
 
-                        // CORREÇÃO: Atualiza o status no banco de dados
+                        // Atualiza o status no banco de dados
                         const { error } = await _sb.from('orders').update({ status: 'concluido' }).eq('id', oid);
                         
                         if(error) {
@@ -2892,8 +2892,10 @@
                         }
                     }
                 }
-            }// <--- FIM DO APP (PONTO E VÍRGULA AQUI)
+            } // Fecha o objeto 'map'
+        }; // <--- ESSA É A CHAVE QUE FALTAVA (Fecha o 'App')
 
+        // Agora o comando window funciona pois o App foi fechado
         window.addEventListener('load', App.init);
     </script>
 </body>
