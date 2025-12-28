@@ -2715,42 +2715,82 @@
                 }
             }, // Fim do Chat (VÍRGULA AQUI)
 
-            provider: {
+           provider: {
                 init: async () => {
-                    const { data: job } = await _sb.from('orders').select('*, products(nome, categoria), profiles:cliente_id(nome_completo, whatsapp)').or(`status.eq.aguardando_prestador,status.eq.em_rota`).order('created_at', { ascending: false });
-                    const myEmail = App.state.profile.email;
+                    const myId = App.state.user.id;
+                    
+                    // 1. Busca os pedidos no banco
+                    const { data: job, error: jobError } = await _sb.from('orders')
+                        .select('*, products(nome, categoria), profiles:cliente_id(nome_completo, whatsapp)')
+                        .or(`status.eq.aguardando_prestador,status.eq.em_rota`)
+                        .order('created_at', { ascending: false });
+
+                    if (jobError) console.error("Erro ao buscar pedidos:", jobError);
+
                     const container = document.getElementById('provider-jobs-list');
-                    const { data: myStores } = await _sb.from('stores').select('id').eq('parceiro_exclusivo_id', App.state.user.id);
-                    const myStoreIds = myStores ? myStores.map(s => s.id) : [];
-
                     let html = '';
-                    if(job) {
-                        for(let j of job) {
-                            const { data: store } = await _sb.from('stores').select('parceiro_exclusivo_id').eq('id', j.store_id).single();
-                            if(store.parceiro_exclusivo_id && store.parceiro_exclusivo_id !== App.state.user.id) continue; 
 
+                    if(job && job.length > 0) {
+                        for(let j of job) {
+                            // 2. Busca dados da loja de forma segura (maybeSingle evita o crash 406)
+                            const { data: store, error: storeError } = await _sb
+                                .from('stores')
+                                .select('parceiro_exclusivo_id')
+                                .eq('id', j.store_id)
+                                .maybeSingle();
+
+                            if (storeError) {
+                                console.log("Erro ao ler loja do pedido:", j.id);
+                                continue; 
+                            }
+
+                            // 3. Verifica Exclusividade
+                            // Se a loja tem um parceiro definido e NÃO é você, pula este pedido
+                            if(store && store.parceiro_exclusivo_id) {
+                                if(store.parceiro_exclusivo_id !== myId) {
+                                    console.log(`Pedido ${j.id} oculto. Exclusivo para outro ID.`);
+                                    continue; 
+                                }
+                            }
+
+                            // 4. Monta o Botão de Ação
                             let actionBtn = '';
                             if(j.status === 'aguardando_prestador') {
                                 actionBtn = `<button class="btn btn-success btn-sm btn-full" onclick="App.provider.acceptJob('${j.id}')">Aceitar Corrida/Serviço</button>`;
-                            } else if (j.status === 'em_rota' && j.prestador_id === App.state.user.id) {
+                            } else if (j.status === 'em_rota' && j.prestador_id === myId) {
                                 actionBtn = `<button class="btn btn-info btn-sm btn-full" onclick="App.map.open('${j.id}', true, '${j.endereco_destino}')">Continuar Rota</button>`;
                             }
 
+                            // 5. Gera o HTML se tiver ação disponível
                             if(actionBtn) {
                                 html += `
                                 <div class="card" style="margin-bottom:1rem">
-                                    <div style="display:flex; justify-content:space-between"><strong>${j.products?.nome}</strong><span class="badge status-${j.status}">${j.status}</span></div>
+                                    <div style="display:flex; justify-content:space-between">
+                                        <strong>${j.products?.nome || 'Serviço'}</strong>
+                                        <span class="badge status-${j.status}">${j.status}</span>
+                                    </div>
                                     <p class="text-sm">Destino: ${j.endereco_destino}</p>
-                                    <div style="font-weight:bold; color:var(--success-dark); margin-bottom:5px;">Ganho: R$ ${(j.taxa_servico).toFixed(2)}</div>
+                                    <div style="font-weight:bold; color:var(--success-dark); margin-bottom:5px;">
+                                        Ganho: R$ ${(j.taxa_servico || 0).toFixed(2)}
+                                    </div>
                                     ${actionBtn}
                                 </div>`;
                             }
                         }
                     }
-                    container.innerHTML = html || '<p>Nenhum serviço disponível.</p>';
-                    document.getElementById('provider-role-label').innerText = App.state.profile.role.toUpperCase();
-                    document.getElementById('provider-pix-display').innerText = App.state.profile.chave_pix || 'Não cadastrada';
+                    
+                    container.innerHTML = html || '<div style="text-align:center; padding:20px; color:#aaa;">Nenhum serviço disponível no momento.</div>';
+                    
+                    // Atualiza informações do perfil na tela
+                    if(document.getElementById('provider-role-label')) {
+                        document.getElementById('provider-role-label').innerText = App.state.profile.role ? App.state.profile.role.toUpperCase() : 'PARCEIRO';
+                    }
+                    if(document.getElementById('provider-pix-display')) {
+                        document.getElementById('provider-pix-display').innerText = App.state.profile.chave_pix || 'Não cadastrada';
+                    }
                 },
+                
+                // Mantenha as outras funções (updatePix, acceptJob) abaixo exatamente como estavam...
                 updatePix: async () => {
                     const pix = prompt("Informe sua chave Pix para recebimento:");
                     if(pix) {
