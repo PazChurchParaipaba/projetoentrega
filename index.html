@@ -2556,14 +2556,17 @@
                 }
             },
             
-            waiter: {
+           waiter: {
                 init: async () => {
-                    // CORREÇÃO: Verifica se o usuário é staff de forma segura
+                    // Proteção: Se não tiver usuário logado, para aqui
+                    if (!App.state.user) return;
+
+                    // CORREÇÃO: Busca vínculo com a loja de forma segura
                     const { data: staffData, error } = await _sb
                         .from('store_staff')
                         .select('store_id')
                         .eq('profile_id', App.state.user.id)
-                        .maybeSingle(); // maybeSingle evita travar se não achar
+                        .maybeSingle(); // Usa maybeSingle para não dar erro se não encontrar
 
                     if (error) {
                         console.error("Erro ao buscar staff:", error);
@@ -2571,8 +2574,7 @@
                     }
 
                     if (!staffData) {
-                        // Se não for equipe, apenas ignora (ou dê um alert se preferir)
-                        // return alert("Você não está vinculado a nenhuma equipe.");
+                        // Se não é staff, apenas retorna silenciosamente (ou use alert se preferir)
                         return;
                     }
 
@@ -2649,6 +2651,7 @@
                     const { data: current } = await _sb.from('comandas').select('items').eq('id', App.state.currentComanda).single();
                     let currentItems = current.items || [];
                     
+                    // Pega nome do garçom
                     const garcomName = App.state.profile ? App.state.profile.nome_completo.split(' ')[0] : 'Sistema';
 
                     const existing = currentItems.find(i => i.id === id);
@@ -2723,7 +2726,7 @@
                     document.getElementById('comanda-modal').style.display = 'none';
                     App.utils.toast("Enviado para cozinha!", "success");
                 }
-            } // Fim do objeto waiter// Fim do Waiter (VÍRGULA AQUI)
+            }, // Fim do objeto waiter// Fim do objeto waiter// Fim do Waiter (VÍRGULA AQUI)
 
             chat: {
                 open: async (storeId, clientId = null) => {
