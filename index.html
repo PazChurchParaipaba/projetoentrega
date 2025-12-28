@@ -2414,36 +2414,52 @@
                 }
             },
             
-               waiter: {
+              waiter: {
                 init: async () => {
                     if (!App.state.user) return;
-                    const { data: staffData, error } = await _sb.from('store_staff').select('store_id').eq('profile_id', App.state.user.id).maybeSingle();
-                    if (error || !staffData) return;
+                    
+                    // --- CORREÇÃO DO ERRO DE SINTAXE AQUI ---
+                    const res = await _sb
+                        .from('store_staff')
+                        .select('store_id')
+                        .eq('profile_id', App.state.user.id)
+                        .maybeSingle();
+
+                    const staffData = res.data;
+                    const error = res.error;
+                    // ----------------------------------------
+
+                    if (error) {
+                        console.error("Erro staff:", error);
+                        return;
+                    }
+                    
+                    // Se não for staff, para aqui sem travar o app
+                    if (!staffData) return;
+
                     App.state.storeId = staffData.store_id;
-                    if (App.waiter.loadTables) App.waiter.loadTables();
+                    
+                    if(App.waiter.loadTables) App.waiter.loadTables(); 
+                    
                     _sb.channel('waiter-updates')
-                        .on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: `store_id=eq.${App.state.storeId}` }, () => {
-                            if (App.waiter.loadTables) App.waiter.loadTables();
-                        })
-                        .subscribe();
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: `store_id=eq.${App.state.storeId}` }, 
+                    () => { if(App.waiter.loadTables) App.waiter.loadTables(); })
+                    .subscribe();
                 },
                 loadTables: async () => {
-                    const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', { ascending: true });
+                    const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', {ascending: true});
                     const container = document.getElementById('comanda-list-container');
                     if (data) {
                         container.innerHTML = data.map(c => `
                             <div class="comanda-card bg-${c.status}" onclick="App.waiter.openComanda('${c.id}', '${c.numero}')">
-                                <div class="comanda-corner"></div>
-                                <div class="comanda-dot"></div>
-                                <div style="font-size:1.5rem;">${c.numero}</div>
-                                <div class="text-xs" style="text-transform:uppercase;">${c.status}</div>
-                            </div>
-                        `).join('');
+                                <div class="comanda-corner"></div><div class="comanda-dot"></div>
+                                <div style="font-size:1.5rem;">${c.numero}</div><div class="text-xs" style="text-transform:uppercase;">${c.status}</div>
+                            </div>`).join('');
                     }
                 },
                 openComanda: async (id, numero) => {
                     App.state.currentComanda = id;
-                    document.getElementById('comanda-title').innerText = `Mesa ${numero}`;
+                    document.getElementById('comanda-title').innerText = `Mesa ${numero}`; 
                     document.getElementById('waiter-prod-search').value = "";
                     document.getElementById('waiter-search-results').style.display = 'none';
                     document.getElementById('comanda-modal').style.display = 'flex';
@@ -2452,7 +2468,7 @@
                 loadItems: async (comandaId) => {
                     const { data } = await _sb.from('comandas').select('items').eq('id', comandaId).single();
                     const list = document.getElementById('comanda-items-list');
-                    if (data && data.items && data.items.length > 0) {
+                    if(data && data.items && data.items.length > 0) {
                         list.innerHTML = data.items.map(item => `
                             <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px;">
                                 <div>
@@ -2460,17 +2476,16 @@
                                     <div class="text-xs text-muted">Garçom: ${item.garcom || 'Geral'}</div>
                                 </div>
                                 <span>R$ ${(item.price * item.qtd).toFixed(2)}</span>
-                            </div>
-                        `).join('');
+                            </div>`).join('');
                     } else {
                         list.innerHTML = '<p class="text-sm text-muted text-center" style="padding:10px">Nenhum item lançado.</p>';
                     }
                 },
                 addItem: async () => {
-                    const term = document.getElementById('waiter-prod-search').value.trim();
-                    if (!term) return alert("Digite o nome ou código");
+                    const term = document.getElementById('waiter-prod-search').value;
+                    if(!term) return alert("Digite o nome ou código");
                     App.utils.toast("Buscando...", "info");
-
+                    
                     const { data } = await _sb.from('products')
                         .select('*')
                         .eq('store_id', App.state.storeId)
@@ -2478,14 +2493,12 @@
                         .limit(5);
 
                     const resultBox = document.getElementById('waiter-search-results');
-                    if (data && data.length > 0) {
+                    if(data && data.length > 0) {
                         resultBox.style.display = 'block';
                         resultBox.innerHTML = data.map(p => `
-                            <div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; background:#fff;" 
-                                 onclick="App.waiter.confirmAdd('${p.id}', '${p.nome.replace(/'/g, "\\'")}', ${p.preco})">
-                                <strong>${p.codigo_cardapio ? '[' + p.codigo_cardapio + '] ' : ''}${p.nome}</strong> - R$ ${p.preco.toFixed(2)}
-                            </div>
-                        `).join('');
+                            <div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; background:#fff;" onclick="App.waiter.confirmAdd('${p.id}', '${p.nome}', ${p.preco})">
+                                <strong>${p.codigo_cardapio ? '['+p.codigo_cardapio+'] ' : ''}${p.nome}</strong> - R$ ${p.preco.toFixed(2)}
+                            </div>`).join('');
                     } else {
                         alert("Produto não encontrado");
                         resultBox.style.display = 'none';
@@ -2493,22 +2506,23 @@
                 },
                 confirmAdd: async (id, nome, price) => {
                     const { data: current } = await _sb.from('comandas').select('items').eq('id', App.state.currentComanda).single();
-                    let currentItems = current?.items || [];
+                    let currentItems = current.items || [];
+                    
                     const garcomName = App.state.profile ? App.state.profile.nome_completo.split(' ')[0] : 'Sistema';
 
                     const existing = currentItems.find(i => i.id === id);
-                    if (existing) {
+                    if(existing) {
                         existing.qtd += 1;
-                        existing.garcom = garcomName;
+                        existing.garcom = garcomName; 
                     } else {
-                        currentItems.push({ id, nome, price, qtd: 1, garcom: garcomName });
+                        currentItems.push({ id: id, nome: nome, price: price, qtd: 1, garcom: garcomName });
                     }
 
                     await _sb.from('comandas').update({ items: currentItems, status: 'aberta' }).eq('id', App.state.currentComanda);
-
+                    
                     document.getElementById('waiter-search-results').style.display = 'none';
                     document.getElementById('waiter-prod-search').value = '';
-
+                    
                     App.utils.toast(`Adicionado: ${nome}`, 'success');
                     App.waiter.loadItems(App.state.currentComanda);
                     App.waiter.loadTables();
@@ -2516,6 +2530,7 @@
                 printBill: () => {
                     const items = App.state.currentComandaItems || [];
                     const mesa = document.getElementById('comanda-title').innerText;
+                    
                     const itemsHtml = items.map(item => `
                         <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #000; padding:4px 0;">
                             <div style="display:flex; flex-direction:column;">
@@ -2525,10 +2540,13 @@
                             <span style="font-weight:bold;">R$ ${(item.price * item.qtd).toFixed(2)}</span>
                         </div>
                     `).join('');
+
                     const total = items.reduce((acc, i) => acc + (i.price * i.qtd), 0);
+
                     const content = `
                         <div style="font-family: monospace; width: 300px; padding: 0 5px;">
-                            <br><h3 style="text-align:center; margin:0;">CONFERÊNCIA</h3>
+                            <br>
+                            <h3 style="text-align:center; margin:0;">CONFERÊNCIA</h3>
                             <h2 style="text-align:center; margin:5px 0;">${mesa}</h2>
                             <p style="text-align:center; font-size:0.8rem; margin-bottom:10px;">${new Date().toLocaleString()}</p>
                             <hr style="border-top: 1px dashed black;">
@@ -2539,7 +2557,9 @@
                             <br><br>
                         </div>
                     `;
-                    document.getElementById('printable-area').innerHTML = content;
+                    
+                    const area = document.getElementById('printable-area');
+                    area.innerHTML = content;
                     window.print();
                 },
                 sendToKitchen: () => {
@@ -2555,9 +2575,9 @@
                             <hr style="border-top: 2px solid black;">
                             <div style="font-size:1.1rem; font-weight:bold;">${itemsHtml}</div>
                             <hr style="border-top: 2px solid black;"><br>
-                        </div>
-                    `;
-                    document.getElementById('printable-area').innerHTML = content;
+                        </div>`;
+                    const area = document.getElementById('printable-area');
+                    area.innerHTML = content;
                     window.print();
                     document.getElementById('comanda-modal').style.display = 'none';
                     App.utils.toast("Enviado para cozinha!", "success");
