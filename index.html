@@ -2734,15 +2734,17 @@
                         App.utils.toast("Pix atualizado!", "success");
                     }
                 },
-                acceptJob: async (id) => {
+             acceptJob: async (id) => {
                     await _sb.from('orders').update({ status: 'em_rota', prestador_id: App.state.user.id }).eq('id', id);
                     App.utils.toast("Aceito! Iniciando navegação...", "success");
                     const { data } = await _sb.from('orders').select('endereco_destino').eq('id', id).single();
                     App.map.open(id, true, data.endereco_destino);
                     App.provider.init();
                 }
-            }
-        },
+            } // Fecha o objeto 'provider'
+        }; // <--- FECHA O 'App' COM PONTO E VÍRGULA. O 'App' ACABOU AQUI.
+
+        // Agora, fora do App, o comando funciona:
         window.addEventListener('load', App.init);
     </script>
 </body>
