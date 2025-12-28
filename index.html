@@ -2414,19 +2414,19 @@
                 }
             },
             
-       waiter: {
+                 waiter: {
                 init: async () => {
                     if (!App.state.user) return;
-                    // Proteção maybeSingle
                     const { data: staffData, error } = await _sb.from('store_staff').select('store_id').eq('profile_id', App.state.user.id).maybeSingle();
                     if (error || !staffData) return;
-
-                    App.state.storeId = staffData.store_id; 
-                    if(App.waiter.loadTables) App.waiter.loadTables(); 
-                    _sb.channel('waiter-updates').on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: `store_id=eq.${App.state.storeId}` }, () => { if(App.waiter.loadTables) App.waiter.loadTables(); }).subscribe();
+                    App.state.storeId = staffData.store_id;
+                    if (App.waiter.loadTables) App.waiter.loadTables();
+                    _sb.channel('waiter-updates').on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: `store_id=eq.${App.state.storeId}` }, () => {
+                        if (App.waiter.loadTables) App.waiter.loadTables();
+                    }).subscribe();
                 },
                 loadTables: async () => {
-                    const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', {ascending: true});
+                    const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', { ascending: true });
                     const container = document.getElementById('comanda-list-container');
                     if (data) {
                         container.innerHTML = data.map(c => `
@@ -2438,7 +2438,7 @@
                 },
                 openComanda: async (id, numero) => {
                     App.state.currentComanda = id;
-                    document.getElementById('comanda-title').innerText = `Mesa ${numero}`; 
+                    document.getElementById('comanda-title').innerText = `Mesa ${numero}`;
                     document.getElementById('waiter-prod-search').value = "";
                     document.getElementById('waiter-search-results').style.display = 'none';
                     document.getElementById('comanda-modal').style.display = 'flex';
@@ -2447,7 +2447,7 @@
                 loadItems: async (comandaId) => {
                     const { data } = await _sb.from('comandas').select('items').eq('id', comandaId).single();
                     const list = document.getElementById('comanda-items-list');
-                    if(data && data.items && data.items.length > 0) {
+                    if (data && data.items && data.items.length > 0) {
                         list.innerHTML = data.items.map(item => `
                             <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px;">
                                 <div>
@@ -2462,17 +2462,16 @@
                 },
                 addItem: async () => {
                     const term = document.getElementById('waiter-prod-search').value;
-                    if(!term) return alert("Digite o nome ou código");
+                    if (!term) return alert("Digite o nome ou código");
                     App.utils.toast("Buscando...", "info");
-                    
-                    // Busca por Nome OU Código
+
                     const { data } = await _sb.from('products').select('*').eq('store_id', App.state.storeId).or(`nome.ilike.%${term}%,codigo_cardapio.eq.${term}`).limit(5);
                     const resultBox = document.getElementById('waiter-search-results');
-                    if(data && data.length > 0) {
+                    if (data && data.length > 0) {
                         resultBox.style.display = 'block';
                         resultBox.innerHTML = data.map(p => `
                         <div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; background:#fff;" onclick="App.waiter.confirmAdd('${p.id}', '${p.nome}', ${p.preco})">
-                            <strong>${p.codigo_cardapio ? '['+p.codigo_cardapio+'] ' : ''}${p.nome}</strong> - R$ ${p.preco.toFixed(2)}
+                            <strong>${p.codigo_cardapio ? '[' + p.codigo_cardapio + '] ' : ''}${p.nome}</strong> - R$ ${p.preco.toFixed(2)}
                         </div>`).join('');
                     } else {
                         alert("Produto não encontrado");
@@ -2483,20 +2482,18 @@
                     const { data: current } = await _sb.from('comandas').select('items').eq('id', App.state.currentComanda).single();
                     let currentItems = current.items || [];
                     const garcomName = App.state.profile ? App.state.profile.nome_completo.split(' ')[0] : 'Sistema';
-
                     const existing = currentItems.find(i => i.id === id);
-                    if(existing) {
+                    if (existing) {
                         existing.qtd += 1;
-                        existing.garcom = garcomName; 
+                        existing.garcom = garcomName;
                     } else {
                         currentItems.push({ id: id, nome: nome, price: price, qtd: 1, garcom: garcomName });
                     }
-
                     await _sb.from('comandas').update({ items: currentItems, status: 'aberta' }).eq('id', App.state.currentComanda);
-                    
+
                     document.getElementById('waiter-search-results').style.display = 'none';
                     document.getElementById('waiter-prod-search').value = '';
-                    
+
                     App.utils.toast(`Adicionado: ${nome}`, 'success');
                     App.waiter.loadItems(App.state.currentComanda);
                     App.waiter.loadTables();
@@ -2504,7 +2501,7 @@
                 printBill: () => {
                     const items = App.state.currentComandaItems || [];
                     const mesa = document.getElementById('comanda-title').innerText;
-                    
+
                     const itemsHtml = items.map(item => `
                         <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #000; padding:4px 0;">
                             <div style="display:flex; flex-direction:column;">
@@ -2514,9 +2511,7 @@
                             <span style="font-weight:bold;">R$ ${(item.price * item.qtd).toFixed(2)}</span>
                         </div>
                     `).join('');
-
                     const total = items.reduce((acc, i) => acc + (i.price * i.qtd), 0);
-
                     const content = `
                         <div style="font-family: monospace; width: 300px; padding: 0 5px;">
                             <br><h3 style="text-align:center; margin:0;">CONFERÊNCIA</h3>
@@ -2544,39 +2539,37 @@
                     document.getElementById('comanda-modal').style.display = 'none';
                     App.utils.toast("Enviado para cozinha!", "success");
                 }
-            }, // Vírgula importante aqui para separar waiter de chat
-
+            },
             chat: {
                 open: async (storeId, clientId = null) => {
-                    if(!App.state.user) return App.router.go('auth');
+                    if (!App.state.user) return App.router.go('auth');
                     App.state.activeChatStore = storeId;
                     App.state.activeChatClient = clientId || App.state.user.id;
                     document.getElementById('chat-modal').style.display = 'flex';
                     const msgs = document.getElementById('chat-msgs');
                     msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Carregando...</div>';
-                    
+
                     const { data } = await _sb.from('messages').select('*').eq('store_id', storeId).eq('client_id', App.state.activeChatClient).order('created_at', { ascending: true });
                     msgs.innerHTML = '';
-                    if(data && data.length > 0) data.forEach(m => App.chat.renderMsg(m));
+                    if (data && data.length > 0) data.forEach(m => App.chat.renderMsg(m));
                     else msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Inicie a conversa...</div>';
-
-                    if(App.state.chatSub) _sb.removeChannel(App.state.chatSub);
+                    if (App.state.chatSub) _sb.removeChannel(App.state.chatSub);
                     App.state.chatSub = _sb.channel('public:messages')
                         .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `store_id=eq.${storeId}` }, (payload) => {
-                            if(payload.new.client_id === App.state.activeChatClient) {
+                            if (payload.new.client_id === App.state.activeChatClient) {
                                 if (payload.eventType === 'INSERT') {
-                                    if(msgs.innerText.includes("Inicie a conversa")) msgs.innerHTML = "";
+                                    if (msgs.innerText.includes("Inicie a conversa")) msgs.innerHTML = "";
                                     App.chat.renderMsg(payload.new);
                                 } else if (payload.eventType === 'UPDATE') {
                                     const msgDiv = document.getElementById(`msg-${payload.new.id}`);
-                                    if(msgDiv) {
+                                    if (msgDiv) {
                                         if (payload.new.is_deleted) msgDiv.innerHTML = `<span class="chat-deleted"><i class="ri-prohibited-line"></i> Mensagem apagada</span>`;
                                         else {
                                             let contentHtml = payload.new.content;
                                             if (payload.new.is_edited) contentHtml += `<span class="chat-edited-label"><i class="ri-pencil-line"></i> Editada</span>`;
                                             if (msgDiv.classList.contains('mine')) {
-                                                 const encodedContent = encodeURIComponent(payload.new.content);
-                                                 contentHtml += `<button class="chat-options-btn" onclick="App.chat.showOptions(${payload.new.id}, '${encodedContent}', ${payload.new.is_edited})"><i class="ri-more-2-fill"></i></button>`;
+                                                const encodedContent = encodeURIComponent(payload.new.content);
+                                                contentHtml += `<button class="chat-options-btn" onclick="App.chat.showOptions(${payload.new.id}, '${encodedContent}', ${payload.new.is_edited})"><i class="ri-more-2-fill"></i></button>`;
                                             }
                                             msgDiv.innerHTML = contentHtml;
                                         }
@@ -2587,14 +2580,14 @@
                 },
                 close: () => {
                     document.getElementById('chat-modal').style.display = 'none';
-                    if(App.state.chatSub) _sb.removeChannel(App.state.chatSub);
+                    if (App.state.chatSub) _sb.removeChannel(App.state.chatSub);
                 },
                 send: async (content = null, type = 'text') => {
                     const txtInput = document.getElementById('chat-input');
                     const txt = content || txtInput.value;
-                    if(!txt && type === 'text') return;
+                    if (!txt && type === 'text') return;
                     await _sb.from('messages').insert({ store_id: App.state.activeChatStore, client_id: App.state.activeChatClient, sender_id: App.state.user.id, content: txt });
-                    if(type === 'text') txtInput.value = '';
+                    if (type === 'text') txtInput.value = '';
                 },
                 recordAudio: async () => {
                     if (!navigator.mediaDevices) return alert("Sem suporte a áudio.");
@@ -2608,27 +2601,32 @@
                                 App.state.audioChunks = [];
                                 const fileName = `audio_${Date.now()}.ogg`;
                                 const { error } = await _sb.storage.from('chat_uploads').upload(fileName, blob);
-                                if(!error) {
+                                if (!error) {
                                     const { data: url } = _sb.storage.from('chat_uploads').getPublicUrl(fileName);
                                     App.chat.send(`<audio controls src="${url.publicUrl}"></audio>`, 'audio');
                                 } else alert("Erro upload áudio");
                             };
                             App.state.mediaRecorder.start();
                             App.utils.toast("Gravando...", "info");
-                        } catch(err) { alert("Erro: " + err.message); }
+                        } catch (err) { alert("Erro: " + err.message); }
                     } else {
-                        if(App.state.mediaRecorder.state === 'recording') { App.state.mediaRecorder.stop(); App.utils.toast("Enviando...", "success"); }
-                        else { App.state.mediaRecorder.start(); App.utils.toast("Gravando...", "info"); }
+                        if (App.state.mediaRecorder.state === 'recording') {
+                            App.state.mediaRecorder.stop();
+                            App.utils.toast("Enviando...", "success");
+                        } else {
+                            App.state.mediaRecorder.start();
+                            App.utils.toast("Gravando...", "info");
+                        }
                     }
                 },
                 showOptions: (msgId, encodedContent, isEdited) => {
                     const currentContent = decodeURIComponent(encodedContent);
                     if (currentContent.includes('<audio')) {
-                        if(confirm("Apagar áudio?")) App.chat.deleteMsg(msgId);
+                        if (confirm("Apagar áudio?")) App.chat.deleteMsg(msgId);
                         return;
                     }
                     const action = prompt("Digite 'apagar' para excluir ou edite o texto:", currentContent);
-                    if (action === null) return; 
+                    if (action === null) return;
                     if (action.toLowerCase() === 'apagar') App.chat.deleteMsg(msgId);
                     else if (action !== currentContent) {
                         if (isEdited) alert("Mensagem já editada.");
@@ -2637,24 +2635,25 @@
                 },
                 deleteMsg: async (id) => {
                     const { error } = await _sb.from('messages').update({ is_deleted: true, content: '🚫 Mensagem apagada' }).eq('id', id);
-                    if(error) alert("Erro ao apagar");
+                    if (error) alert("Erro ao apagar");
                 },
                 editMsg: async (id, newContent) => {
                     const { error } = await _sb.from('messages').update({ content: newContent, is_edited: true }).eq('id', id);
-                    if(error) alert("Erro ao editar");
+                    if (error) alert("Erro ao editar");
                 },
                 renderMsg: (msg) => {
                     const div = document.createElement('div');
                     const isMine = msg.sender_id === App.state.user.id;
                     div.className = `chat-bubble ${isMine ? 'mine' : 'theirs'}`;
                     div.id = `msg-${msg.id}`;
-                    if (msg.is_deleted) div.innerHTML = `<span class="chat-deleted"><i class="ri-prohibited-line"></i> Mensagem apagada</span>`;
-                    else {
+                    if (msg.is_deleted) {
+                        div.innerHTML = `<span class="chat-deleted"><i class="ri-prohibited-line"></i> Mensagem apagada</span>`;
+                    } else {
                         let contentHtml = msg.content;
                         if (msg.is_edited) contentHtml += `<span class="chat-edited-label"><i class="ri-pencil-line"></i> Editada</span>`;
                         if (isMine) {
-                             const encodedContent = encodeURIComponent(msg.content);
-                             contentHtml += `<button class="chat-options-btn" onclick="App.chat.showOptions(${msg.id}, '${encodedContent}', ${msg.is_edited})"><i class="ri-more-2-fill"></i></button>`;
+                            const encodedContent = encodeURIComponent(msg.content);
+                            contentHtml += `<button class="chat-options-btn" onclick="App.chat.showOptions(${msg.id}, '${encodedContent}', ${msg.is_edited})"><i class="ri-more-2-fill"></i></button>`;
                         }
                         div.innerHTML = contentHtml;
                     }
@@ -2670,85 +2669,67 @@
                     if (!App.state.user) return;
                     const myId = App.state.user.id;
                     let html = '';
-                    let query = _sb.from('messages').select('*, profiles:sender_id(nome_completo), stores:store_id(nome_loja)').order('created_at', {ascending:false}).limit(50);
-                    if(viewType === 'loja') query = query.eq('store_id', App.state.storeId);
+                    let query = _sb.from('messages').select('*, profiles:sender_id(nome_completo), stores:store_id(nome_loja)').order('created_at', { ascending: false }).limit(50);
+                    if (viewType === 'loja') query = query.eq('store_id', App.state.storeId);
                     else query = query.eq('client_id', myId);
                     const { data } = await query;
-                    
-                    if(!data || data.length === 0) html = '<p class="text-sm text-muted">Nenhuma conversa.</p>';
+
+                    if (!data || data.length === 0) html = '<p class="text-sm text-muted">Nenhuma conversa.</p>';
                     else {
                         const unique = new Set();
                         data.forEach(msg => {
                             let cid = (viewType === 'loja') ? msg.client_id : msg.store_id;
-                            if(!unique.has(cid)) {
+                            if (!unique.has(cid)) {
                                 unique.add(cid);
                                 let name = (viewType === 'loja') ? (msg.sender_id !== myId ? msg.profiles?.nome_completo : 'Cliente') : (msg.stores?.nome_loja || 'Loja');
-                                html += `<div class="chat-history-item" onclick="App.chat.open('${viewType==='loja'?App.state.storeId:cid}', '${viewType==='loja'?cid:myId}')"><div class="chat-user-info"><div><i class="ri-message-3-line"></i> ${name}</div><div class="text-xs">Abrir conversa</div></div><i class="ri-arrow-right-s-line"></i></div>`;
+                                html += `<div class="chat-history-item" onclick="App.chat.open('${viewType === 'loja' ? App.state.storeId : cid}', '${viewType === 'loja' ? cid : myId}')"><div class="chat-user-info"><div><i class="ri-message-3-line"></i> ${name}</div><div class="text-xs">Abrir conversa</div></div><i class="ri-arrow-right-s-line"></i></div>`;
                             }
                         });
                     }
                     document.getElementById(viewType === 'loja' ? 'store-chat-list' : 'client-chat-list').innerHTML = html;
                 }
-            }, // Fim do Chat (VÍRGULA AQUI)
-
-           provider: {
+            },
+            provider: {
                 init: async () => {
                     const myId = App.state.user.id;
-                    
-                    // 1. Busca os pedidos no banco (ADICIONEI 'whatsapp' no select de profiles)
+
                     const { data: job, error: jobError } = await _sb.from('orders')
                         .select('*, products(nome, categoria), profiles:cliente_id(nome_completo, whatsapp)')
                         .or(`status.eq.aguardando_prestador,status.eq.em_rota`)
                         .order('created_at', { ascending: false });
-
                     if (jobError) console.error("Erro ao buscar pedidos:", jobError);
-
                     const container = document.getElementById('provider-jobs-list');
                     let html = '';
-
-                    if(job && job.length > 0) {
-                        for(let j of job) {
-                            // 2. Busca dados da loja
+                    if (job && job.length > 0) {
+                        for (let j of job) {
                             const { data: store, error: storeError } = await _sb
                                 .from('stores')
                                 .select('parceiro_exclusivo_id')
                                 .eq('id', j.store_id)
                                 .maybeSingle();
-
                             if (storeError) { console.log("Erro loja:", j.id); continue; }
-
-                            // Variável para saber se este motorista é exclusivo desta loja
                             const isExclusive = (store && store.parceiro_exclusivo_id === myId);
 
-                            // 3. Verifica Exclusividade (Filtro)
-                            if(store && store.parceiro_exclusivo_id) {
-                                if(!isExclusive) {
-                                    // Se tem dono e não sou eu, esconde
-                                    continue; 
-                                }
+                            if (store && store.parceiro_exclusivo_id && !isExclusive) {
+                                continue;
                             }
 
-                            // 4. Monta o Botão de Ação
                             let actionBtn = '';
-                            if(j.status === 'aguardando_prestador') {
+                            if (j.status === 'aguardando_prestador') {
                                 actionBtn = `<button class="btn btn-success btn-sm btn-full" onclick="App.provider.acceptJob('${j.id}')">Aceitar Corrida/Serviço</button>`;
                             } else if (j.status === 'em_rota' && j.prestador_id === myId) {
                                 actionBtn = `<button class="btn btn-info btn-sm btn-full" onclick="App.map.open('${j.id}', true, '${j.endereco_destino}')">Continuar Rota</button>`;
                             }
 
-                            // 5. Lógica de Exibição da Comissão e WhatsApp
-                            // Se for exclusivo, NÃO mostra o valor. Se for livre, mostra.
-                            let earningsHtml = isExclusive 
+                            let earningsHtml = isExclusive
                                 ? `<div style="font-size:0.8rem; color:var(--info-dark); margin-bottom:5px;"><i class="ri-briefcase-line"></i> Entrega da Loja (Fixo/Salário)</div>`
                                 : `<div style="font-weight:bold; color:var(--success-dark); margin-bottom:5px;">Ganho: R$ ${(j.taxa_servico || 0).toFixed(2)}</div>`;
-                            
-                            // Mostra WhatsApp do Cliente se disponível
-                            let clientWppHtml = '';
-                            if(j.profiles?.whatsapp) {
-                                clientWppHtml = `<a href="https://wa.me/55${j.profiles.whatsapp.replace(/\D/g,'')}" target="_blank" class="btn btn-sm btn-secondary" style="margin-top:5px; text-decoration:none; display:inline-flex;"><i class="ri-whatsapp-line"></i> Falar com Cliente</a>`;
-                            }
 
-                            if(actionBtn) {
+                            let clientWppHtml = '';
+                            if (j.profiles?.whatsapp) {
+                                clientWppHtml = `<a href="https://wa.me/55${j.profiles.whatsapp.replace(/\D/g, '')}" target="_blank" class="btn btn-sm btn-secondary" style="margin-top:5px; text-decoration:none; display:inline-flex;"><i class="ri-whatsapp-line"></i> Falar com Cliente</a>`;
+                            }
+                            if (actionBtn) {
                                 html += `
                                 <div class="card" style="margin-bottom:1rem">
                                     <div style="display:flex; justify-content:space-between">
@@ -2756,28 +2737,26 @@
                                         <span class="badge status-${j.status}">${j.status}</span>
                                     </div>
                                     <p class="text-sm">Destino: ${j.endereco_destino}</p>
-                                    
                                     ${earningsHtml}
                                     ${clientWppHtml}
-                                    
                                     <div style="margin-top:10px;">${actionBtn}</div>
                                 </div>`;
                             }
                         }
                     }
-                    
+
                     container.innerHTML = html || '<div style="text-align:center; padding:20px; color:#aaa;">Nenhum serviço disponível no momento.</div>';
-                    
-                    if(document.getElementById('provider-role-label')) {
+
+                    if (document.getElementById('provider-role-label')) {
                         document.getElementById('provider-role-label').innerText = App.state.profile.role ? App.state.profile.role.toUpperCase() : 'PARCEIRO';
                     }
-                    if(document.getElementById('provider-pix-display')) {
+                    if (document.getElementById('provider-pix-display')) {
                         document.getElementById('provider-pix-display').innerText = App.state.profile.chave_pix || 'Não cadastrada';
                     }
                 },
                 updatePix: async () => {
                     const pix = prompt("Informe sua chave Pix para recebimento:");
-                    if(pix) {
+                    if (pix) {
                         await _sb.from('profiles').update({ chave_pix: pix }).eq('id', App.state.user.id);
                         App.state.profile.chave_pix = pix;
                         App.provider.init();
@@ -2795,24 +2774,20 @@
                     }
                     App.provider.init();
                 }
-            }, // Fim do Provider (VÍRGULA AQUI se adicionar o map, ou sem vírgula se for o último)
-
-            // --- ADICIONEI O OBJETO MAP QUE ESTAVA FALTANDO PARA EVITAR ERRO DE CRASH ---
-        map: {
+            },
+            map: {
                 open: (orderId, isDriver, address) => {
-                    // Guarda o ID do pedido que está sendo visualizado no mapa
-                    App.state.activeOrder = orderId; 
-                    
+                    App.state.activeOrder = orderId;
                     document.getElementById('map-modal').style.display = 'flex';
                     document.getElementById('map-dest-address').innerText = address;
-                    
-                    if(!App.state.mapInstance) {
+
+                    if (!App.state.mapInstance) {
                         App.state.mapInstance = L.map('map').setView([-23.5505, -46.6333], 13);
                         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(App.state.mapInstance);
                     }
                     setTimeout(() => App.state.mapInstance.invalidateSize(), 500);
-                    
-                    if(isDriver) {
+
+                    if (isDriver) {
                         document.getElementById('btn-start-gps').style.display = 'block';
                         document.getElementById('btn-end-gps').style.display = 'block';
                     } else {
@@ -2826,27 +2801,23 @@
                     window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`, '_blank');
                 },
                 finishDelivery: async () => {
-                    if(confirm("Confirmar que a entrega foi realizada?")) {
+                    if (confirm("Confirmar que a entrega foi realizada?")) {
                         const oid = App.state.activeOrder;
-                        if(!oid) return alert("Erro: Pedido não identificado.");
-
-                        // Atualiza o status no banco de dados
+                        if (!oid) return alert("Erro: Pedido não identificado.");
                         const { error } = await _sb.from('orders').update({ status: 'concluido' }).eq('id', oid);
-                        
-                        if(error) {
+
+                        if (error) {
                             alert("Erro ao finalizar: " + error.message);
                         } else {
                             document.getElementById('map-modal').style.display = 'none';
                             App.utils.toast("Entrega Finalizada com Sucesso!", "success");
-                            // Atualiza a lista
-                            if(App.provider && App.provider.init) App.provider.init();
+                            if (App.provider && App.provider.init) App.provider.init();
                         }
                     }
                 }
-            } // Fecha o objeto 'map'
-        }; // <--- ESSA É A CHAVE QUE FALTAVA (Fecha o 'App')
+            }
+        }; // <-- Fechamento final do objeto App
 
-        // Agora o comando window funciona pois o App foi fechado
         window.addEventListener('load', App.init);
     </script>
 </body>
