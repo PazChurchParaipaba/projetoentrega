@@ -1169,7 +1169,7 @@
                 }
             },
 
-          auth: {
+        auth: {
                 switchView: (view) => {
                     ['login', 'roles', 'register', 'recover'].forEach(v => document.getElementById(`auth-state-${v}`).style.display = 'none');
                     document.getElementById(`auth-state-${view}`).style.display = 'block';
@@ -1182,8 +1182,10 @@
                     let html = '';
                     
                     if(role === 'loja_admin') {
+                        // Trazendo de volta o CAMPO DE TOKEN e mantendo os novos campos
                         html = `
                             <div class="input-wrapper"><label>Nome da Loja</label><input id="reg-store-name" class="input-field" placeholder="Ex: NexLog Center"></div>
+                            
                             <div class="input-wrapper"><label>Ramo da Loja</label>
                                 <select id="reg-store-type" class="input-field">
                                     <option value="Restaurante">Restaurante/Bebidas</option>
@@ -1192,11 +1194,13 @@
                                     <option value="Outros">Outros</option>
                                 </select>
                             </div>
+
                             <div class="input-wrapper"><label>WhatsApp da Loja</label><input id="reg-whatsapp" class="input-field" placeholder="(00) 00000-0000"></div>
                             <div class="input-wrapper"><label>CNPJ</label><input id="reg-cnpj" class="input-field" placeholder="00.000.000/0000-00"></div>
+                            
+                            <div class="input-wrapper" style="border: 2px dashed var(--primary); padding: 10px; border-radius: 8px; background: var(--info-bg);"><label style="color:var(--primary)">🔑 Token de Autorização</label><input id="reg-token" class="input-field" placeholder="Código fornecido pelo Admin"><p class="text-xs text-muted">Cadastro restrito. Insira sua matrícula/token.</p></div>
                         `;
                     } else if (role === 'cliente') {
-                         // AGORA PEDE O WHATSAPP DO CLIENTE TAMBÉM
                          html = `<div class="input-wrapper"><label>Seu WhatsApp</label><input id="reg-whatsapp-client" class="input-field" placeholder="(00) 00000-0000"></div>`;
                     } else if (role === 'motorista' || role === 'montador') {
                         html = `<div class="input-wrapper"><label>CPF</label><input id="reg-cpf" class="input-field" placeholder="000.000.000-00"></div><div class="input-wrapper"><label>Sua Chave Pix (Para Receber)</label><input id="reg-pix" class="input-field" placeholder="Email, CPF ou Aleatória"></div><div class="camera-container" id="cam-box"><video id="cam-video" autoplay playsinline></video><div class="camera-overlay">Selfie com capacete (validação facial)</div></div><div id="verified-msg" style="display:none; color:var(--success); font-weight:bold; margin-bottom:1rem;">✅ Identidade Confirmada</div><button class="btn btn-secondary btn-full" id="btn-cam" onclick="App.auth.runCamera()">Validar Identidade (Obrigatório)</button>`;
@@ -1232,7 +1236,16 @@
                     if(!email || !pass || !name) return App.utils.toast('Preencha os campos corretamente', 'error');
                     
                     try {
-                        // Captura o WhatsApp do cliente se for cliente
+                        // --- SEGURANÇA REINSERIDA: Validação do Token ---
+                        if (role === 'loja_admin') {
+                            const token = document.getElementById('reg-token').value.trim();
+                            if (!token) throw new Error("Token de autorização é obrigatório");
+                            // Chama a função RPC no banco para validar se o token existe e é válido
+                            const { error: tokenError } = await _sb.rpc('validate_store_token', { token_input: token });
+                            if (tokenError) throw new Error(tokenError.message);
+                        }
+                        // ------------------------------------------------
+
                         const wppClient = document.getElementById('reg-whatsapp-client')?.value || null;
 
                         const { data: newUser, error } = await _sb.from('profiles').insert({
@@ -1240,7 +1253,7 @@
                             cpf: document.getElementById('reg-cpf')?.value || null,
                             cnpj: document.getElementById('reg-cnpj')?.value || null,
                             chave_pix: document.getElementById('reg-pix')?.value || null, 
-                            whatsapp: wppClient, // Salva o zap do cliente na tabela profiles
+                            whatsapp: wppClient, 
                             is_verified: document.getElementById('verified-msg')?.style.display === 'block'
                         }).select().single();
                         
@@ -1248,14 +1261,14 @@
                         
                         if(role === 'loja_admin') {
                             const storeName = document.getElementById('reg-store-name').value.trim();
-                            const storeType = document.getElementById('reg-store-type').value; // Pega o Ramo selecionado
+                            const storeType = document.getElementById('reg-store-type').value; 
                             const whatsAppStore = document.getElementById('reg-whatsapp').value.trim();
                             const cnpj = document.getElementById('reg-cnpj').value.trim();
                             
                             const { error: storeError } = await _sb.from('stores').insert({ 
                                 admin_id: newUser.id, 
                                 nome_loja: storeName || "Minha Loja Nova", 
-                                tipo_loja: storeType, // Salva o Ramo no banco
+                                tipo_loja: storeType,
                                 cnpj: cnpj, 
                                 whatsapp: whatsAppStore 
                             });
@@ -1266,6 +1279,9 @@
                             }
                         }
                         
+                        // Limpa o campo de token se ele existir
+                        if (document.getElementById('reg-token')) document.getElementById('reg-token').value = "";
+
                         App.utils.toast('Cadastro realizado com sucesso!', 'success');
                         App.auth.switchView('login');
                     } catch(e) { App.utils.toast('Erro: ' + e.message, 'error'); }
