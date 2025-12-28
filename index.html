@@ -2556,33 +2556,34 @@
                 }
             },
             
-         waiter: {
+        waiter: {
                 init: async () => {
                     if (!App.state.user) return;
-                    
-                    // CORREÇÃO DO ERRO DE SINTAXE AQUI (Faltava o sinal de igual ou estrutura incorreta)
+
                     const { data: staffData, error } = await _sb
                         .from('store_staff')
                         .select('store_id')
                         .eq('profile_id', App.state.user.id)
                         .maybeSingle();
 
-                    if (error || !staffData) {
-                        // Se der erro ou não achar, para a execução sem travar a tela
+                    if (error) {
+                        console.error("Erro staff:", error);
                         return;
                     }
 
+                    if (!staffData) return;
+
                     App.state.storeId = staffData.store_id;
                     
-                    if (App.waiter.loadTables) App.waiter.loadTables();
+                    if(App.waiter.loadTables) App.waiter.loadTables();
                     
                     _sb.channel('waiter-updates')
                         .on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: `store_id=eq.${App.state.storeId}` }, 
-                        () => { if (App.waiter.loadTables) App.waiter.loadTables(); })
+                        () => { if(App.waiter.loadTables) App.waiter.loadTables(); })
                         .subscribe();
                 },
                 loadTables: async () => {
-                    const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', { ascending: true });
+                    const { data } = await _sb.from('comandas').select('*').eq('store_id', App.state.storeId).order('numero', {ascending: true});
                     const container = document.getElementById('comanda-list-container');
                     if (data) {
                         container.innerHTML = data.map(c => `
@@ -2603,7 +2604,7 @@
                 loadItems: async (comandaId) => {
                     const { data } = await _sb.from('comandas').select('items').eq('id', comandaId).single();
                     const list = document.getElementById('comanda-items-list');
-                    if (data && data.items && data.items.length > 0) {
+                    if(data && data.items && data.items.length > 0) {
                         list.innerHTML = data.items.map(item => `
                             <div style="display:flex; justify-content:space-between; border-bottom:1px solid #eee; padding:8px;">
                                 <div>
@@ -2618,11 +2619,9 @@
                 },
                 addItem: async () => {
                     const term = document.getElementById('waiter-prod-search').value;
-                    if (!term) return alert("Digite o nome ou código");
-                    
+                    if(!term) return alert("Digite o nome ou código");
                     App.utils.toast("Buscando...", "info");
                     
-                    // Busca por Nome OU Código
                     const { data } = await _sb.from('products')
                         .select('*')
                         .eq('store_id', App.state.storeId)
@@ -2630,11 +2629,11 @@
                         .limit(5);
 
                     const resultBox = document.getElementById('waiter-search-results');
-                    if (data && data.length > 0) {
+                    if(data && data.length > 0) {
                         resultBox.style.display = 'block';
                         resultBox.innerHTML = data.map(p => `
                             <div style="padding:10px; border-bottom:1px solid #eee; cursor:pointer; background:#fff;" onclick="App.waiter.confirmAdd('${p.id}', '${p.nome}', ${p.preco})">
-                                <strong>${p.codigo_cardapio ? '[' + p.codigo_cardapio + '] ' : ''}${p.nome}</strong> - R$ ${p.preco.toFixed(2)}
+                                <strong>${p.codigo_cardapio ? '['+p.codigo_cardapio+'] ' : ''}${p.nome}</strong> - R$ ${p.preco.toFixed(2)}
                             </div>`).join('');
                     } else {
                         alert("Produto não encontrado");
@@ -2645,11 +2644,10 @@
                     const { data: current } = await _sb.from('comandas').select('items').eq('id', App.state.currentComanda).single();
                     let currentItems = current.items || [];
                     
-                    // Pega o nome do Garçom logado
                     const garcomName = App.state.profile ? App.state.profile.nome_completo.split(' ')[0] : 'Sistema';
 
                     const existing = currentItems.find(i => i.id === id);
-                    if (existing) {
+                    if(existing) {
                         existing.qtd += 1;
                         existing.garcom = garcomName;
                     } else {
@@ -2660,7 +2658,6 @@
                     
                     document.getElementById('waiter-search-results').style.display = 'none';
                     document.getElementById('waiter-prod-search').value = '';
-                    
                     App.utils.toast(`Adicionado: ${nome}`, 'success');
                     App.waiter.loadItems(App.state.currentComanda);
                     App.waiter.loadTables();
@@ -2669,7 +2666,6 @@
                     const items = App.state.currentComandaItems || [];
                     const mesa = document.getElementById('comanda-title').innerText;
                     
-                    // Gera HTML com o nome do garçom
                     const itemsHtml = items.map(item => `
                         <div style="display:flex; justify-content:space-between; border-bottom:1px dashed #000; padding:4px 0;">
                             <div style="display:flex; flex-direction:column;">
@@ -2684,8 +2680,7 @@
 
                     const content = `
                         <div style="font-family: monospace; width: 300px; padding: 0 5px;">
-                            <br>
-                            <h3 style="text-align:center; margin:0;">CONFERÊNCIA</h3>
+                            <br><h3 style="text-align:center; margin:0;">CONFERÊNCIA</h3>
                             <h2 style="text-align:center; margin:5px 0;">${mesa}</h2>
                             <p style="text-align:center; font-size:0.8rem; margin-bottom:10px;">${new Date().toLocaleString()}</p>
                             <hr style="border-top: 1px dashed black;">
@@ -2696,7 +2691,6 @@
                             <br><br>
                         </div>
                     `;
-                    
                     const area = document.getElementById('printable-area');
                     area.innerHTML = content;
                     window.print();
@@ -2704,24 +2698,14 @@
                 sendToKitchen: () => {
                     const itemsHtml = document.getElementById('comanda-items-list').innerHTML;
                     const mesa = document.getElementById('comanda-title').innerText;
-                    const content = `
-                        <div style="font-family: monospace; width: 300px; padding: 0 10px;">
-                            <br><h3 style="text-align:center; margin:0;">PEDIDO COZINHA</h3>
-                            <div style="border: 2px solid black; margin: 10px 0; padding: 5px;">
-                                <p style="text-align:center; font-size:1.5rem; font-weight:800; margin:0;">${mesa.toUpperCase()}</p>
-                            </div>
-                            <p style="text-align:center;">${new Date().toLocaleTimeString()}</p>
-                            <hr style="border-top: 2px solid black;">
-                            <div style="font-size:1.1rem; font-weight:bold;">${itemsHtml}</div>
-                            <hr style="border-top: 2px solid black;"><br>
-                        </div>`;
+                    const content = `<div style="font-family: monospace; width: 300px; padding: 0 10px;"><br><h3 style="text-align:center; margin:0;">PEDIDO COZINHA</h3><div style="border: 2px solid black; margin: 10px 0; padding: 5px;"><p style="text-align:center; font-size:1.5rem; font-weight:800; margin:0;">${mesa.toUpperCase()}</p></div><p style="text-align:center;">${new Date().toLocaleTimeString()}</p><hr style="border-top: 2px solid black;"><div style="font-size:1.1rem; font-weight:bold;">${itemsHtml}</div><hr style="border-top: 2px solid black;"><br></div>`;
                     const area = document.getElementById('printable-area');
                     area.innerHTML = content;
                     window.print();
                     document.getElementById('comanda-modal').style.display = 'none';
                     App.utils.toast("Enviado para cozinha!", "success");
                 }
-            }, // Fim do objeto waiter// Fim do objeto waiter// Fim do Waiter (VÍRGULA AQUI)
+            }, // Vírgula importante aqui para separar waiter de chat
 
             chat: {
                 open: async (storeId, clientId = null) => {
@@ -2730,7 +2714,7 @@
                     App.state.activeChatClient = clientId || App.state.user.id;
                     document.getElementById('chat-modal').style.display = 'flex';
                     const msgs = document.getElementById('chat-msgs');
-                    msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Carregando histórico...</div>';
+                    msgs.innerHTML = '<div style="text-align:center; padding:20px; color:#aaa;">Carregando...</div>';
                     
                     const { data } = await _sb.from('messages').select('*').eq('store_id', storeId).eq('client_id', App.state.activeChatClient).order('created_at', { ascending: true });
                     msgs.innerHTML = '';
@@ -2774,7 +2758,7 @@
                     if(type === 'text') txtInput.value = '';
                 },
                 recordAudio: async () => {
-                    if (!navigator.mediaDevices) return alert("Navegador sem suporte a áudio.");
+                    if (!navigator.mediaDevices) return alert("Sem suporte a áudio.");
                     if (!App.state.mediaRecorder) {
                         try {
                             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -2784,14 +2768,14 @@
                                 const blob = new Blob(App.state.audioChunks, { type: 'audio/ogg; codecs=opus' });
                                 App.state.audioChunks = [];
                                 const fileName = `audio_${Date.now()}.ogg`;
-                                const { data, error } = await _sb.storage.from('chat_uploads').upload(fileName, blob);
+                                const { error } = await _sb.storage.from('chat_uploads').upload(fileName, blob);
                                 if(!error) {
                                     const { data: url } = _sb.storage.from('chat_uploads').getPublicUrl(fileName);
                                     App.chat.send(`<audio controls src="${url.publicUrl}"></audio>`, 'audio');
                                 } else alert("Erro upload áudio");
                             };
                             App.state.mediaRecorder.start();
-                            App.utils.toast("Gravando... Toque de novo para enviar.", "info");
+                            App.utils.toast("Gravando...", "info");
                         } catch(err) { alert("Erro: " + err.message); }
                     } else {
                         if(App.state.mediaRecorder.state === 'recording') { App.state.mediaRecorder.stop(); App.utils.toast("Enviando...", "success"); }
@@ -2801,24 +2785,24 @@
                 showOptions: (msgId, encodedContent, isEdited) => {
                     const currentContent = decodeURIComponent(encodedContent);
                     if (currentContent.includes('<audio')) {
-                        if(confirm("Deseja apagar este áudio para todos?")) App.chat.deleteMsg(msgId);
+                        if(confirm("Apagar áudio?")) App.chat.deleteMsg(msgId);
                         return;
                     }
-                    const action = prompt("Digite 'apagar' para excluir ou digite o novo texto para editar:", currentContent);
+                    const action = prompt("Digite 'apagar' para excluir ou edite o texto:", currentContent);
                     if (action === null) return; 
                     if (action.toLowerCase() === 'apagar') App.chat.deleteMsg(msgId);
                     else if (action !== currentContent) {
-                        if (isEdited) alert("Esta mensagem já foi editada uma vez e não pode ser alterada novamente.");
+                        if (isEdited) alert("Mensagem já editada.");
                         else App.chat.editMsg(msgId, action);
                     }
                 },
                 deleteMsg: async (id) => {
                     const { error } = await _sb.from('messages').update({ is_deleted: true, content: '🚫 Mensagem apagada' }).eq('id', id);
-                    if(error) alert("Erro ao apagar: " + error.message);
+                    if(error) alert("Erro ao apagar");
                 },
                 editMsg: async (id, newContent) => {
                     const { error } = await _sb.from('messages').update({ content: newContent, is_edited: true }).eq('id', id);
-                    if(error) alert("Erro ao editar: " + error.message);
+                    if(error) alert("Erro ao editar");
                 },
                 renderMsg: (msg) => {
                     const div = document.createElement('div');
@@ -2866,7 +2850,7 @@
                     }
                     document.getElementById(viewType === 'loja' ? 'store-chat-list' : 'client-chat-list').innerHTML = html;
                 }
-            }, // Fim do Chat (VÍRGULA AQUI)
+            } // Fim do Chat (VÍRGULA AQUI)
 
            provider: {
                 init: async () => {
