@@ -1262,7 +1262,7 @@
                 logout: () => { localStorage.removeItem('logimoveis_session'); location.reload(); }
             },
 
-            store: {
+           store: {
                 init: async () => {
                     if (!App.state.user) return;
                     let { data: store } = await _sb.from('stores').select('*').eq('admin_id', App.state.user.id).maybeSingle();
@@ -1278,11 +1278,26 @@
                     document.getElementById('store-pickup-address').value = store.endereco_retirada || '';
                     document.getElementById('store-delivery-fee').value = store.taxa_entrega_padrao || '';
 
-                    if (store.tipo_loja === 'Restaurante') {
+                    // ============================================================
+                    // COLE A CORREÇÃO AQUI (INÍCIO)
+                    // ============================================================
+                    
+                    // Se o tipo_loja for "Restaurante" OU estiver vazio (null), MOSTRA o painel
+                    if (!store.tipo_loja || store.tipo_loja === 'Restaurante') {
                         document.getElementById('admin-restaurant-panel').style.display = 'block';
+                        
+                        // Opcional: Salva no banco pra ficar fixo como Restaurante da próxima vez
+                        if(!store.tipo_loja) {
+                             await _sb.from('stores').update({ tipo_loja: 'Restaurante' }).eq('id', store.id);
+                        }
                     } else {
+                        // Só esconde se estiver explicitamente escrito outra coisa (ex: "Loja de Roupa")
                         document.getElementById('admin-restaurant-panel').style.display = 'none';
                     }
+
+                    // ============================================================
+                    // FIM DA CORREÇÃO
+                    // ============================================================
 
                     if(store.mp_access_token) {
                         document.getElementById('store-keys-area').style.display = 'none';
