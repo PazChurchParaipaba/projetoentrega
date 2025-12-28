@@ -1665,20 +1665,19 @@
                         document.getElementById('clothing-options-area').style.display = 'block';
                     }
                 },
-               submitProduct: async () => {
+            submitProduct: async () => {
+                    // 1. Validação inicial
                     if(!App.state.storeId) {
                         alert("Erro crítico: ID da Loja não encontrado.");
                         return;
                     }
 
+                    // 2. Coleta dos valores do formulário
                     const id = document.getElementById('edit-prod-id').value;
                     const nome = document.getElementById('new-prod-name').value;
-                    
-                    // --- NOVO: Captura o código do produto ---
-                    // O '?' garante que não quebre se o campo ainda não existir no HTML
+                    // Captura o código (verifica se o campo existe para não dar erro)
                     const codigo = document.getElementById('new-prod-code') ? document.getElementById('new-prod-code').value : null;
-                    // ----------------------------------------
-
+                    
                     const preco = document.getElementById('new-prod-price').value;
                     const cat = document.getElementById('new-prod-cat').value;
                     const promo = document.getElementById('new-prod-promo').checked;
@@ -1690,6 +1689,7 @@
 
                     if (!nome || !preco) return App.utils.toast("Preencha nome e preço", "error");
                     
+                    // 3. Upload das Imagens
                     let galeriaUrls = [];
                     
                     if (files.length > 0) {
@@ -1706,6 +1706,7 @@
                         }
                     }
 
+                    // 4. Lógica específica de categorias (Hotel, Gesso, Delivery)
                     const dateStart = document.getElementById('hotel-start-date').value;
                     const dateEnd = document.getElementById('hotel-end-date').value;
                     let disp = null;
@@ -1728,12 +1729,11 @@
                         });
                     }
                     
+                    // 5. Montagem do Payload (Objeto para salvar)
                     const payload = { 
                         store_id: App.state.storeId, 
-                        nome,
-                        // --- NOVO: Envia o código para o banco ---
-                        codigo_cardapio: codigo,
-                        // ----------------------------------------
+                        nome, 
+                        codigo_cardapio: codigo, // Salva o código
                         preco: parseFloat(preco), 
                         categoria: cat, 
                         promocao: promo, 
@@ -1744,42 +1744,24 @@
                         sizes: sizes
                     };
 
+                    // --- AQUI ESTAVA O PROBLEMA ANTES: O IF TEM QUE FICAR AQUI DENTRO ---
                     if (galeriaUrls.length > 0) {
                         payload.imagem_url = galeriaUrls[0]; 
                         payload.galeria = galeriaUrls;        
                     }
+                    // ------------------------------------------------------------------
 
+                    // 6. Envio para o Banco de Dados (Insert ou Update)
                     let res;
                     if(id) {
                         res = await _sb.from('products').update(payload).eq('id', id);
                     } else {
+                        // Se não tiver imagem nova e for novo produto, põe placeholder
                         if(galeriaUrls.length === 0 && !id) payload.imagem_url = 'https://placehold.co/400x300?text=NexLog';
                         res = await _sb.from('products').insert(payload);
                     }
 
-                    if(res.error) { 
-                        alert("Erro ao salvar: " + res.error.message); 
-                    } else {
-                        alert("Produto salvo com sucesso!");
-                        App.store.closeProductModal(); 
-                        App.catalog.fetchPublic(); 
-                        App.store.init();
-                    }
-                },
-
-                    if (galeriaUrls.length > 0) {
-                        payload.imagem_url = galeriaUrls[0]; 
-                        payload.galeria = galeriaUrls;       
-                    }
-
-                    let res;
-                    if(id) {
-                        res = await _sb.from('products').update(payload).eq('id', id);
-                    } else {
-                        if(galeriaUrls.length === 0 && !id) payload.imagem_url = 'https://placehold.co/400x300?text=NexLog';
-                        res = await _sb.from('products').insert(payload);
-                    }
-
+                    // 7. Resposta final
                     if(res.error) { 
                         alert("Erro ao salvar: " + res.error.message); 
                     } else {
