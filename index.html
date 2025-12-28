@@ -2413,12 +2413,9 @@
                     alert(`O valor total é R$ ${total.toFixed(2)}. Você pagará 50% (R$ ${downPayment.toFixed(2)}) agora.`);
                 }
             },
-            
-              waiter: {
-                init: async () => {
+                waiter: {
+                   init: async () => {
                     if (!App.state.user) return;
-                    
-                    // --- CORREÇÃO DO ERRO DE SINTAXE AQUI ---
                     const res = await _sb
                         .from('store_staff')
                         .select('store_id')
