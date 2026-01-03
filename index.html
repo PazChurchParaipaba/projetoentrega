@@ -1353,6 +1353,126 @@
                     App.store.loadMyProducts();
                     App.store.listenMessages();
                     App.chat.loadHistory('loja');
+                    App.store.monitorKitchen();
+                },
+           monitorKitchen: () => {
+                    console.log("Iniciando monitoramento da Cozinha (Mesas + Delivery)...");
+
+                    // =========================================
+                    // 1. ESCUTA AS MESAS (COMANDAS DO GARÇOM)
+                    // =========================================
+                    _sb.channel('cozinha-mesas')
+                    .on('postgres_changes', { 
+                        event: 'UPDATE', 
+                        schema: 'public', 
+                        table: 'comandas', 
+                        filter: 'imprimir_cozinha=eq.true' 
+                    }, 
+                    async (payload) => {
+                        if(payload.new.store_id === App.state.storeId) {
+                            const { data } = await _sb.from('comandas').select('*').eq('id', payload.new.id).single();
+                            
+                            if(data && data.items && data.items.length > 0) {
+                                const itemsHtml = data.items.map(item => `
+                                    <div style="border-bottom:1px dashed #000; padding:5px 0;">
+                                        <div style="font-size:1.2rem; font-weight:bold;">${item.qtd}x ${item.nome}</div>
+                                        ${item.obs ? `<div style="font-size:0.9rem;">OBS: ${item.obs}</div>` : ''}
+                                        <div style="font-size:0.7rem; text-align:right;">Garçom: ${item.garcom || 'Geral'}</div>
+                                    </div>
+                                `).join('');
+
+                                const content = `
+                                <div style="font-family: monospace; width: 300px; padding: 0 5px;">
+                                    <br>
+                                    <h3 style="text-align:center; margin:0;">PEDIDO SALÃO</h3>
+                                    <div style="border: 2px solid black; margin: 5px 0; padding: 5px;">
+                                        <p style="text-align:center; font-size:2rem; font-weight:800; margin:0;">MESA ${data.numero}</p>
+                                    </div>
+                                    <p style="text-align:center;">${new Date().toLocaleTimeString()}</p>
+                                    <hr style="border-top: 2px solid black;">
+                                    ${itemsHtml}
+                                    <hr style="border-top: 2px solid black;">
+                                    <br>.
+                                </div>`;
+
+                                printContent(content);
+                                await _sb.from('comandas').update({ imprimir_cozinha: false }).eq('id', payload.new.id);
+                            }
+                        }
+                    })
+                    .subscribe();
+
+                    // =========================================
+                    // 2. ESCUTA O DELIVERY (NOVOS PEDIDOS)
+                    // =========================================
+                    _sb.channel('cozinha-delivery')
+                    .on('postgres_changes', { 
+                        event: 'INSERT', 
+                        schema: 'public', 
+                        table: 'orders', 
+                        filter: `store_id=eq.${App.state.storeId}` 
+                    }, 
+                    async (payload) => {
+                        // Só imprime se o pedido acabou de chegar (status pendente)
+                            if(['pendente', 'aguardando_prestador', 'pago'].includes(payload.new.status)) {
+                            
+                            // Busca detalhes do cliente e do produto para imprimir bonito
+                            const { data: fullOrder } = await _sb.from('orders')
+                                .select('*, products(nome), profiles(nome_completo, whatsapp)')
+                                .eq('id', payload.new.id)
+                                .single();
+
+                            if(fullOrder) {
+                                // Cálculo do Total (Preço + Taxa) - Ajuste conforme sua lógica
+                                // Aqui assumindo que o valor cobrado foi o basePrice registrado ou similar
+                                // Como o 'orders' não salva o total final explícito no seu banco atual, vamos estimar ou mostrar itens
+                                // O seu banco 'orders' tem 'product_id', mas não tem array de itens (carrinho múltiplo). 
+                                // O código atual do App só salva 1 produto por pedido no 'orders'.
+                                
+                                const content = `
+                                <div style="font-family: monospace; width: 300px; padding: 0 5px;">
+                                    <br>
+                                    <h3 style="text-align:center; margin:0;">NOVO DELIVERY 🛵</h3>
+                                    <div style="border-bottom: 1px solid black; margin: 10px 0;"></div>
+                                    
+                                    <p style="font-size:1.1rem; font-weight:bold; margin:5px 0;">Cliente: ${fullOrder.profiles?.nome_completo || 'Visitante'}</p>
+                                    ${fullOrder.profiles?.whatsapp ? `<p>Tel: ${fullOrder.profiles.whatsapp}</p>` : ''}
+                                    
+                                    <div style="background:#eee; padding:5px; margin:5px 0;">
+                                        <strong>Endereço:</strong><br>
+                                        ${fullOrder.endereco_destino}
+                                    </div>
+
+                                    <hr style="border-top: 2px dashed black;">
+                                    <div style="font-size:1.2rem; font-weight:bold; margin:10px 0;">
+                                        1x ${fullOrder.products?.nome || 'Produto'}
+                                    </div>
+                                    <hr style="border-top: 2px dashed black;">
+                                    
+                                    <p style="text-align:center; font-size:0.8rem; margin-top:10px;">
+                                        Pedido #${fullOrder.id}<br>
+                                        ${new Date().toLocaleString()}
+                                    </p>
+                                    <br>.
+                                </div>`;
+
+                                printContent(content);
+                            }
+                        }
+                    })
+                    .subscribe();
+
+                    // Função auxiliar interna para imprimir e tocar som
+                    const printContent = (html) => {
+                        const area = document.getElementById('printable-area');
+                        area.innerHTML = html;
+                        
+                        // Toca campainha
+                        try { new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play(); } catch(e){}
+                        
+                        // Imprime (Modo Kiosk fará isso sem janela)
+                        setTimeout(() => window.print(), 500);
+                    };
                 },
                 calcMetrics: async (orders) => {
                     const now = new Date();
@@ -1913,18 +2033,26 @@
                     area.innerHTML = content;
                     window.print();
                 },
-                sendToKitchen: () => {
-                    const itemsHtml = document.getElementById('comanda-items-list').innerHTML;
-                    const mesa = document.getElementById('comanda-title').innerText;
-                    const content = `<div style="font-family: monospace; width: 300px; padding: 0 10px;"><br><h3 style="text-align:center; margin:0;">PEDIDO COZINHA</h3><div style="border: 2px solid black; margin: 10px 0; padding: 5px;"><p style="text-align:center; font-size:1.5rem; font-weight:800; margin:0;">${mesa.toUpperCase()}</p></div><p style="text-align:center;">${new Date().toLocaleTimeString()}</p><hr style="border-top: 2px solid black;"><div style="font-size:1.1rem; font-weight:bold;">${itemsHtml}</div><hr style="border-top: 2px solid black;"><br></div>`;
-                    const area = document.getElementById('printable-area');
-                    area.innerHTML = content;
-                    window.print();
-                    document.getElementById('comanda-modal').style.display = 'none';
-                    App.utils.toast("Enviado para cozinha!", "success");
-                }
-            },
+                sendToKitchen: async () => {
+    // 1. Atualiza o status no banco para avisar a cozinha
+    // Vamos usar um campo 'status_impressao' ou criar uma tabela de fila
+    // Aqui vou usar a tabela 'messages' como gatilho ou atualizar a comanda
+    
+    // Vamos atualizar a comanda com um flag avisando que precisa imprimir
+    const { error } = await _sb.from('comandas')
+        .update({ 
+            imprimir_cozinha: true, // Você precisará criar essa coluna boolean no Supabase ou usar lógica similar
+            updated_at: new Date() 
+        })
+        .eq('id', App.state.currentComanda);
 
+    if (error) {
+        alert("Erro ao enviar para cozinha: " + error.message);
+    } else {
+        App.utils.toast("Enviado para a Cozinha!", "success");
+        document.getElementById('comanda-modal').style.display = 'none';
+    }
+},
             admin: {
                 createComandas: async () => {
                     const start = parseInt(document.getElementById('comanda-start').value);
