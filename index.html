@@ -1304,6 +1304,7 @@
             },
 
          store: {
+                // 1. FUNÇÃO INIT
                 init: async () => {
                     if (!App.state.user) return;
                     let { data: store } = await _sb.from('stores').select('*').eq('admin_id', App.state.user.id).maybeSingle();
@@ -1353,14 +1354,28 @@
                     App.store.loadMyProducts();
                     App.store.listenMessages();
                     App.chat.loadHistory('loja');
+                    
+                    // CHAMA O MONITORAMENTO AQUI NO FINAL
                     App.store.monitorKitchen();
-                },
-           monitorKitchen: () => {
+                }, // <--- VÍRGULA OBRIGATÓRIA AQUI
+
+                // 2. FUNÇÃO MONITOR KITCHEN (Salão + Delivery)
+                monitorKitchen: () => {
                     console.log("Iniciando monitoramento da Cozinha (Mesas + Delivery)...");
 
-                    // =========================================
-                    // 1. ESCUTA AS MESAS (COMANDAS DO GARÇOM)
-                    // =========================================
+                    // Função auxiliar interna para imprimir e tocar som
+                    const printContent = (html) => {
+                        const area = document.getElementById('printable-area');
+                        area.innerHTML = html;
+                        
+                        // Toca campainha
+                        try { new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play(); } catch(e){}
+                        
+                        // Imprime (Modo Kiosk fará isso sem janela)
+                        setTimeout(() => window.print(), 500);
+                    };
+
+                    // A. ESCUTA AS MESAS (COMANDAS DO GARÇOM)
                     _sb.channel('cozinha-mesas')
                     .on('postgres_changes', { 
                         event: 'UPDATE', 
@@ -1402,9 +1417,7 @@
                     })
                     .subscribe();
 
-                    // =========================================
-                    // 2. ESCUTA O DELIVERY (NOVOS PEDIDOS)
-                    // =========================================
+                    // B. ESCUTA O DELIVERY (NOVOS PEDIDOS)
                     _sb.channel('cozinha-delivery')
                     .on('postgres_changes', { 
                         event: 'INSERT', 
@@ -1413,22 +1426,15 @@
                         filter: `store_id=eq.${App.state.storeId}` 
                     }, 
                     async (payload) => {
-                        // Só imprime se o pedido acabou de chegar (status pendente)
-                            if(['pendente', 'aguardando_prestador', 'pago'].includes(payload.new.status)) {
+                        // Aceita status pendente, aguardando ou pago
+                        if(['pendente', 'aguardando_prestador', 'pago'].includes(payload.new.status)) {
                             
-                            // Busca detalhes do cliente e do produto para imprimir bonito
                             const { data: fullOrder } = await _sb.from('orders')
                                 .select('*, products(nome), profiles(nome_completo, whatsapp)')
                                 .eq('id', payload.new.id)
                                 .single();
 
                             if(fullOrder) {
-                                // Cálculo do Total (Preço + Taxa) - Ajuste conforme sua lógica
-                                // Aqui assumindo que o valor cobrado foi o basePrice registrado ou similar
-                                // Como o 'orders' não salva o total final explícito no seu banco atual, vamos estimar ou mostrar itens
-                                // O seu banco 'orders' tem 'product_id', mas não tem array de itens (carrinho múltiplo). 
-                                // O código atual do App só salva 1 produto por pedido no 'orders'.
-                                
                                 const content = `
                                 <div style="font-family: monospace; width: 300px; padding: 0 5px;">
                                     <br>
@@ -1461,7 +1467,8 @@
                         }
                     })
                     .subscribe();
-
+                 // <--- VÍRGULA FINAL OBRIGATÓRIA
+                // ... MANTENHA AQUI EMBAIXO AS OUTRAS FUNÇÕES COMO loadComandas, calcMetrics, etc.
                     // Função auxiliar interna para imprimir e tocar som
                     const printContent = (html) => {
                         const area = document.getElementById('printable-area');
