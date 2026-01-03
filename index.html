@@ -1856,6 +1856,14 @@
                 },
                 loadItems: async (comandaId) => {
                     const { data } = await _sb.from('comandas').select('items').eq('id', comandaId).single();
+                    
+                    // --- INÍCIO DA CORREÇÃO ---
+                    // Atualiza o estado global para que o botão "Imprimir Conta" enxergue os itens
+                    if (data) {
+                        App.state.currentComandaItems = data.items || [];
+                    }
+                    // --- FIM DA CORREÇÃO ---
+
                     const list = document.getElementById('comanda-items-list');
                     if(data && data.items && data.items.length > 0) {
                         list.innerHTML = data.items.map(item => `
