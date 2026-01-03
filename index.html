@@ -1467,19 +1467,6 @@
                         }
                     })
                     .subscribe();
-                 // <--- VÍRGULA FINAL OBRIGATÓRIA
-                // ... MANTENHA AQUI EMBAIXO AS OUTRAS FUNÇÕES COMO loadComandas, calcMetrics, etc.
-                    // Função auxiliar interna para imprimir e tocar som
-                    const printContent = (html) => {
-                        const area = document.getElementById('printable-area');
-                        area.innerHTML = html;
-                        
-                        // Toca campainha
-                        try { new Audio('https://actions.google.com/sounds/v1/alarms/beep_short.ogg').play(); } catch(e){}
-                        
-                        // Imprime (Modo Kiosk fará isso sem janela)
-                        setTimeout(() => window.print(), 500);
-                    };
                 },
                 calcMetrics: async (orders) => {
                     const now = new Date();
