@@ -1360,8 +1360,8 @@
                 }, // <--- VÍRGULA OBRIGATÓRIA AQUI
 
                 // 2. FUNÇÃO MONITOR KITCHEN (Salão + Delivery)
-               monitorKitchen: () => {
-                    console.log("Iniciando monitoramento Inteligente (Apenas Novos Itens)...");
+             monitorKitchen: () => {
+                    console.log("🛡️ Monitoramento Blindado Ativado (Salão + Delivery)");
 
                     const printContent = (html) => {
                         const area = document.getElementById('printable-area');
@@ -1370,91 +1370,104 @@
                         setTimeout(() => window.print(), 500);
                     };
 
-                    // CANAL 1: MESAS (Lógica Inteligente)
+                    // ============================================================
+                    // 1. VARREDURA INICIAL (Recupera o que não foi impresso ao abrir)
+                    // ============================================================
+                    const checkPendingOrders = async () => {
+                        // Busca pedidos pendentes/pagos que AINDA NÃO foram impressos
+                        const { data: pending } = await _sb.from('orders')
+                            .select('*, products(nome), profiles(nome_completo, whatsapp)')
+                            .eq('store_id', App.state.storeId)
+                            .is('impresso_cozinha', false) // <--- O PULO DO GATO
+                            .in('status', ['pendente', 'aguardando_prestador', 'pago']);
+
+                        if(pending && pending.length > 0) {
+                            console.log(`🖨️ Encontrados ${pending.length} pedidos pendentes de impressão.`);
+                            for (const order of pending) {
+                                await printDeliveryOrder(order);
+                            }
+                        }
+                    };
+                    
+                    // Chama a varredura assim que inicia
+                    checkPendingOrders();
+
+                    // ============================================================
+                    // 2. FUNÇÃO DE IMPRESSÃO DE DELIVERY (Reutilizável)
+                    // ============================================================
+                    const printDeliveryOrder = async (fullOrder) => {
+                        const content = `
+                        <div style="font-family: monospace; width: 300px; padding: 0 5px;">
+                            <br><h3 style="text-align:center; margin:0;">NOVO DELIVERY 🛵</h3>
+                            <div style="border-bottom: 1px solid black; margin: 10px 0;"></div>
+                            <p style="font-size:1.1rem; font-weight:bold; margin:5px 0;">${fullOrder.profiles?.nome_completo || 'Cliente'}</p>
+                            ${fullOrder.profiles?.whatsapp ? `<p>Tel: ${fullOrder.profiles.whatsapp}</p>` : ''}
+                            <div style="background:#eee; padding:5px; margin:5px 0; font-size:0.9rem;"><strong>Endereço:</strong><br>${fullOrder.endereco_destino}</div>
+                            <hr style="border-top: 2px dashed black;">
+                            <div style="font-size:1.2rem; font-weight:bold; margin:10px 0;">1x ${fullOrder.products?.nome || 'Produto'}</div>
+                            <hr style="border-top: 2px dashed black;">
+                            <p style="text-align:center; font-size:0.8rem; margin-top:10px;">#${fullOrder.id} - ${new Date().toLocaleString()}</p><br>.
+                        </div>`;
+
+                        printContent(content);
+
+                        // MARCA COMO IMPRESSO NO BANCO
+                        await _sb.from('orders').update({ impresso_cozinha: true }).eq('id', fullOrder.id);
+                    };
+
+                    // ============================================================
+                    // 3. CANAL MESAS (Lógica Inteligente de Diferença)
+                    // ============================================================
                     _sb.channel('cozinha-mesas')
                     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'comandas', filter: 'imprimir_cozinha=eq.true' }, async (payload) => {
                         if(payload.new.store_id === App.state.storeId) {
                             const { data } = await _sb.from('comandas').select('*').eq('id', payload.new.id).single();
-                            
                             if(data && data.items && data.items.length > 0) {
-                                let novosItensParaImprimir = [];
-                                let itensAtualizados = data.items.map(item => {
-                                    // Se 'printed_qtd' não existe (item antigo), assume 0
-                                    const jaImpresso = item.printed_qtd || 0;
-                                    const paraImprimir = item.qtd - jaImpresso;
-
-                                    if(paraImprimir > 0) {
-                                        // Adiciona à lista de impressão apenas a diferença
-                                        novosItensParaImprimir.push({
-                                            ...item,
-                                            qtd: paraImprimir // Imprime só a quantidade nova (Ex: pediu +2)
-                                        });
-                                        // Atualiza o contador de impressos para ficar igual ao total
-                                        item.printed_qtd = item.qtd;
+                                let itensParaImprimir = [];
+                                let novosItens = data.items.map(item => {
+                                    const diff = (item.qtd || 0) - (item.printed_qtd || 0);
+                                    if(diff > 0) {
+                                        itensParaImprimir.push({ ...item, qtd: diff });
+                                        return { ...item, printed_qtd: item.qtd };
                                     }
                                     return item;
                                 });
 
-                                // Só imprime se tiver novidade
-                                if(novosItensParaImprimir.length > 0) {
-                                    const itemsHtml = novosItensParaImprimir.map(item => `
-                                        <div style="border-bottom:1px dashed #000; padding:5px 0;">
-                                            <div style="font-size:1.2rem; font-weight:bold;">${item.qtd}x ${item.nome}</div>
-                                            ${item.obs ? `<div style="font-size:0.9rem;">⚠️ OBS: ${item.obs}</div>` : ''}
-                                            <div style="font-size:0.7rem; text-align:right;">Garçom: ${item.garcom || 'Geral'}</div>
-                                        </div>
-                                    `).join('');
-
-                                    const content = `
-                                    <div style="font-family: monospace; width: 300px; padding: 0 5px;">
-                                        <br>
-                                        <h3 style="text-align:center; margin:0;">PEDIDO COZINHA 👨‍🍳</h3>
-                                        <div style="border: 2px solid black; margin: 5px 0; padding: 5px;">
-                                            <p style="text-align:center; font-size:2rem; font-weight:800; margin:0;">MESA ${data.numero}</p>
-                                        </div>
-                                        <p style="text-align:center;">${new Date().toLocaleTimeString()}</p>
-                                        <hr style="border-top: 2px solid black;">
-                                        ${itemsHtml}
-                                        <hr style="border-top: 2px solid black;">
-                                        <br>.
-                                    </div>`;
-
-                                    printContent(content);
-
-                                    // Atualiza o banco com os novos contadores de "já impresso" e desliga o aviso
-                                    await _sb.from('comandas').update({ 
-                                        imprimir_cozinha: false,
-                                        items: itensAtualizados 
-                                    }).eq('id', payload.new.id);
+                                if(itensParaImprimir.length > 0) {
+                                    const itemsHtml = itensParaImprimir.map(i => `<div style="border-bottom:1px dashed #000; padding:5px 0;"><div style="font-size:1.2rem; font-weight:bold;">${i.qtd}x ${i.nome}</div>${i.obs ? `<div style="font-size:0.9rem;">⚠️ OBS: ${i.obs}</div>` : ''}<div style="font-size:0.7rem; text-align:right;">Garçom: ${i.garcom || 'Geral'}</div></div>`).join('');
+                                    printContent(`<div style="font-family: monospace; width: 300px; padding: 0 5px;"><br><h3 style="text-align:center; margin:0;">PEDIDO SALÃO 🍽️</h3><div style="border: 2px solid black; margin: 5px 0; padding: 5px;"><p style="text-align:center; font-size:2rem; font-weight:800; margin:0;">MESA ${data.numero}</p></div><p style="text-align:center;">${new Date().toLocaleTimeString()}</p><hr style="border-top: 2px solid black;">${itemsHtml}<hr style="border-top: 2px solid black;"><br>.</div>`);
+                                    await _sb.from('comandas').update({ imprimir_cozinha: false, items: novosItens }).eq('id', payload.new.id);
                                 } else {
-                                    // Se não tiver nada novo, só desliga o aviso
                                     await _sb.from('comandas').update({ imprimir_cozinha: false }).eq('id', payload.new.id);
                                 }
                             }
                         }
                     }).subscribe();
 
-                    // CANAL 2: DELIVERY (Mantém igual, pois delivery sempre é novo)
+                    // ============================================================
+                    // 4. CANAL DELIVERY (Agora escuta TUDO e filtra por impresso_cozinha)
+                    // ============================================================
                     _sb.channel('cozinha-delivery')
-                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders', filter: `store_id=eq.${App.state.storeId}` }, async (payload) => {
+                    .on('postgres_changes', { 
+                        event: 'INSERT', 
+                        schema: 'public', 
+                        table: 'orders', 
+                        filter: `store_id=eq.${App.state.storeId}` 
+                    }, async (payload) => {
+                        // Se chegou um pedido novo, verifica se ele já foi marcado como impresso (o default é false)
                         if(['pendente', 'aguardando_prestador', 'pago'].includes(payload.new.status)) {
-                            const { data: fullOrder } = await _sb.from('orders').select('*, products(nome), profiles(nome_completo, whatsapp)').eq('id', payload.new.id).single();
-                            if(fullOrder) {
-                                printContent(`
-                                <div style="font-family: monospace; width: 300px; padding: 0 5px;">
-                                    <br><h3 style="text-align:center; margin:0;">NOVO DELIVERY 🛵</h3>
-                                    <div style="border-bottom: 1px solid black; margin: 10px 0;"></div>
-                                    <p style="font-size:1.1rem; font-weight:bold; margin:5px 0;">${fullOrder.profiles?.nome_completo || 'Cliente'}</p>
-                                    ${fullOrder.profiles?.whatsapp ? `<p>Tel: ${fullOrder.profiles.whatsapp}</p>` : ''}
-                                    <div style="background:#eee; padding:5px; margin:5px 0; font-size:0.9rem;"><strong>Endereço:</strong><br>${fullOrder.endereco_destino}</div>
-                                    <hr style="border-top: 2px dashed black;">
-                                    <div style="font-size:1.2rem; font-weight:bold; margin:10px 0;">1x ${fullOrder.products?.nome || 'Produto'}</div>
-                                    <hr style="border-top: 2px dashed black;">
-                                    <p style="text-align:center; font-size:0.8rem; margin-top:10px;">#${fullOrder.id} - ${new Date().toLocaleString()}</p><br>.
-                                </div>`);
+                            const { data: fullOrder } = await _sb.from('orders')
+                                .select('*, products(nome), profiles(nome_completo, whatsapp)')
+                                .eq('id', payload.new.id)
+                                .single();
+                            
+                            // Só imprime se realmente não foi impresso ainda
+                            if(fullOrder && fullOrder.impresso_cozinha === false) {
+                                await printDeliveryOrder(fullOrder);
                             }
                         }
-                    }).subscribe();
+                    })
+                    .subscribe();
                 },
                 calcMetrics: async (orders) => {
                     const now = new Date();
