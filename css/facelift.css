@@ -1,0 +1,262 @@
+/* Facelift Moderno - Melhorias Visuais Incrementais */
+/* Focado em aprimorar o existente sem alterar o layout */
+
+/* 1. Base e Cores */
+:root {
+    --bg-dark: #0f172a;
+    /* Slate 900 */
+    --bg-card: #1e293b;
+    /* Slate 800 */
+    --border: #334155;
+    /* Slate 700 */
+    --accent: #6366f1;
+    /* Indigo 500 */
+    --text-primary: #f8fafc;
+    --text-muted: #94a3b8;
+    --success: #10b981;
+    /* Emerald 500 */
+    --warning: #f59e0b;
+    /* Amber 500 */
+    --danger: #ef4444;
+    /* Red 500 */
+}
+
+body {
+    background-color: var(--bg-dark) !important;
+    color: var(--text-primary) !important;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* 2. Botões de Ação Principais (Dashboard) */
+/* Mantém o layout grid, mas melhora cada botão individualmente */
+.action-btn {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    border-radius: 16px !important;
+    /* Mais moderno */
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+    /* Sombra suave */
+    position: relative;
+    overflow: hidden;
+}
+
+/* Efeito de brilho suave ao passar o mouse */
+.action-btn::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.action-btn:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+    filter: brightness(1.1);
+    z-index: 1;
+}
+
+.action-btn:hover::after {
+    opacity: 1;
+}
+
+.action-btn:active {
+    transform: translateY(-1px);
+}
+
+.action-btn i {
+    font-size: 2rem !important;
+    /* Ícone 25% maior para destaque */
+    margin-bottom: 8px;
+    display: block;
+    transition: transform 0.3s;
+}
+
+.action-btn:hover i {
+    transform: scale(1.1) rotate(3deg);
+    /* Micro-interação divertida */
+}
+
+/* 3. Inputs Modernos */
+.input-field,
+input[type="text"],
+input[type="password"],
+input[type="number"],
+select,
+textarea {
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-primary) !important;
+    border-radius: 10px !important;
+    padding: 12px 14px !important;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+}
+
+.input-field:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25) !important;
+    outline: none;
+}
+
+/* 4. Cards e Modais */
+.card,
+.modal-content {
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border) !important;
+    padding-bottom: 15px !important;
+    margin-bottom: 15px !important;
+}
+
+/* 5. Botões Gerais (btn-primary, btn-success, etc) */
+.btn {
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.025em;
+    padding: 10px 20px;
+    text-transform: none !important;
+    /* Remove uppercase forçado se houver */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: filter 0.2s, transform 0.1s;
+}
+
+.btn:hover {
+    filter: brightness(1.1);
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+/* 6. Tipografia e Títulos */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: white !important;
+    font-weight: 700 !important;
+    line-height: 1.2;
+}
+
+p,
+span,
+label {
+    line-height: 1.5;
+}
+
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
+/* 7. Scrollbars Bonitas */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #475569;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #64748b;
+}
+
+/* 8. Modal Backdrop Glassmorphism */
+.modal-overlay {
+    backdrop-filter: blur(8px) !important;
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* 9. Animações de Entrada */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-content {
+    animation: fadeInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.action-btn {
+    animation: fadeInUp 0.5s ease-out backwards;
+}
+
+/* Stagger animação dos botões para efeito cascata */
+.action-btn:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.action-btn:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.action-btn:nth-child(3) {
+    animation-delay: 0.2s;
+}
+
+.action-btn:nth-child(4) {
+    animation-delay: 0.25s;
+}
+
+.action-btn:nth-child(5) {
+    animation-delay: 0.3s;
+}
+
+.action-btn:nth-child(6) {
+    animation-delay: 0.35s;
+}
+
+/* 10. Tabelas Melhoradas */
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+th,
+td {
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background-color: rgba(255, 255, 255, 0.02);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+tr:hover td {
+    background-color: rgba(255, 255, 255, 0.02);
+}
