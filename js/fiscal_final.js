@@ -37,6 +37,14 @@ const Fiscal = {
                 // Se for URL, tenta baixar e converter em blob local
                 const response = await fetch(pdfData);
                 blob = await response.blob();
+            } else if (/^[0-9a-fA-F]+$/.test(pdfData) && pdfData.length > 100) {
+                // Retorno da Geranet é um Hexadecimal
+                const hex = pdfData;
+                const array = new Uint8Array(hex.length / 2);
+                for (let i = 0; i < hex.length; i += 2) {
+                    array[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+                }
+                blob = new Blob([array], { type: 'application/pdf' });
             }
 
             if (blob) {
