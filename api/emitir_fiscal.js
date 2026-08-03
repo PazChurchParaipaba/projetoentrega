@@ -180,8 +180,8 @@ export default async function handler(req, res) {
             totalTrib = round2(totalTrib + vTotTrib);
 
             return {
-                "numeroPedido": null,
-                "numeroItemPedido": null,
+                "numeroPedido": "",
+                "numeroItemPedido": "",
                 "desconto": "0.00",
                 "frete": "0.00",
                 "seguro": "0.00",
@@ -226,8 +226,8 @@ export default async function handler(req, res) {
             const vTaxa = round2(vNF_Original - somaTotalProdutos);
             
             itensFiscais.push({
-                "numeroPedido": null,
-                "numeroItemPedido": null,
+                "numeroPedido": "",
+                "numeroItemPedido": "",
                 "desconto": "0.00",
                 "frete": "0.00",
                 "seguro": "0.00",
