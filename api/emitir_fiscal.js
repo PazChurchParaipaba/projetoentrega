@@ -270,11 +270,28 @@ export default async function handler(req, res) {
 
         const vNF_Final = somaTotalProdutos;
 
+function mapearBandeira(b) {
+    const t = String(b || "").toUpperCase().trim();
+    if (t.includes('VISA')) return '01';
+    if (t.includes('MASTER')) return '02';
+    if (t.includes('AMEX')) return '03';
+    if (t.includes('SORO')) return '04';
+    if (t.includes('DINER')) return '05';
+    if (t.includes('ELO')) return '06';
+    if (t.includes('HIPER')) return '07';
+    if (t.includes('AURA')) return '08';
+    if (t.includes('CABAL')) return '09';
+    return '99';
+}
+
         let pags = [];
         if (Array.isArray(payments_payload) && payments_payload.length) {
             pags = payments_payload.map(p => ({
                 code: mapearMeioPagamento(p.code || p.tipo || p.metodo || p.payment_method || p.method),
-                val: round2(parseMonetario(p.valor || p.amount || p.val))
+                val: round2(parseMonetario(p.valor || p.amount || p.val)),
+                cnpj: p.cnpj || p.cnpjCredenciadora || "",
+                bandeira: mapearBandeira(p.bandeira || p.tipoBandeira),
+                aut: p.aut || p.autorizacao || p.nsu || ""
             }));
         } else {
             let parsedObs = null;
@@ -285,10 +302,13 @@ export default async function handler(req, res) {
             if (parsedObs && Array.isArray(parsedObs.pagamentos) && parsedObs.pagamentos.length) {
                 pags = parsedObs.pagamentos.map(p => ({
                     code: mapearMeioPagamento(p.code || p.tipo || p.metodo || p.payment_method || p.method),
-                    val: round2(parseMonetario(p.valor || p.amount || p.val))
+                    val: round2(parseMonetario(p.valor || p.amount || p.val)),
+                    cnpj: p.cnpj || "",
+                    bandeira: mapearBandeira(p.bandeira),
+                    aut: p.aut || p.nsu || ""
                 }));
             } else {
-                pags.push({ code: mapearMeioPagamento(order.metodo_pagamento), val: vNF_Final });
+                pags.push({ code: mapearMeioPagamento(order.metodo_pagamento), val: vNF_Final, cnpj: "", bandeira: "99", aut: "" });
             }
         }
 
@@ -299,11 +319,20 @@ export default async function handler(req, res) {
         }
 
         const detPag = pags.map(p => {
-            return {
+            const isCartao = ['03', '04'].includes(p.code);
+            const obj = {
                 "tipo": p.code,
                 "valor": p.val,
                 "indicadorPagamento": "0" 
             };
+            
+            if (isCartao) {
+                obj.cnpjCredenciadora = String(p.cnpj || "").replace(/\D/g, '');
+                obj.tipoBandeira = p.bandeira || "99";
+                obj.autorizacao = String(p.aut || "").trim().substring(0, 20);
+                obj.tipoIntegracao = "2"; // 2=Pagamento não integrado
+            }
+            return obj;
         });
 
         const cepEmitente = String(store.cep || '62685000').replace(/\D/g, '').padEnd(8, '0').substring(0, 8);
