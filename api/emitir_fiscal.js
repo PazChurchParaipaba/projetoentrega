@@ -405,17 +405,17 @@ export default async function handler(req, res) {
                 "cep": cep.padEnd(8, '0').substring(0, 8)
             };
         } else {
+            nfe.cliente = {
+                "consumidorFinal": "1",
+                "indicadorIEdestinatario": "9"
+            };
             if (cpf_nota && cpf_nota.length > 5) {
                 const docLimpo = String(cpf_nota).replace(/\D/g, '');
                 const nomeDestinatario = limparString(body.nome_nota || 'CONSUMIDOR', 2, 60);
 
-                nfe.cliente = {
-                    "cnpj": docLimpo.length === 14 ? docLimpo : "",
-                    "cpf": docLimpo.length === 11 ? docLimpo : "",
-                    "razaoSocial": nomeDestinatario,
-                    "consumidorFinal": "1",
-                    "indicadorIEdestinatario": "9",
-                };
+                nfe.cliente.cnpj = docLimpo.length === 14 ? docLimpo : "";
+                nfe.cliente.cpf = docLimpo.length === 11 ? docLimpo : "";
+                nfe.cliente.razaoSocial = nomeDestinatario;
             }
         }
 
