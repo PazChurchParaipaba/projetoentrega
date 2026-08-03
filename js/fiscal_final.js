@@ -201,15 +201,15 @@ const Fiscal = {
                     </div>
                     
                     <div style="background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:15px; margin-bottom:15px;">
-                        <h5 style="color:#38bdf8; margin-bottom:10px; display:flex; align-items:center; gap:5px;"><i class="ri-settings-3-line"></i> Credenciais Nuvem Fiscal</h5>
+                        <h5 style="color:#38bdf8; margin-bottom:10px; display:flex; align-items:center; gap:5px;"><i class="ri-settings-3-line"></i> Credenciais Geranet NFe</h5>
                         
                         <div class="input-wrapper">
-                            <label>Client ID</label>
-                            <input type="text" id="nuvem-id" class="input-field" value="${store.nuvem_client_id || ''}" placeholder="Client ID">
+                            <label>Certificado A1 (Hexadecimal)</label>
+                            <input type="text" id="geranet-cert" class="input-field" value="${store.certificado_hex || ''}" placeholder="Cole o código hexadecimal do seu certificado">
                         </div>
                         <div class="input-wrapper">
-                            <label>Client Secret</label>
-                            <input type="password" id="nuvem-secret" class="input-field" value="${store.nuvem_client_secret || ''}" placeholder="Client Secret">
+                            <label>Senha do Certificado</label>
+                            <input type="password" id="geranet-senha" class="input-field" value="${store.senha_certificado || ''}" placeholder="Senha do certificado digital">
                         </div>
 
                         <div style="display:flex; gap:10px;">
@@ -400,17 +400,17 @@ const Fiscal = {
     },
 
     saveCredentials: async () => {
-        const clientId = document.getElementById('nuvem-id').value.trim();
-        const clientSecret = document.getElementById('nuvem-secret').value.trim();
+        const certHex = document.getElementById('geranet-cert').value.trim();
+        const senhaCert = document.getElementById('geranet-senha').value.trim();
         const cscId = document.getElementById('csc-id').value.trim();
         const cscToken = document.getElementById('csc-token').value.trim();
         const emailCont = document.getElementById('cont-email').value.trim();
 
-        if (!clientId || !clientSecret) return alert("Erro: Client ID e Secret são obrigatórios.");
+        if (!certHex || !senhaCert) return alert("Erro: Certificado (Hexadecimal) e Senha são obrigatórios.");
 
         const { error } = await _sb.from('stores').update({
-            nuvem_client_id: clientId,
-            nuvem_client_secret: clientSecret,
+            certificado_hex: certHex,
+            senha_certificado: senhaCert,
             csc_id: cscId,
             csc_token: cscToken,
             email_contador: emailCont
