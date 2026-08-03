@@ -204,8 +204,12 @@ const Fiscal = {
                         <h5 style="color:#38bdf8; margin-bottom:10px; display:flex; align-items:center; gap:5px;"><i class="ri-settings-3-line"></i> Credenciais Geranet NFe</h5>
                         
                         <div class="input-wrapper">
-                            <label>Certificado A1 (Hexadecimal)</label>
-                            <input type="text" id="geranet-cert" class="input-field" value="${store.certificado_hex || ''}" placeholder="Cole o código hexadecimal do seu certificado">
+                            <label>Certificado A1 (Arquivo ou Hexadecimal)</label>
+                            <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                                <input type="file" id="geranet-cert-file" accept=".pfx,.p12" style="display:none;" onchange="Fiscal.handleCertificadoUpload(event)">
+                                <button class="btn btn-secondary" style="width: auto; padding: 10px; margin: 0; display: flex; align-items: center; gap: 5px;" onclick="document.getElementById('geranet-cert-file').click()"><i class="ri-upload-cloud-2-line"></i> Buscar Arquivo</button>
+                                <input type="text" id="geranet-cert" class="input-field" value="${store.certificado_hex || ''}" placeholder="Ou cole o código hexadecimal" style="margin: 0; flex: 1;">
+                            </div>
                         </div>
                         <div class="input-wrapper">
                             <label>Senha do Certificado</label>
@@ -397,6 +401,33 @@ const Fiscal = {
             console.error(e);
             alert("Erro ao gerar nota avulsa: " + e.message);
         }
+    },
+
+    // =========================================================================
+    // 🛠️ UPLOAD E CONVERSÃO DO CERTIFICADO
+    // =========================================================================
+    handleCertificadoUpload: (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        App.utils.toast("Lendo arquivo...", "info");
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const arrayBuffer = e.target.result;
+            const bytes = new Uint8Array(arrayBuffer);
+            let hexString = '';
+            for (let i = 0; i < bytes.length; i++) {
+                let hex = bytes[i].toString(16);
+                if (hex.length === 1) hex = '0' + hex;
+                hexString += hex;
+            }
+            document.getElementById('geranet-cert').value = hexString;
+            App.utils.toast("Certificado convertido com sucesso!", "success");
+        };
+        reader.onerror = () => {
+            alert("Erro ao ler o arquivo do certificado.");
+        };
+        reader.readAsArrayBuffer(file);
     },
 
     saveCredentials: async () => {
