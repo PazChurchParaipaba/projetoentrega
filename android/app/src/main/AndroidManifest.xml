@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.naxio.software">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="com.getnet.posdigital.service.POSDIGITAL" />
+
+    <queries>
+        <!-- Getnet Packages -->
+        <package android:name="com.getnet.posdigital.service" />
+        <package android:name="com.getnet.posdigital" />
+        <package android:name="com.getnet.getnetserviceapp" />
+        <package android:name="com.getnet.smartpos" />
+        <package android:name="com.getnet.posdigital.payment" />
+        <package android:name="br.com.getnet.posdigital" />
+        
+        <!-- Getnet Intent Actions -->
+        <intent>
+            <action android:name="br.com.getnet.posdigital.intent.action.PAYMENT" />
+        </intent>
+        <intent>
+            <action android:name="com.getnet.posdigital.payment.PAYMENT" />
+        </intent>
+        <intent>
+            <action android:name="com.getnet.smartpos.intent.action.PAYMENT" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="getnet" android:host="pagamento" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="getnet" android:host="payment" />
+        </intent>
+        <intent>
+            <action android:name="com.getnet.posdigital.print.PRINT" />
+        </intent>
+        
+        <!-- Sunmi Printer Package -->
+        <package android:name="woyou.aidlservice.jiuiv5" />
+    </queries>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@drawable/logo"
+        android:roundIcon="@drawable/logo"
+        android:label="Naxio POS"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+        
+        <meta-data android:name="kiosk-mode" android:value="false" />
+        <meta-data android:name="priority_pay" android:value="true" />
+        <meta-data android:name="allow_print_permission" android:value="1" />
+        
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="Naxio POS"
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

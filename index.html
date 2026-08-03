@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="description" content="Naxio Restaurantes - Gestão Inteligente para Gastronomia">
+
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <title>NAXIO RESTAURANTES</title>
+
+    <link rel="manifest" href="./manifest.json" id="app-manifest">
+
+    <link rel="icon" type="image/png"
+        href="https://raw.githubusercontent.com/PazChurchParaipaba/projetoentrega/refs/heads/main/logo.png">
+    <link rel="apple-touch-icon"
+        href="https://raw.githubusercontent.com/PazChurchParaipaba/projetoentrega/refs/heads/main/logo.png">
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/animations.css">
+    <link rel="stylesheet" href="./css/enhancements.css">
+    <link rel="stylesheet" href="./css/naxio-ui.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Splash Screen Cinematic/Ultra-Professional */
+        #naxio-splash {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            transition: opacity 1s ease-in-out, visibility 1s;
+            overflow: hidden;
+        }
+
+        /* High-Tech Background: Particles + Grid */
+        #naxio-splash::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(139, 92, 246, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(139, 92, 246, 0.05) 1px, transparent 1px),
+                radial-gradient(#ffffff 1px, transparent 1px);
+            background-size: 40px 40px, 40px 40px, 60px 60px;
+            opacity: 0.2;
+            animation: techMove 120s linear infinite;
+        }
+
+        #naxio-splash.fade-out {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .splash-container {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+        }
+
+        .logo-box {
+            width: 200px;
+            height: 200px;
+            background: #0f172a;
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 45px auto;
+            box-shadow: 0 0 70px rgba(139, 92, 246, 0.45), 0 0 30px rgba(139, 92, 246, 0.2);
+            border: 1px solid rgba(167, 139, 250, 0.45);
+            opacity: 0;
+            animation: fadeInScale 1s ease-out forwards;
+        }
+
+        .splash-logo-img {
+            width: 140px;
+            height: auto;
+            filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.6));
+        }
+
+        .splash-main-title {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 3rem;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: 6px;
+            text-transform: uppercase;
+            margin: 0;
+            opacity: 0;
+            white-space: nowrap;
+            /* Slide from left animation */
+            animation: slideInLeft 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards;
+            position: relative;
+            background: linear-gradient(90deg, #fff 0%, #a78bfa 50%, #fff 100%);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation-name: slideInLeft, sweep;
+            animation-duration: 1.2s, 3s;
+            animation-iteration-count: 1, infinite;
+        }
+
+        .splash-subtitle {
+            font-size: 0.8rem;
+            color: rgba(167, 139, 250, 0.8);
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-top: 15px;
+            margin-bottom: 50px;
+            opacity: 0;
+            animation: fadeIn 1s ease-out 1s forwards;
+        }
+
+        .loading-wrapper {
+            width: 240px;
+            margin: 0 auto;
+            opacity: 0;
+            animation: fadeIn 1s ease-out 1.5s forwards;
+        }
+
+        .tech-bar {
+            width: 100%;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.05);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .tech-bar-inner {
+            position: absolute;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: #8b5cf6;
+            box-shadow: 0 0 15px #8b5cf6;
+            animation: techLoad 2.5s infinite cubic-bezier(0.65, 0, 0.35, 1);
+        }
+
+        .tech-status {
+            font-family: 'Courier New', monospace;
+            font-size: 0.55rem;
+            color: rgba(255, 255, 255, 0.3);
+            letter-spacing: 3px;
+        }
+
+        /* Animations */
+        @keyframes techMove {
+            from {
+                background-position: 0 0;
+            }
+
+            to {
+                background-position: 500px 1000px;
+            }
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes sweep {
+            0% {
+                background-position: 200% center;
+            }
+
+            100% {
+                background-position: -200% center;
+            }
+        }
+
+        @keyframes techLoad {
+            0% {
+                left: -100%;
+            }
+
+            100% {
+                left: 100%;
+            }
+        }
+
+        /* Mobile Responsiveness for Splash Screen */
+        @media (max-width: 600px) {
+            .logo-box {
+                width: 150px;
+                height: 150px;
+                border-radius: 20px;
+                margin-bottom: 30px;
+            }
+
+            .splash-logo-img {
+                width: 100px;
+            }
+
+            .splash-main-title {
+                font-size: 1.5rem;
+                letter-spacing: 2px;
+                white-space: normal;
+            }
+
+            .splash-subtitle {
+                font-size: 0.6rem;
+                letter-spacing: 3px;
+                margin-bottom: 30px;
+            }
+
+            .loading-wrapper {
+                width: 160px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Splash Screen Ultra-Professional -->
+    <div id="naxio-splash">
+        <div class="splash-container">
+            <div class="logo-box">
+                <img src="./logo.png" class="splash-logo-img" alt="Naxio">
+            </div>
+            <h1 class="splash-main-title">NAXIO RESTAURANTES</h1>
+            <p class="splash-subtitle">TECNOLOGIA GASTRONÔMICA</p>
+
+            <div class="loading-wrapper">
+                <div class="tech-bar">
+                    <div class="tech-bar-inner"></div>
+                </div>
+                <div class="tech-status">Carregando sistema...</div>
+            </div>
+        </div>
+    </div>
+    <div class="toast-container" id="toast-container"></div>
+
+    <div id="store-notifications"></div>
+    <!-- Cart Floater Removed -->
+
+    <div id="pwa-banner" class="pwa-banner">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <i class="ri-download-cloud-2-line" style="font-size:1.5rem"></i>
+            <div>
+                <div style="font-weight:bold">Instalar Software Naxio</div>
+                <div style="font-size:0.8rem; opacity:0.8">Acesso rápido na tela inicial</div>
+            </div>
+        </div>
+        <button class="btn btn-sm btn-primary" onclick="App.pwa.install()">Instalar</button>
+    </div>
+
+    <header class="main-header">
+        <div class="brand">
+            <span class="brand-text">NAXIO RESTAURANTES</span>
+        </div>
+
+        <nav class="desktop-nav">
+            <button class="nav-tab active" onclick="App.router.go('home')"><i class="ri-store-2-line"></i>
+                Início</button>
+            <button class="nav-tab" onclick="App.catalog.filter('Todos', this)"><i class="ri-search-line"></i>
+                Catálogo</button>
+            <button class="nav-tab" onclick="App.router.go('cliente')"><i class="ri-file-list-3-line"></i> Meus
+                Pedidos</button>
+        </nav>
+
+        <div class="header-actions">
+            <button id="btn-header-cart" class="btn-icon header-cart-btn" onclick="App.cart.open()"
+                style="display: none !important;">
+                <i class="ri-shopping-cart-2-fill"></i>
+                <span id="header-cart-count" class="badge-count" style="display:none">0</span>
+            </button>
+
+            <div id="user-actions-container" style="display:inline-block;">
+                <button id="btn-header-user" class="btn-icon" onclick="App.router.go('auth')">
+                    <i class="ri-user-3-line"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+
+        <section id="view-home" class="view-section active">
+            <div
+                style="background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px); padding: 5px 0; position:sticky; top:70px; z-index:90; border-bottom:1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2);">
+                <div class="container" style="padding-top: 10px; padding-bottom: 0;">
+                    <div class="category-scroll" id="category-list">
+                        <button class="cat-pill active" onclick="App.catalog.filter('Todos', this)">Todos</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="view-content container" style="margin-top: 15px;">
+                <div class="home-hero"
+                    style="text-align: center; padding: 40px 20px; background: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.7)), url('https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80'); background-size: cover; background-position: center; border-radius: 20px; margin-bottom: 30px; border: 1px solid rgba(255,255,255,0.1);">
+                    <h2
+                        style="font-size: 2.2rem; font-weight: 800; margin-bottom: 10px; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.5);">
+                        Sabor e qualidade na sua mesa</h2>
+                    <p style="font-size: 1.1rem; color: rgba(255,255,255,0.9); text-shadow: 0 1px 5px rgba(0,0,0,0.5);">
+                        Peça o melhor da gastronomia local com rapidez e segurança.</p>
+                </div>
+
+                <div id="public-catalog" class="grid grid-3">
+                    <!-- Skeleton cards aparecem instantaneamente -->
+                    <div id="skel-1" class="skel-card"></div>
+                    <div id="skel-2" class="skel-card"></div>
+                    <div id="skel-3" class="skel-card"></div>
+                    <div id="skel-4" class="skel-card"></div>
+                    <div id="skel-5" class="skel-card"></div>
+                    <div id="skel-6" class="skel-card"></div>
+                </div>
+            </div>
+        </section>
+        <style>
+            @keyframes skelPulse {
+                0% {
+                    background-position: 200% 0
+                }
+
+                100% {
+                    background-position: -200% 0
+                }
+            }
+
+            .skel-card {
+                background: var(--surface, #1e293b);
+                border-radius: 12px;
+                overflow: hidden;
+                border: 1px solid #334155;
+                min-height: 220px
+            }
+
+            .skel-card::before {
+                content: '';
+                display: block;
+                height: 140px;
+                background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+                background-size: 200% 100%;
+                animation: skelPulse 1.4s ease infinite
+            }
+
+            .skel-card::after {
+                content: '';
+                display: block;
+                margin: 14px;
+                height: 60px;
+                border-radius: 8px;
+                background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+                background-size: 200% 100%;
+                animation: skelPulse 1.4s ease infinite
+            }
+        </style>
+        <!-- ⚡ PRÉ-CARREGAMENTO IMEDIATO: renderiza cache ANTES do App.init() -->
+        <script>
+            (function () {
+                try {
+                    var cached = localStorage.getItem('CACHE_CATALOG_Todos');
+                    if (!cached) return;
+                    var data = JSON.parse(cached);
+                    if (!data || data.length === 0) return;
+                    var el = document.getElementById('public-catalog');
+                    if (!el) return;
+                    var html = data.slice(0, 50).map(function (p) {
+                        var img = p.imagem_url ? '<img src="' + p.imagem_url + '" style="width:100%;height:160px;object-fit:cover;" loading="lazy">'
+                            : '<div style="height:160px;background:#1e293b;display:flex;align-items:center;justify-content:center;color:#475569;font-size:2rem;">🍽️</div>';
+                        var promo = p.promocao ? '<div style="position:absolute;top:10px;left:10px;background:#ef4444;color:#fff;font-size:0.7rem;font-weight:bold;padding:2px 8px;border-radius:999px">PROMOÇÃO</div>' : '';
+                        return '<div class="card" style="position:relative;overflow:hidden;cursor:pointer">' +
+                            '<div style="position:relative">' + promo + img + '</div>' +
+                            '<h4 style="margin:10px 0 4px;font-size:0.95rem">' + (p.nome || '') + '</h4>' +
+                            '<div style="color:#38bdf8;font-weight:bold;font-size:1.1rem">R$ ' + parseFloat(p.preco || 0).toFixed(2) + '</div>' +
+                            '</div>';
+                    }).join('');
+                    el.innerHTML = html;
+                } catch (e) { }
+            })();
+        </script>
+
+        <section id="view-auth" class="view-section container">
+            <div class="card auth-card">
+                <div id="auth-state-login">
+                    <div style="margin-bottom: 2rem;">
+                        <h2 style="color:var(--primary); margin-bottom:0.5rem;">Bem-vindo</h2>
+                        <p>Entre para gerenciar seus pedidos</p>
+                    </div>
+                    <div class="input-wrapper"><label>Endereço de Email</label><input type="email" id="login-email"
+                            class="input-field" placeholder="seu@email.com"></div>
+                    <div class="input-wrapper"><label>Sua Senha</label><input type="password" id="login-pass"
+                            class="input-field" placeholder="••••••"></div>
+                    <button class="btn btn-primary btn-full" onclick="App.auth.login()">Entrar no Sistema</button>
+                    <div style="margin-top:1rem;"><button class="btn btn-sm btn-secondary"
+                            onclick="App.auth.switchView('recover')">Esqueci minha senha</button></div>
+                    <div style="margin-top:2rem; padding-top:1.5rem; border-top:1px solid var(--border);">
+                        <p class="text-xs">Não possui conta?</p>
+                        <button class="btn btn-secondary btn-full" onclick="App.auth.switchView('roles')">Criar Nova
+                            Conta</button>
+                    </div>
+                </div>
+
+                <div id="auth-state-recover" style="display:none;">
+                    <h3>Recuperação de Senha</h3>
+                    <p>Informe seus dados para validar sua identidade.</p>
+                    <div class="input-wrapper"><label>Email Cadastrado</label><input type="email" id="rec-email"
+                            class="input-field" placeholder="seu@email.com"></div>
+                    <div class="input-wrapper"><label>CPF (Validação de Segurança)</label><input type="text"
+                            id="rec-cpf" class="input-field" placeholder="000.000.000-00"></div>
+                    <button class="btn btn-primary btn-full" onclick="App.auth.recoverPassword()">Enviar Email de
+                        Recuperação</button>
+                    <button class="btn btn-secondary btn-full" style="margin-top:0.5rem"
+                        onclick="App.auth.switchView('login')">Voltar</button>
+                </div>
+
+                <div id="auth-state-roles" style="display:none;">
+                    <h3>Qual o seu perfil?</h3>
+                    <p>Selecione como deseja usar a plataforma Naxio</p>
+                    <div class="role-grid">
+                        <div class="role-card" onclick="App.auth.startReg('cliente')"><i
+                                class="ri-user-smile-line"></i><span class="font-bold">Sou Cliente</span></div>
+                        <div class="role-card" onclick="App.auth.startReg('loja_admin')"><i
+                                class="ri-store-2-line"></i><span class="font-bold">Sou Lojista</span></div>
+                        <div class="role-card" onclick="App.auth.startReg('motorista')"><i
+                                class="ri-truck-line"></i><span class="font-bold">Sou Motorista</span></div>
+                        <div class="role-card" onclick="App.auth.startReg('montador')"><i
+                                class="ri-tools-line"></i><span class="font-bold">Sou Prestador</span></div>
+                        <div class="role-card" onclick="App.auth.startReg('garcom')"><i
+                                class="ri-restaurant-line"></i><span class="font-bold">Sou Garçom</span></div>
+                    </div>
+                    <button class="btn btn-secondary btn-full" style="margin-top:2rem"
+                        onclick="App.auth.switchView('login')">Voltar ao Login</button>
+                </div>
+
+                <div id="auth-state-register" style="display:none;">
+                    <h3 id="reg-title">Cadastro</h3>
+                    <p>Preencha seus dados para continuar</p>
+                    <div class="input-wrapper"><label>Nome Completo</label><input type="text" id="reg-name"
+                            class="input-field" placeholder="Seu nome"></div>
+                    <div class="input-wrapper"><label>Email</label><input type="email" id="reg-email"
+                            class="input-field" placeholder="seu@email.com"></div>
+                    <div class="input-wrapper"><label>Senha</label><input type="password" id="reg-pass"
+                            class="input-field" placeholder="••••••"></div>
+                    <div id="reg-dynamic-fields"></div>
+                    <button class="btn btn-primary btn-full" onclick="App.auth.register()" id="btn-final-reg"
+                        style="margin-top:1rem;">Finalizar Cadastro</button>
+                    <button class="btn btn-secondary btn-full" style="margin-top:0.5rem"
+                        onclick="App.auth.switchView('roles')">Voltar</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-loja" class="view-section container">
+            <div
+                style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1.5rem; border-bottom: 1px solid #334155; padding-bottom: 20px;">
+                <div>
+                    <div id="loja-header-info">
+                        <p style="margin:0;">Gestão completa do seu negócio</p>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <div class="painel-actions-grid">
+
+
+                <button class="btn action-btn" onclick="if(typeof Caixa !== 'undefined') Caixa.openView();"
+                    style="background-color: #3b82f6; color: #fff; border:none;">
+                    <i class="ri-safe-2-line"></i> Caixa
+                </button>
+
+                <button class="btn action-btn" onclick="if(typeof Varejo !== 'undefined') Varejo.openPDV();"
+                    style="background-color: #f59e0b; color: #fff; border:none;">
+                    <i class="ri-computer-line"></i> PDV
+                </button>
+
+                <button id="btn-add-produto" class="btn action-btn" onclick="App.store.openProductModal()"
+                    style="background-color: var(--primary); color: #0f172a; border:none;">
+                    <i class="ri-add-line"></i> Produto
+                </button>
+
+                <button class="btn action-btn" id="btn-consulta-produto" onclick="App.store.openConsultaProduto()"
+                    style="background-color: #14b8a6; color: #fff; border:none;">
+                    <i class="ri-search-eye-line"></i> Consultar Produto
+                </button>
+
+                <button id="btn-print-config" class="btn action-btn" onclick="App.printers.openModal()"
+                    style="background-color: #334155; color: #fff; border:1px solid #475569;">
+                    <i class="ri-printer-cloud-line"></i> Impressoras
+                </button>
+
+                <button id="btn-import-csv" class="btn action-btn" onclick="App.store.importProducts()"
+                    style="background-color: #334155; color: #fff; border:1px solid #475569;">
+                    <i class="ri-file-upload-line"></i> CSV
+                </button>
+
+                <button id="btn-fiscal-config" class="btn action-btn"
+                    onclick="if(typeof Fiscal !== 'undefined') Fiscal.openModal();"
+                    style="background-color: #334155; color: #fff; border:1px solid #475569;">
+                    <i class="ri-government-line"></i> Fiscal
+                </button>
+                <button id="btn-guias-restaurante" class="btn action-btn" onclick="GuiasSystem.openCadastro()"
+                    style="background-color: #10b981; color: #fff; border:none;">
+                    <i class="ri-user-star-line"></i> Guias
+                </button>
+                <button class="btn action-btn" onclick="App.store.reports.openDashboard()"
+                    style="background-color: #6366f1; color: #fff; border:none;">
+                    <i class="ri-bar-chart-2-line"></i> Relatórios
+                </button>
+                <button id="btn-comandas-mesas-restaurante" class="btn action-btn" onclick="App.store.openGestaoSalao()"
+                    style="background-color: #f59e0b; color: #fff; border:none;">
+                    <i class="ri-restaurant-line"></i> Comandas
+                </button>
+                <button id="btn-lote-mesas-restaurante" class="btn action-btn"
+                    onclick="App.store.openLancarProdutoLoteModal()"
+                    style="background-color: #0d9488; color: #fff; border:none; display:none;">
+                    <i class="ri-rocket-2-line"></i> Lançar Produto
+                </button>
+                <button id="btn-reservas-restaurante" class="btn action-btn"
+                    onclick="ReservasSystem.abrirPainelReservas()"
+                    style="background-color: #8b5cf6; color: #fff; border:none; display:none;">
+                    <i class="ri-calendar-check-line"></i> Reservas
+                </button>
+
+                <button id="btn-emitir-nfe55" class="btn action-btn" onclick="if(App.fiscal && App.fiscal.openModalAvulsa55) { App.fiscal.openModalAvulsa55(); } else { alert('Módulo fiscal não carregado'); }"
+                    style="background-color: #2563eb; color: #fff; border:none;">
+                    <i class="ri-article-line"></i> Emitir NF-e 55
+                </button>
+
+                <button id="btn-notas-pendentes" class="btn action-btn" onclick="App.store.showNotasNaoEmitidasModal()"
+                    style="background-color: #ef4444; color: #fff; border:none;">
+                    <i class="ri-file-warning-line"></i> Notas Pendentes
+                </button>
+            </div>
+
+            <!-- ALERTAS DE ESTOQUE BAIXO -->
+            <div id="low-stock-alerts" class="card"
+                style="margin-top: 1.5rem; border-left: 5px solid #ef4444; display:none;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h4 style="color:#ef4444; margin:0;"><i class="ri-alarm-warning-line"></i> Alertas de Estoque Baixo
+                    </h4>
+                    <button class="btn btn-sm btn-secondary" style="width:auto;"
+                        onclick="document.getElementById('low-stock-alerts').style.display='none'">Fechar</button>
+                </div>
+                <div id="low-stock-list" style="max-height:200px; overflow-y:auto;"></div>
+            </div>
+
+            <!-- Containers dinâmicos (preenchidos por JS quando necessário) -->
+            <div id="onboarding-checklist" class="card"
+                style="margin-top: 1.5rem; border-left: 5px solid #3b82f6; display:none;"></div>
+
+            <!-- Container para relatórios rápidos (visível via botão Relatórios) -->
+            <div id="inline-reports-area" style="display:none; margin-top:1.5rem;"></div>
+
+            <!-- CADASTRAR EQUIPE - Visível apenas para Restaurante -->
+            <div id="section-cadastrar-equipe"
+                style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; display:none;">
+            </div>
+
+            <div>
+                <div class="card">
+                    <h4 style="margin-bottom:1rem; color:var(--primary)">Pedidos em Aberto</h4>
+                    <div id="store-orders-list">
+                        <p class="text-sm">Carregando...</p>
+                    </div>
+                </div>
+                <div class="card" style="margin-top:1.5rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <h4 style="color:var(--text-muted); margin:0;">Meus Produtos</h4>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <input id="admin-prod-search" class="input-field"
+                            placeholder="Buscar por nome, código, aplicação..." onkeyup="App.store.filterMyProducts()">
+                    </div>
+                    <div id="store-products-list" style="max-height: 500px; overflow-y: auto;"></div>
+                </div>
+            </div>
+            </div>
+        </section>
+
+        <section id="view-hotel-dashboard" class="view-section container">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+                <h2>Gestão Hoteleira</h2>
+                <button class="btn btn-primary btn-sm" onclick="App.hotel.newReservation()">+ Nova Reserva</button>
+            </div>
+            <div class="card"
+                style="margin-bottom:1.5rem; flex-direction:row; gap:10px; align-items:center; padding:10px;">
+                <button class="btn btn-sm btn-secondary" onclick="App.hotel.loadGrid(1)">Hoje</button>
+                <button class="btn btn-sm btn-secondary" onclick="App.hotel.loadGrid(30)">30 Dias</button>
+                <button class="btn btn-sm btn-secondary" onclick="App.hotel.loadGrid(60)">60 Dias</button>
+                <button class="btn btn-sm btn-secondary" onclick="App.hotel.loadGrid(90)">90 Dias</button>
+            </div>
+            <h4 style="margin-bottom:1rem;">Mapa de Quartos (Hoje)</h4>
+            <div id="hotel-rooms-grid" class="grid grid-3" style="margin-bottom:2rem;"></div>
+            <div class="card">
+                <h4>Próximas Chegadas (Check-in)</h4>
+                <div style="overflow-x:auto;">
+                    <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                        <thead>
+                            <tr style="text-align:left; border-bottom:1px solid var(--border);">
+                                <th style="padding:10px;">Hóspede</th>
+                                <th>Quarto</th>
+                                <th>Check-in</th>
+                                <th>Check-out</th>
+                                <th>Status</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hotel-reservations-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-cliente" class="view-section container">
+            <div style="margin-bottom:2rem;">
+                <h2>Meus Pedidos</h2>
+                <p>Acompanhe suas compras</p>
+                <div
+                    style="background: #0f172a; padding: 15px; border-radius: 8px; margin-top: 10px; border: 1px solid #334155; color: #f8fafc;">
+                    <strong>Estou na Mesa?</strong>
+                    <div style="display:flex; gap:10px; margin-top:5px;">
+                        <input type="number" id="client-table-check" class="input-field" placeholder="Nº da Mesa"
+                            style="border:1px solid #334155;">
+                        <button class="btn btn-primary btn-sm" style="width:auto;"
+                            onclick="App.client.checkTableBill()">Ver Conta</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card" style="margin-bottom:2rem; border-color:var(--info);">
+                <h4 style="color:var(--info-dark)"><i class="ri-chat-history-line"></i> Minhas Conversas</h4>
+                <div id="client-chat-list" class="grid grid-2">
+                    <p class="text-sm text-muted">Carregando conversas...</p>
+                </div>
+            </div>
+            <div id="client-orders-list" class="grid grid-2"></div>
+            <div style="margin-top:3rem; text-align:center;">
+                <button class="btn btn-secondary" onclick="App.router.go('home')"><i class="ri-search-line"></i> Voltar
+                    ao Catálogo</button>
+            </div>
+        </section>
+
+        <section id="view-provider" class="view-section container">
+            <div class="card"
+                style="background:var(--surface); color:var(--text-main); margin-bottom:2rem; border:1px solid var(--border);">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <h3 style="color:white; margin-bottom:0.2rem;">Painel de Entregas</h3>
+                        <p style="color:rgba(255,255,255,0.7); margin:0;" id="provider-role-label">Parceiro</p>
+                    </div>
+                    <div class="badge status-aceito"><i class="ri-wifi-line"></i> Online</div>
+                </div>
+                <hr style="border-color:rgba(255,255,255,0.1); margin:15px 0;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div><span class="text-xs" style="opacity:0.7">Sua Chave Pix (Para Receber
+                            Comissão):</span><br><strong id="provider-pix-display"
+                            style="font-family:monospace; font-size:1.1rem;">Não cadastrada</strong></div>
+                    <button class="btn btn-sm btn-secondary" style="width:auto; padding:5px 10px;"
+                        onclick="App.provider.updatePix()">Alterar</button>
+                </div>
+            </div>
+            <h3>Oportunidades Disponíveis</h3>
+            <p class="text-sm text-muted">Entregas próximas ou exclusivas para você.</p>
+            <div id="provider-jobs-list" class="grid grid-2"></div>
+        </section>
+
+        <section id="view-waiter" class="view-section container">
+            <div style="margin-bottom:2rem; display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <h2>Painel do Garçom</h2>
+                    <p>Gerencie pedidos e comandas</p>
+                </div>
+                <button class="btn btn-danger btn-sm" style="width:auto;" onclick="App.auth.logout()">Sair</button>
+            </div>
+            <div id="waiter-comanda-list" class="comanda-grid"></div>
+        </section>
+    </main>
+
+    <div id="printable-area" style="display:none;"></div>
+    <nav class="bottom-nav" id="mobile-nav"></nav>
+
+    <div id="map-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h3>Navegação GPS</h3>
+                    <p id="map-dest-address" class="text-xs text-muted" style="margin:0;"></p>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="App.map.close()">Fechar</button>
+            </div>
+            <div id="map"></div>
+            <div class="modal-footer" id="map-footer">
+                <div style="display:flex; gap:1rem; align-items:center; margin-bottom:1rem;">
+                    <div class="badge status-aceito" id="map-status-badge">Conectado</div>
+                    <p style="margin:0; font-size:0.9rem;" id="map-status-text">Aguardando dados...</p>
+                </div>
+                <button id="btn-start-gps" class="btn btn-success btn-full" style="margin-top:1rem; display:none;"
+                    onclick="App.map.startGPS()"><i class="ri-navigation-line"></i> Iniciar Rota</button>
+                <button id="btn-end-gps" class="btn btn-danger btn-full" style="margin-top:1rem; display:none;"
+                    onclick="App.map.finishDelivery()"><i class="ri-flag-line"></i> Finalizar Entrega</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="product-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="prod-modal-title">Adicionar Produto</h3>
+                <button class="btn btn-secondary btn-sm" onclick="App.store.closeProductModal()">Fechar</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-prod-id">
+
+                <div
+                    style="background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px dashed #cbd5e1; margin-bottom: 15px;">
+                    <h5 style="margin-bottom: 5px; color: #64748b; font-size: 0.85rem;">Fiscal (Opcional)</h5>
+                    <div style="display:flex; gap:10px;">
+                        <div class="input-wrapper" style="flex:1; margin:0;"><input type="text" id="prod-ncm"
+                                class="input-field" placeholder="NCM" style="font-size:0.85rem;"></div>
+                        <div class="input-wrapper" style="flex:1; margin:0;"><input type="text" id="prod-cest"
+                                class="input-field" placeholder="CEST" style="font-size:0.85rem;"></div>
+                        <div class="input-wrapper" style="flex:1; margin:0;"><input type="text" id="prod-origem"
+                                class="input-field" placeholder="Origem (0)" value="0" style="font-size:0.85rem;"></div>
+                    </div>
+                    <div style="margin-top:5px;">
+                        <input type="text" id="prod-cfop" class="input-field" placeholder="CFOP (Ex: 5102)"
+                            style="font-size:0.85rem;">
+                    </div>
+                </div>
+                <div class="checkbox-wrapper"
+                    style="background:var(--surface); border:1px solid var(--border); padding:10px; border-radius:8px; margin-bottom:15px;">
+                    <input type="checkbox" id="new-prod-online" checked>
+                    <label for="new-prod-online"
+                        style="margin:0; cursor:pointer; color:var(--text-main); font-weight:bold;">
+                        Exibir no Catálogo Online?
+                        <br><span class="text-xs text-muted">Se desmarcar, aparece apenas no PDV/Garçom.</span>
+                    </label>
+                </div>
+
+                <div class="input-wrapper">
+                    <label>Categoria/Setor</label>
+                    <select id="new-prod-cat" class="input-field" onchange="App.store.checkCategory(this.value)">
+                    </select>
+                </div>
+
+                <div id="printer-target-area"
+                    style="display:none; background:#fff7ed; padding:15px; border-radius:8px; border:1px solid #fdba74; margin-bottom:1rem;">
+                    <h5 style="color:#c2410c">🖨️ Roteamento de Impressão</h5>
+                    <p class="text-xs text-muted">Digite exatamente o nome da impressora onde este item deve sair (Ex:
+                        Cozinha ou Bar).</p>
+                    <div class="input-wrapper" style="margin-bottom:0;">
+                        <label>Nome da Impressora Destino</label>
+                        <input type="text" id="new-prod-printer" class="input-field" placeholder="Ex: Cozinha">
+                    </div>
+                </div>
+                <div id="hotel-dates-area"
+                    style="display:none; background:#f0f9ff; padding:15px; border-radius:8px; border:1px solid #bae6fd; margin-bottom:1rem;">
+                    <h5 style="color:var(--info-dark)">Disponibilidade de Reserva</h5>
+                    <div style="display:flex; gap:10px;">
+                        <div style="flex:1"><label class="text-xs">Início</label><input type="date"
+                                id="hotel-start-date" class="input-field"></div>
+                        <div style="flex:1"><label class="text-xs">Fim</label><input type="date" id="hotel-end-date"
+                                class="input-field"></div>
+                    </div>
+                </div>
+
+                <div id="gesso-options-area"
+                    style="display:none; background:#fefce8; padding:15px; border-radius:8px; border:1px solid #fde047; margin-bottom:1rem;">
+                    <h5 style="color:var(--warning-dark)">Configuração de Orçamento (Gesso)</h5>
+                    <div class="input-wrapper"><label>Preço do Metro Quadrado (Material)</label><input type="number"
+                            id="gesso-price-m2" class="input-field" placeholder="0.00"></div>
+                    <div class="input-wrapper"><label>Valor da Mão de Obra</label><input type="number"
+                            id="gesso-labor-val" class="input-field" placeholder="0.00"></div>
+                    <div class="input-wrapper"><label>Tipo de Cobrança da Mão de Obra</label><select
+                            id="gesso-labor-type" class="input-field">
+                            <option value="fixed">Valor Fixo (R$ por m²)</option>
+                            <option value="percent">Porcentagem (%) sobre o Material</option>
+                        </select></div>
+                </div>
+
+                <div id="delivery-options-area"
+                    style="display:none; background:#f0fdf4; padding:15px; border-radius:8px; border:1px solid #bbf7d0; margin-bottom:1rem;">
+                    <h5 style="color:var(--success-dark)">Configuração de Entrega</h5>
+                    <div class="input-wrapper"><label>Taxa de Entrega (Opcional)</label><input type="number"
+                            id="delivery-fee-val" class="input-field" placeholder="0.00"></div>
+                    <div class="input-wrapper"><label>Tipo da Taxa</label><select id="delivery-fee-type"
+                            class="input-field">
+                            <option value="fixed">Valor Fixo (R$)</option>
+                            <option value="percent">Porcentagem (%)</option>
+                        </select></div>
+                </div>
+
+                <div id="clothing-options-area"
+                    style="display:none; background:#fdf2f8; padding:15px; border-radius:8px; border:1px solid #fbcfe8; margin-bottom:1rem;">
+                    <h5 style="color:#be185d">Moda e Vestuário</h5>
+
+                    <div class="input-wrapper">
+                        <label class="text-xs" style="font-weight:bold; color:#be185d;">Subcategoria</label>
+                        <select id="clothing-subcat" class="input-field">
+                            <option value="">Selecione...</option>
+                            <option value="Masculina">Masculina</option>
+                            <option value="Feminina">Feminina</option>
+                            <option value="Moda Fitness">Moda Fitness</option>
+                            <option value="Moda Praia">Moda Praia</option>
+                            <option value="Infantil">Infantil</option>
+                            <option value="Acessórios">Acessórios</option>
+                        </select>
+                    </div>
+
+                    <p class="text-xs text-muted" style="margin-bottom:5px;">Tamanhos:</p>
+                    <div id="admin-size-list" class="size-selector-container" style="margin-bottom:15px;"></div>
+                    <input type="hidden" id="clothing-sizes">
+
+                    <p class="text-xs text-muted" style="margin-bottom:5px;">Cores:</p>
+                    <div id="admin-color-list" class="size-selector-container" style="margin-bottom:5px;"></div>
+
+                    <input type="text" id="clothing-colors" class="input-field"
+                        placeholder="Outras cores (digite aqui se não houver acima)...">
+                </div>
+
+                <div id="autopecas-options-area"
+                    style="display:none; background:#fef3c7; padding:15px; border-radius:8px; border:1px solid #fbbf24; margin-bottom:1rem;">
+                    <h5 style="color:#92400e; margin-bottom:10px;"><i class="ri-tools-line"></i> Dados Técnicos
+                        (Autopeças)</h5>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <div class="input-wrapper">
+                            <label class="text-xs">Código Fabricante</label>
+                            <input id="ap-cod-fab" class="input-field" placeholder="Ex: BOSCH-123">
+                        </div>
+                        <div class="input-wrapper">
+                            <label class="text-xs">Código Fornecedor</label>
+                            <input id="ap-cod-for" class="input-field" placeholder="Ex: FORN-999">
+                        </div>
+                    </div>
+
+                    <div class="input-wrapper">
+                        <label class="text-xs">Aplicação (Carros Compatíveis)</label>
+                        <input id="ap-aplicacao" class="input-field" placeholder="Ex: Gol G5, Fox, Voyage 1.6...">
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                        <div class="input-wrapper">
+                            <label class="text-xs">Localização (Rua/Prat.)</label>
+                            <input id="ap-local" class="input-field" placeholder="Ex: A-12-B">
+                        </div>
+                        <div class="input-wrapper">
+                            <label class="text-xs">Subcategoria</label>
+                            <select id="autopecas-subcat" class="input-field">
+                                <option value="">Selecione...</option>
+                                <!-- Populated by JS -->
+                            </select>
+                        </div>
+                    </div>
+
+
+
+                    <div style="display:flex; gap:15px; align-items:center; margin-top:5px;">
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="ap-neg-stock" checked>
+                            <label for="ap-neg-stock" style="font-size:0.8rem;">Permitir Estoque Negativo</label>
+                        </div>
+                        <div class="input-wrapper" style="flex:1;">
+                            <label class="text-xs">Estoque Mínimo</label>
+                            <input type="number" id="ap-min-stock" class="input-field" placeholder="5" value="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-wrapper"><label>Descrição do Produto</label><textarea id="new-prod-desc"
+                        class="input-field" rows="3"
+                        placeholder="Detalhes do tecido, medidas, estado de conservação..."></textarea></div>
+
+                <div class="input-wrapper">
+                    <label>Nome do Item</label>
+                    <input type="text" id="new-prod-name" class="input-field" placeholder="Ex: Camiseta">
+                </div>
+
+                <div
+                    style="background:#f0f9ff; padding:12px; border-radius:8px; border:1px solid #bae6fd; margin-bottom:1rem;">
+                    <h5 style="color:#0284c7; margin:0 0 8px 0; font-size:0.85rem;"><i
+                            class="ri-money-dollar-circle-line"></i> Preços</h5>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <div class="input-wrapper" style="flex:1; min-width:100px; margin:0;">
+                            <label class="text-xs">Custo (R$)</label>
+                            <input type="number" id="new-prod-price-custo" class="input-field" placeholder="0.00"
+                                title="Preço de Custo">
+                        </div>
+                        <div class="input-wrapper" style="flex:1; min-width:100px; margin:0;">
+                            <label class="text-xs">À Vista (R$)</label>
+                            <input type="number" id="new-prod-price" class="input-field" placeholder="0.00"
+                                title="Preço À Vista">
+                        </div>
+                        <div class="input-wrapper" style="flex:1; min-width:100px; margin:0;">
+                            <label class="text-xs">Prazo / Cartão (R$)</label>
+                            <input type="number" id="new-prod-price-prazo" class="input-field" placeholder="0.00"
+                                title="Preço a Prazo ou Cartão">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-wrapper">
+                    <label>Código (Barras/Cardápio)</label>
+                    <input type="text" id="new-prod-code" class="input-field"
+                        placeholder="Código de Barras ou Código Rápido">
+                </div>
+
+                <div class="input-wrapper">
+                    <label>Estoque Atual</label>
+                    <input type="number" id="new-prod-stock" class="input-field" placeholder="Qtd">
+                </div>
+
+                <div class="checkbox-wrapper">
+                    <input type="checkbox" id="new-prod-promo">
+                    <label for="new-prod-promo"
+                        style="margin:0; cursor:pointer; color:var(--danger-dark); font-weight:bold;">
+                        Colocar em Promoção?
+                    </label>
+                </div>
+
+                <div class="checkbox-wrapper"
+                    style="background:#f0fdf4; border:1px solid #bbf7d0; padding:10px; border-radius:8px; margin-top:10px;">
+                    <input type="checkbox" id="new-prod-taxa10" checked>
+                    <label for="new-prod-taxa10" style="margin:0; cursor:pointer; color:#15803d; font-weight:bold;">
+                        Incluir na Taxa de Serviço (10%)?
+                        <br><span class="text-xs text-muted">Se desmarcar, este item <strong>não entra</strong> no
+                            cálculo da gorjeta/taxa de serviço.</span>
+                    </label>
+                </div>
+
+                <div class="input-wrapper">
+                    <label>Fotos (Pode selecionar várias)</label>
+                    <input type="file" id="new-prod-file" class="input-field" accept="image/*" multiple>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary btn-full" onclick="App.store.submitProduct()" id="btn-save-prod">Publicar
+                    Produto</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="chat-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Chat</h3><button class="btn btn-secondary btn-sm" onclick="App.chat.close()">Fechar</button>
+            </div>
+            <div class="modal-body">
+                <p class="text-sm text-muted">Converse diretamente com o estabelecimento/cliente.</p>
+                <div id="chat-msgs" class="chat-messages">
+                    <div style="text-align:center; padding:20px; color:#aaa;">Carregando mensagens...</div>
+                </div>
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <input type="text" id="chat-input" class="input-field" placeholder="Digite sua mensagem..."
+                        autocomplete="off">
+                    <button class="btn btn-secondary btn-sm" style="width:auto" onclick="App.chat.recordAudio()"
+                        title="Gravar Áudio"><i class="ri-mic-line"></i></button>
+                    <button class="btn btn-primary btn-sm" style="width:auto" onclick="App.chat.send()">Enviar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="split-pay-modal" class="modal-overlay">
+        <div class="modal-content"
+            style="background:var(--surface); border:1px solid var(--border); max-width:850px; width:95%; min-height:480px; display:flex; flex-direction:column; border-radius:12px;">
+            <div class="modal-header"
+                style="background:var(--background); border-bottom:1px solid var(--border); padding:15px 20px;">
+                <h3 style="color:var(--text-main); font-size:1.5rem; margin:0;"><i
+                        class="ri-money-dollar-circle-line"></i> Fechamento de Conta</h3>
+                <button class="btn btn-secondary btn-sm"
+                    onclick="document.getElementById('split-pay-modal').style.display='none'">Fechar X</button>
+            </div>
+
+            <div class="modal-body"
+                style="background:var(--surface); color:var(--text-main); display:grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px; flex: 1; overflow-y:auto;">
+
+                <!-- LADO ESQUERDO: TOTAL, RESTANTE E HISTÓRICO -->
+                <div
+                    style="background:var(--background); padding:20px; border-radius:10px; border:1px solid var(--border); display:flex; flex-direction:column;">
+                    <div
+                        style="text-align:center; padding-bottom:15px; border-bottom:1px solid var(--border); margin-bottom:15px;">
+                        <span style="color:var(--text-muted); font-size:0.9rem;">Total da Conta</span>
+                        <h2 id="split-total-due" style="color:var(--primary); font-size:2.5rem; margin:5px 0 0 0;">R$
+                            0,00</h2>
+                    </div>
+
+                    <h5 style="color:var(--text-muted); margin-bottom:8px;">💳 Histórico de Lançamentos</h5>
+                    <div id="split-history"
+                        style="font-size:0.9rem; color:var(--text-main); background:var(--surface); padding:10px; border-radius:6px; border:1px dashed var(--border); flex:1; min-height:80px; overflow-y:auto;">
+                        <!-- Itens lançados -->
+                    </div>
+
+                    <div
+                        style="text-align:right; margin-top:15px; padding-top:15px; border-top:1px solid var(--border); font-size:1.2rem; font-weight:bold; color:var(--danger);">
+                        Falta Pagar: <span id="split-remaining">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <!-- LADO DIREITO: LANÇAMENTO / SEFAZ -->
+                <div
+                    style="background:var(--background); padding:20px; border-radius:10px; border:1px solid var(--border); display:flex; flex-direction:column; justify-content:center;">
+                    <div class="input-wrapper" style="margin-bottom:15px;">
+                        <label style="color:var(--text-muted); font-weight:bold; font-size:0.9rem;">Valor do Pagamento
+                            Agora:</label>
+                        <input type="number" id="split-amount" class="input-field"
+                            style="font-size:1.5rem; text-align:center; height:50px;">
+                    </div>
+
+                    <div class="input-wrapper" style="margin-bottom:15px;">
+                        <label style="color:var(--text-muted); font-weight:bold; font-size:0.9rem;">Forma de
+                            Pagamento:</label>
+                        <select id="split-method" class="input-field" style="font-size:1.1rem; height:45px;"
+                            onchange="App.payment.toggleCardFields()">
+                            <option value="dinheiro">💵 Dinheiro (din)</option>
+                            <option value="credito">💳 Cartão de Crédito</option>
+                            <option value="debito">💳 Cartão de Débito</option>
+                            <option value="pix">💠 Pix</option>
+                        </select>
+                    </div>
+
+                    <!-- CARD FIELDS / SEFAZ -->
+                    <div id="card-fields"
+                        style="display:none; padding:15px; background:var(--surface); border-radius:8px; border:1px dashed #64748b; margin-bottom:15px;">
+                        <div style="color:var(--text-muted); font-size:0.8rem; margin-bottom:10px; font-weight:bold;">📄
+                            DADOS DO CARTÃO (SEFAZ IN 87/25)</div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <div class="input-wrapper">
+                                <label id="label-card-nsu" style="font-size:0.75rem; color:var(--text-muted);">NSU / E2E
+                                    (Pix)</label>
+                                <input type="text" id="card-nsu" class="input-field" placeholder="000000"
+                                    title="NSU Sefaz">
+                            </div>
+                            <div class="input-wrapper">
+                                <label style="font-size:0.75rem; color:var(--text-muted);">AUT (Autorização)</label>
+                                <input type="text" id="card-aut" class="input-field" placeholder="000000"
+                                    title="Código de Autorização">
+                            </div>
+                            <div class="input-wrapper" id="wrapper-card-bandeira">
+                                <label style="font-size:0.75rem; color:var(--text-muted);">Bandeira</label>
+                                <select id="card-bandeira" class="input-field" title="Bandeira do Cartão">
+                                    <option value="VISA">VISA</option>
+                                    <option value="MASTER">MASTER</option>
+                                    <option value="ELO">ELO</option>
+                                    <option value="TICKET">TICKET</option>
+                                    <option value="ALELO">ALELO</option>
+                                    <option value="AMEX">AMEX</option>
+                                </select>
+                            </div>
+                            <div class="input-wrapper">
+                                <label style="font-size:0.75rem; color:var(--text-muted);">CNPJ Adquirente/Banco</label>
+                                <input type="text" id="card-cnpj" class="input-field" value="10.440.482/0001-54"
+                                    title="CNPJ Adquirente">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary btn-full"
+                        style="padding:15px; font-size:1.1rem; font-weight:bold; margin-top:auto;"
+                        onclick="App.payment.addSplit()">
+                        ✅ Lançar Pagamento
+                    </button>
+                </div>
+            </div>
+
+            <div class="modal-footer"
+                style="background:var(--background); border-top:1px solid var(--border); padding:15px 20px;">
+                <button id="btn-finish-split" class="btn btn-success btn-full"
+                    style="font-size:1.2rem; font-weight:bold; padding:15px;" disabled
+                    onclick="App.payment.finalizeSplit()">
+                    🚀 CONCLUIR E FECHAR CONTA
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="comanda-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width:600px;">
+            <div class="modal-header">
+                <h3 id="comanda-title">Mesa 1</h3><button class="btn btn-secondary btn-sm"
+                    onclick="document.getElementById('comanda-modal').style.display='none'">Fechar</button>
+            </div>
+            <div class="modal-body">
+                <div class="input-wrapper">
+                    <label>Adicionar Produto</label>
+                    <div style="display:flex; gap:10px;"><input type="text" id="waiter-prod-search" class="input-field"
+                            placeholder="Busque o produto..."><button class="btn btn-primary btn-sm" style="width:auto;"
+                            onclick="App.waiter.addItem()">Add</button></div>
+                    <div id="waiter-search-results"
+                        style="border:1px solid #eee; max-height:150px; overflow-y:auto; display:none;"></div>
+                </div>
+                <h5>Itens do Pedido</h5>
+                <div id="comanda-items-list"
+                    style="border:1px solid #eee; padding:10px; min-height:100px; margin-bottom:1rem;">
+                    <p class="text-sm text-muted">Nenhum item adicionado.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div style="display:flex; gap:10px;"><button class="btn btn-secondary"
+                        onclick="App.waiter.printBill()">Imprimir Conta</button><button class="btn btn-success"
+                        onclick="App.waiter.sendToKitchen()">Enviar para Cozinha</button></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="payment-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Pagamento Seguro</h3><button class="btn btn-secondary btn-sm"
+                    onclick="App.payment.close()">Cancelar</button>
+            </div>
+            <div class="modal-body">
+                <div
+                    style="text-align:center; margin-bottom:1.5rem; background: var(--info-bg); padding: 1rem; border-radius: var(--radius-sm);">
+                    <p style="color:var(--info-dark); margin-bottom:0.5rem;">Total a pagar:</p>
+                    <h2 id="pay-total-display" style="color:var(--primary); font-size:2.5rem; margin-bottom:0;">R$ 0,00
+                    </h2>
+                    <p class="text-xs text-muted" id="pay-detail-display" style="margin-top:0.5rem;">Segurança Mercado
+                        Pago</p>
+                </div>
+                <div id="payment-brick_container"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="cart-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Carrinho de Compras</h3><button class="btn btn-secondary btn-sm"
+                    onclick="document.getElementById('cart-modal').style.display='none'">Fechar</button>
+            </div>
+            <div class="modal-body">
+
+                <div style="margin-bottom:15px; padding:10px; border:1px solid #e2e8f0; border-radius:8px;">
+                    <label class="font-bold text-sm" style="color:var(--primary);">Opções de Entrega:</label>
+
+                    <div style="display:flex; gap:10px; margin-top:8px; margin-bottom:12px;">
+                        <button class="btn btn-secondary shipping-btn" data-ship="local"
+                            onclick="App.cart.toggleShip('local')" style="padding: 10px; font-size: 0.85rem;">
+                            🛵 Local
+                        </button>
+                        <button class="btn btn-secondary shipping-btn" data-ship="correios"
+                            onclick="App.cart.toggleShip('correios')" style="padding: 10px; font-size: 0.85rem;">
+                            📦 Correios
+                        </button>
+                        <button class="btn btn-secondary shipping-btn" data-ship="retirada"
+                            onclick="App.cart.toggleShip('retirada')" style="padding: 10px; font-size: 0.85rem;">
+                            🏪 Retirada
+                        </button>
+                    </div>
+
+                    <div id="ship-local" class="ship-option" style="display:none;">
+                        <textarea id="cart-delivery-address" class="input-field" rows="2"
+                            placeholder="Endereço completo (Rua, Nº, Bairro)..."></textarea>
+
+                        <div id="district-selector-area"
+                            style="display:none; background:#fff7ed; border:1px solid #fdba74; padding:10px; border-radius:8px; margin-top:10px;">
+                            <p class="text-xs" style="color:#c2410c; font-weight:bold; margin-bottom:5px;">
+                                ⚠️ Precisamos saber seu bairro/distrito:
+                            </p>
+                            <select id="cart-district-select" class="input-field"
+                                onchange="App.logistics.applyDistrictFee(this)">
+                                <option value="">Selecione seu bairro...</option>
+                            </select>
+                        </div>
+                        <div class="text-xs text-muted" style="margin-top:5px;">
+                            Taxa estimada: <strong id="label-delivery-fee-local"
+                                style="color:var(--primary)">--</strong>
+                        </div>
+                    </div>
+
+                    <div id="ship-correios" class="ship-option" style="display:none;">
+                        <div style="display:flex; gap:5px;">
+                            <input type="text" id="cart-cep-input" class="input-field" placeholder="Seu CEP (00000-000)"
+                                style="max-width: 150px;">
+                            <button class="btn btn-primary btn-sm" style="width:auto;"
+                                onclick="App.cart.calcCorreios()">Calcular Frete</button>
+                        </div>
+                        <div id="correios-results" style="margin-top:10px;"></div>
+                    </div>
+
+                    <div id="ship-retirada" class="ship-option" style="display:none;">
+                        <div
+                            style="background:#f3e8ff; padding:10px; border-radius:6px; font-size:0.85rem; color:#6b21a8; border:1px solid #d8b4fe;">
+                            <i class="ri-store-2-line"></i> Você retira em: <strong id="txt-pickup-addr">...</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="cart-items-list" style="margin-bottom: 1rem; border-top: 1px solid #eee; padding-top: 10px;">
+                </div>
+
+                <div
+                    style="background:var(--surface); padding:15px; border-radius:8px; border:1px solid var(--border); margin-top:10px; text-align:right;">
+
+                    <div style="margin-bottom:10px; display:flex; gap:5px; justify-content: flex-end;">
+                        <input type="text" id="cart-coupon-input" class="input-field" placeholder="CUPOM"
+                            style="text-transform:uppercase; width: 100px; font-size: 0.8rem; height: 32px; background:var(--background); color:var(--text-main); border-color:var(--border);">
+                        <button class="btn btn-secondary btn-sm" style="width:auto; height: 32px; padding: 0 10px;"
+                            onclick="App.cart.applyCoupon()">OK</button>
+                    </div>
+                    <div id="coupon-msg" class="text-xs" style="margin-bottom:10px; height: 15px;"></div>
+
+                    <div style="font-size: 1.1rem; color: var(--text-muted);">
+                        Frete: <span id="label-delivery-fee" style="color:var(--text-main)">R$ 0,00</span>
+                    </div>
+                    <div style="font-size: 1.4rem; font-weight: 800; color: var(--primary); margin-top: 5px;">
+                        Total: <span id="cart-total-modal">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-success btn-full" onclick="App.cart.checkout()">Finalizar
+                    Compra</button></div>
+        </div>
+    </div>
+
+    <div id="hotel-reserva-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Nova Reserva</h3>
+                <button class="btn btn-secondary btn-sm"
+                    onclick="document.getElementById('hotel-reserva-modal').style.display='none'">Fechar</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="res-room-id">
+                <input type="hidden" id="res-room-price">
+
+                <div
+                    style="background:#f0f9ff; padding:15px; border-radius:8px; border:1px solid #bae6fd; margin-bottom:1.5rem;">
+                    <h4 style="color:#0369a1; margin-bottom:5px;" id="res-room-name-display">Nome do Quarto</h4>
+                    <div class="text-xs text-muted" id="res-room-price-display">Diária: R$ 0,00</div>
+                </div>
+
+                <div class="input-wrapper"><label>Nome do Hóspede</label><input type="text" id="res-guest-name"
+                        class="input-field" placeholder="Nome completo"></div>
+                <div class="input-wrapper"><label>Contato / WhatsApp</label><input type="text" id="res-guest-contact"
+                        class="input-field" placeholder="(00) 00000-0000"></div>
+
+                <div style="display:flex; gap:10px;">
+                    <div class="input-wrapper" style="flex:1;"><label>Check-in (Entrada)</label><input type="date"
+                            id="res-checkin" class="input-field" onchange="App.hotel.calculateTotal()"></div>
+                    <div class="input-wrapper" style="flex:1;"><label>Check-out (Saída)</label><input type="date"
+                            id="res-checkout" class="input-field" onchange="App.hotel.calculateTotal()"></div>
+                </div>
+
+                <div
+                    style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #e2e8f0; margin-top:10px; text-align:right;">
+                    <div class="text-xs text-muted" id="res-days-display">0 diárias</div>
+                    <div style="font-size:1.5rem; font-weight:800; color:var(--primary);" id="res-total-display">R$ 0,00
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-success btn-full"
+                    onclick="App.hotel.confirmReservation()">Confirmar Reserva</button></div>
+        </div>
+    </div>
+
+    <div id="printer-config-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🖨️ Configurar Impressoras</h3>
+                <button class="btn btn-secondary btn-sm"
+                    onclick="document.getElementById('printer-config-modal').style.display='none'">Fechar</button>
+            </div>
+            <div class="modal-body">
+                <div
+                    style="background:var(--surface); padding:15px; border-radius:8px; border:1px solid var(--border); margin-bottom:15px;">
+                    <h5 style="color:var(--primary); margin-bottom:10px;"><i class="ri-printer-line"></i> Nova Impressora</h5>
+                    <div class="input-wrapper">
+                        <label>Nome do Setor (Ex: Cozinha, Bar)</label>
+                        <input type="text" id="printer-new-name" class="input-field" placeholder="Ex: Cozinha">
+                    </div>
+                    <div class="input-wrapper">
+                        <label>Endereço IP (Ex: 192.168.1.200)</label>
+                        <input type="text" id="printer-new-ip" class="input-field" placeholder="192.168...">
+                    </div>
+                    <button class="btn btn-success btn-full" onclick="App.printers.add()">Salvar Impressora</button>
+                </div>
+
+                <h5>Impressoras Cadastradas</h5>
+                <div id="printer-list-display" style="margin-top:10px; border-top:1px solid #00025e;">
+                    <p class="text-sm text-muted" style="padding:10px;">Carregando...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONSULTA DE PRODUTOS -->
+    <div id="consulta-produto-modal" class="modal-overlay" style="z-index:2005;">
+        <div class="modal-content" style="max-width:700px;">
+            <div class="modal-header" style="background: linear-gradient(135deg, #0f766e, #14b8a6);">
+                <h3 style="color:#fff;"><i class="ri-search-eye-line"></i> Consulta de Produtos</h3>
+                <button class="btn btn-sm" style="background:rgba(255,255,255,0.2); color:#fff; border:none;"
+                    onclick="document.getElementById('consulta-produto-modal').style.display='none'">Fechar</button>
+            </div>
+            <div class="modal-body">
+                <div style="display:flex; gap:10px; margin-bottom:15px;">
+                    <input type="text" id="consulta-keyword" class="input-field"
+                        placeholder="🔍 Buscar por nome, código, aplicação, marca..."
+                        oninput="App.store.consultarProduto()" autofocus>
+                    <select id="consulta-category-filter" class="input-field" style="width:auto; min-width:120px;"
+                        onchange="App.store.consultarProduto()">
+                        <option value="">Todas</option>
+                    </select>
+                </div>
+                <div style="display:flex; gap:15px; margin-bottom:10px; flex-wrap:wrap;">
+                    <div class="text-xs text-muted" id="consulta-count">0 produtos encontrados</div>
+                    <div class="text-xs" style="margin-left:auto;">
+                        <label style="cursor:pointer; display:flex; align-items:center; gap:5px;">
+                            <input type="checkbox" id="consulta-only-stock" onchange="App.store.consultarProduto()">
+                            Apenas com estoque
+                        </label>
+                    </div>
+                </div>
+                <div id="consulta-results"
+                    style="max-height:450px; overflow-y:auto; border:1px solid var(--border); border-radius:8px;">
+                    <div style="text-align:center; padding:40px; color:var(--text-muted);">
+                        <i class="ri-search-line" style="font-size:2rem;"></i>
+                        <p>Digite uma palavra-chave para buscar</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Configuração do Worker do PDF.js
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <script src="./js/naxio-ui.js"></script>
+    <script src="./js/naxio-helpers.js"></script>
+    <script src="./js/core.js"></script>
+    <script src="./js/stability_manager.js"></script>
+    <script src="./js/modules_auth.js"></script>
+    <script src="./js/modules.js"></script>
+    <script src="./js/autopecas.js"></script>
+    <script src="./js/nfe_import.js"></script>
+    <script src="./js/modules_extensions.js"></script>
+    <script src="js/client.js"></script>
+    <script src="js/comandas.js"></script>
+    <script src="js/payment.js"></script>
+    <script src="./js/chat.js"></script>
+    <script src="./js/cart.js"></script>
+    <script src="js/crediario.js"></script>
+    <script src="./js/varejo_final.js?v=5.0.1"></script>
+    <script src="./js/fiscal_final.js"></script>
+    <script src="./js/caixa_modules.js"></script>
+    <script src="./js/guias.js"></script>
+    <script src="./js/relatorios.js"></script>
+    <script src="./js/garçom.js"></script>
+    <script src="./js/reservas.js"></script>
+    <script src="./js/keyboard-shortcuts.js"></script>
+    <script src="./js/naxio_enterprise.js"></script>
+    <script src="./js/catalog_chatbot.js"></script>
+    <script src="./js/gestao_lojista.js"></script> <!-- MODULO GESTAO LOJISTA -->
+    <script>
+        // Função de teste para diagnóstico de modais
+        window.testModals = function () {
+            console.log("🧪 TESTE DE MODAIS");
+            const cartModal = document.getElementById('cart-modal');
+            const chatModal = document.getElementById('chat-modal');
+
+            console.log("Carrinho modal encontrado:", !!cartModal);
+            console.log("Carrinho computedStyle:", window.getComputedStyle(cartModal).display);
+            console.log("Carrinho abrindo...");
+            cartModal.style.display = 'flex';
+            setTimeout(() => {
+                console.log("Carrinho após abrir:", window.getComputedStyle(cartModal).display);
+            }, 100);
+        };
+
+        window.testChat = function () {
+            console.log("🧪 TESTE DE CHAT");
+            const chatModal = document.getElementById('chat-modal');
+            if (chatModal) {
+                console.log("Chat encontrado, abrindo...");
+                chatModal.style.display = 'flex';
+                setTimeout(() => {
+                    console.log("Chat após abrir:", window.getComputedStyle(chatModal).display);
+                }, 100);
+            }
+        };
+
+        // ✅ Registra o Service Worker para PWA offline
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js', { scope: './' })
+                .then(function (registration) {
+                    console.log('[PWA] Service Worker registrado com sucesso:', registration.scope);
+                    // Verifica por atualizações
+                    registration.addEventListener('updatefound', function () {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', function () {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                console.log('[PWA] Nova versão disponível!');
+                            }
+                        });
+                    });
+                })
+                .catch(function (err) {
+                    console.warn('[PWA] Falha ao registrar SW (não crítico):', err);
+                });
+
+            // Atualização automática forçada em todos os dispositivos quando uma nova versão assume
+            let refreshing = false;
+            navigator.serviceWorker.addEventListener('controllerchange', function () {
+                if (refreshing) return;
+                refreshing = true;
+                window.location.reload();
+            });
+
+            // Verifica atualizações a cada 30 minutos (para dispositivos ligados direto)
+            setInterval(() => {
+                navigator.serviceWorker.ready.then(reg => {
+                    reg.update();
+                });
+            }, 1800000);
+
+            // Verifica atualizações ao focar na tela
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'visible') {
+                    navigator.serviceWorker.ready.then(reg => {
+                        reg.update();
+                    });
+                }
+            });
+        }
+
+        window.addEventListener('load', function () {
+            setTimeout(() => {
+                // Inicia o App Principal
+                if (typeof App !== 'undefined' && App.init) {
+                    App.init();
+
+                    // Se o catálogo estiver visível, inicia o filtro 'Todos'
+                    const todosButton = document.querySelector('#category-list .cat-pill.active');
+                    if (todosButton && App.catalog && App.catalog.filter) {
+                        App.catalog.filter('Todos', todosButton);
+                    }
+                } else {
+                    console.error("ERRO CRÍTICO: App não definido. Verifique core.js e modules.js");
+                }
+
+                if (typeof Varejo !== 'undefined') console.log("Módulo Varejo Carregado");
+                if (typeof Caixa !== 'undefined') console.log("Módulo Caixa OK");
+
+                console.log("✅ Sistema Naxio Full Carregado");
+            }, 1500);
+        });
+    </script>
+</body>
+
+</html>

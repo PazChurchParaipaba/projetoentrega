@@ -1,0 +1,34 @@
+﻿42: console.log(`Ô£à NCM encontrado no cache para ${item.nome}: ${ncm}`);
+71: .on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: `store_id=eq.${storeId}` }, (payload) => {
+110: if (hours > 0) return `${hours}h ${textMin}m`;
+111: return `${min}min`;
+130: const guiasOptions = guias ? guias.map(g => `<option value="${g.id}">${g.name}</option>`).join('') : '';
+136: view.innerHTML = `
+289: </div>`;
+315: .gte('created_at', `${hoje}T00:00:00`)
+316: .lte('created_at', `${hoje}T23:59:59`)
+324: document.getElementById('stat-faturamento').innerText = `R$ ${totalFatu.toFixed(2)}`;
+354: `Mesa ${num} est├í com status: ${comanda.status}. Deseja for├ºar para 'aberta'?`,
+388: document.getElementById('checkout-info-txt').innerText = `${comanda.items?.length || 0} itens | ${comanda.guides?.name?.split(' ')[0] || 'S/ Guia'}`;
+397: document.getElementById('checkout-total').innerText = `R$ ${(sub + taxa).toFixed(2)}`;
+447: const html = `
+470: </div>`;
+480: lista.innerHTML = matches.map(p => `
+484: </div>`).join('');
+543: App.utils.toast(`Promo├º├úo Ativa: ${promoName} (${(promo.val * 100).toFixed(0)}% OFF)`, "success");
+593: `Prato "${nome}" adicionado ├á lista de reservas para o almo├ºo!`,
+620: const modalHtml = `
+659: </div>`;
+687: const modalHtml = `
+769: `;
+798: document.getElementById(`tab-btn-${tabName}`).classList.add('active');
+813: elTotal.innerText = `R$ ${final.toFixed(2)}`;
+842: const listHtml = itemsAgrupados.length > 0 ? itemsAgrupados.map(item => `
+849: ${item.observacao ? `<div style="font-size:0.85rem; color:#f59e0b; margin-top:2px;">­ƒôØ ${item.observacao}</div>` : ''}
+862: `).join('') : '<div style="text-align:center; padding:40px; color:#64748b;">Nenhum item lan├ºado ainda.</div>';
+864: container.innerHTML = `
+911: `;
+949: return `
+953: ${isParcial ? `
+956: </div>` : ''}
+959: ${item.promo_name ? `<div style="font-size:0.7rem; color:#facc15;">­ƒÅÀ´©Å ${item.promo_name} (Promo)</div>` : ''}

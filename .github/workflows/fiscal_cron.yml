@@ -1,0 +1,31 @@
+name: Envio Fiscal Mensal
+
+on:
+  schedule:
+    # Roda as 08:00 (UTC) do dia 01 de cada mês
+    - cron: '0 8 1 * *'
+  # Permite rodar manualmente clicando num botão (bom para testar)
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar Código
+        uses: actions/checkout@v3
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Instalar Dependências
+        run: npm install
+
+      - name: Rodar Script de Envio
+        run: node enviar_xml.js
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}

@@ -1,0 +1,26 @@
+🚀 PLANO NAXIO TOTAL ANTI-QUEDAS (OFFLINE PRO) 🛡️
+
+Para garantir que o sistema NUNCA pare, mesmo sem internet:
+
+1. NO COMPUTADOR DA LOJA (SERVIDOR):
+   - Mantenha o arquivo 'naxio_agent.py' rodando. Ele agora é o HUB LOCAL.
+   - Ele cria um banco de dados 'pagamentos_sefaz.db' que guarda tudo localmente.
+   - Ele aceita pedidos dos celulares dos garçons mesmo sem internet.
+   - Ele sincroniza com a nuvem automaticamente quando a internet volta.
+
+2. NA IMPRESSORA:
+   - O 'print_service.py' agora lê os pedidos direto do HUB LOCAL.
+   - Resultado: O pedido sai na impressora em milissegundos, sem depender de nuvem.
+
+3. NOS CELULARES DOS GARÇONS:
+   - O sistema detecta o IP do HUB LOCAL na rede Wi-Fi.
+   - Se a internet cair, o celular envia o pedido para o IP do computador da loja.
+   - O Service Worker atualizado garante que o site abra instantaneamente.
+
+4. COMO CONFIGURAR O IP DO HUB:
+   - No celular do garçom, se o hub não for detectado automaticamente como 'localhost',
+     abra o console do navegador e digite: localStorage.setItem('NAXIO_HUB_IP', '192.168.1.XXX');
+     (Substitua pelo IP do computador da loja).
+
+⚠️ IMPORTANTE: O computador da loja e os celulares devem estar no MESMO Wi-Fi.
+Mesmo que o Wi-Fi esteja "sem internet", a comunicação interna via IP local funcionará.

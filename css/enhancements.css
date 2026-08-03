@@ -1,0 +1,870 @@
+/* Melhorias Adicionais de UX/UI - Naxio */
+
+/* ========== LOADING SPINNER GLOBAL ========== */
+.global-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 99999;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.global-loader.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.loader-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(59, 130, 246, 0.2);
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.loader-text {
+    margin-top: 20px;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+/* ========== SMOOTH PAGE TRANSITIONS ========== */
+.view-section {
+    animation: fadeInView 0.4s ease-out;
+}
+
+@keyframes fadeInView {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========== ENHANCED BUTTONS ========== */
+.action-btn {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.action-btn:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.action-btn:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
+/* Glow effect */
+.action-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.4);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.action-btn:hover::after {
+    width: 300px;
+    height: 300px;
+    opacity: 0;
+}
+
+/* ========== ENHANCED CARDS ========== */
+.card {
+    position: relative;
+    overflow: hidden;
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.1),
+            transparent);
+    transition: left 0.5s;
+}
+
+.card:hover::before {
+    left: 100%;
+}
+
+/* ========== ENHANCED INPUTS ========== */
+.input-field {
+    position: relative;
+}
+
+.input-field:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.input-wrapper {
+    position: relative;
+}
+
+.input-wrapper label {
+    transition: all 0.2s ease;
+}
+
+.input-wrapper:focus-within label {
+    color: var(--primary);
+    transform: translateY(-2px);
+}
+
+/* ========== NOTIFICATION BADGES ========== */
+.notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #ef4444;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+    animation: pulse-badge 2s infinite;
+}
+
+@keyframes pulse-badge {
+
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+
+    50% {
+        transform: scale(1.1);
+        box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+    }
+}
+
+/* ========== PROGRESS BARS ========== */
+.progress-bar {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.progress-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.3),
+            transparent);
+    animation: shimmer-progress 2s infinite;
+}
+
+@keyframes shimmer-progress {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* ========== ENHANCED MODALS ========== */
+.modal-overlay {
+    backdrop-filter: blur(8px);
+}
+
+.modal-content {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+    position: relative;
+}
+
+.modal-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary), transparent);
+}
+
+/* ========== ENHANCED TOASTS ========== */
+.toast {
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.toast.success {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.toast.error {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+}
+
+.toast.info {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.toast.warning {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+/* ========== GRID STAGGER ANIMATION ========== */
+.painel-actions-grid .btn:nth-child(7) {
+    animation-delay: 0.35s;
+}
+
+.painel-actions-grid .btn:nth-child(8) {
+    animation-delay: 0.4s;
+}
+
+.painel-actions-grid .btn:nth-child(9) {
+    animation-delay: 0.45s;
+}
+
+.painel-actions-grid .btn:nth-child(10) {
+    animation-delay: 0.5s;
+}
+
+/* ========== ENHANCED SCROLLBAR ========== */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--background);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--primary), var(--border));
+    border-radius: 5px;
+    border: 2px solid var(--background);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #2563eb, var(--primary));
+}
+
+/* ========== ENHANCED FOCUS RING ========== */
+*:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 3px;
+    border-radius: 4px;
+}
+
+/* ========== SKELETON SCREENS ========== */
+.skeleton-card {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 15px;
+}
+
+.skeleton-line {
+    height: 12px;
+    background: linear-gradient(90deg,
+            var(--border) 0%,
+            var(--surface) 50%,
+            var(--border) 100%);
+    background-size: 200% 100%;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    animation: shimmer 1.5s infinite;
+}
+
+.skeleton-line.short {
+    width: 60%;
+}
+
+.skeleton-line.medium {
+    width: 80%;
+}
+
+/* ========== ENHANCED BADGES ========== */
+.badge {
+    position: relative;
+    overflow: hidden;
+}
+
+.badge::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg,
+            transparent,
+            rgba(255, 255, 255, 0.3),
+            transparent);
+    transform: rotate(45deg);
+    animation: badge-shine 3s infinite;
+}
+
+@keyframes badge-shine {
+    0% {
+        transform: translateX(-100%) rotate(45deg);
+    }
+
+    100% {
+        transform: translateX(100%) rotate(45deg);
+    }
+}
+
+/* ========== ENHANCED EMPTY STATES ========== */
+.empty-state {
+    animation: fadeIn 0.5s ease-out;
+}
+
+.empty-state i {
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+/* ========== RESPONSIVE ENHANCEMENTS ========== */
+@media (max-width: 768px) {
+    .action-btn:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    .card:hover {
+        transform: none;
+    }
+
+    .modal-content {
+        max-width: 95vw !important;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+}
+
+/* ========== DARK MODE ENHANCEMENTS ========== */
+@media (prefers-color-scheme: dark) {
+    .global-loader {
+        background: rgba(15, 23, 42, 0.98);
+    }
+
+    .modal-overlay {
+        background: rgba(0, 0, 0, 0.8);
+    }
+}
+
+/* ========== PRINT OPTIMIZATIONS ========== */
+@media print {
+
+    .global-loader,
+    .modal-overlay,
+    .toast,
+    .notification-badge {
+        display: none !important;
+    }
+}
+
+/* ========== PDV STOCK BADGES ========== */
+.bg-good-stock {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    color: #065f46;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+
+.bg-low-stock {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    color: #991b1b;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    animation: pulse-stock 2s infinite;
+}
+
+@keyframes pulse-stock {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.pos-stock-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* ========== PDV SEARCH ITEM ========== */
+.pos-search-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    gap: 10px;
+}
+
+.pos-search-item:hover {
+    background: rgba(59, 130, 246, 0.06);
+    padding-left: 20px;
+}
+
+.pos-search-item:active {
+    background: rgba(59, 130, 246, 0.12);
+}
+
+/* ========== CONSULTA PRODUTO MODAL ========== */
+#consulta-produto-modal .modal-header {
+    border-radius: 8px 8px 0 0;
+}
+
+#consulta-produto-modal .modal-body {
+    padding: 20px;
+}
+
+#consulta-results>div:hover {
+    cursor: default;
+}
+
+/* ========== LOW STOCK ALERTS ========== */
+#low-stock-alerts {
+    animation: slideInAlert 0.5s ease-out;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    color: #f1f5f9;
+    border: 1px solid #334155;
+}
+
+@keyframes slideInAlert {
+    from {
+        opacity: 0;
+        transform: translateY(-15px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========== IMPROVED ACTION GRID ========== */
+.painel-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+    margin-top: 1rem;
+}
+
+.painel-actions-grid .action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 16px 10px;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    min-height: 75px;
+    text-align: center;
+    line-height: 1.2;
+    letter-spacing: 0.2px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.painel-actions-grid .action-btn i {
+    font-size: 1.4rem;
+}
+
+/* ========== ENHANCED PDV INPUT ========== */
+.pos-input {
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.pos-input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    outline: none;
+}
+
+/* ========== GLASSMORPHISM CARDS ========== */
+.card-glass {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 20px;
+}
+
+/* ========== RESPONSIVE ACTION GRID ========== */
+@media (max-width: 600px) {
+    .painel-actions-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .painel-actions-grid .action-btn {
+        padding: 12px 6px;
+        font-size: 0.75rem;
+        min-height: 65px;
+    }
+
+    .painel-actions-grid .action-btn i {
+        font-size: 1.2rem;
+    }
+}
+
+/* ========== TOOLTIP HELPER ========== */
+[data-tooltip] {
+    position: relative;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+[data-tooltip]:hover::after {
+    opacity: 1;
+}
+
+/* ========== SECTION TEAM CARD ========== */
+#section-cadastrar-equipe .card {
+    background: linear-gradient(135deg, #f0fdf4 0%, #fff 60%);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+#section-cadastrar-equipe .input-field {
+    border: 1px solid #d1fae5;
+}
+
+#section-cadastrar-equipe .input-field:focus {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+/* ========== PROGRESS BAR ========== */
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(100, 116, 139, 0.15);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #06b6d4);
+    border-radius: 10px;
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+.progress-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* ========== KPI CARDS ========== */
+.kpi-card {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.kpi-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+    transform: translate(15px, -15px);
+}
+
+/* ========== CRM CLIENT ROW ========== */
+.crm-client-row {
+    transition: all 0.2s ease;
+}
+
+.crm-client-row:hover {
+    padding-left: 20px !important;
+}
+
+/* ========== ENTERPRISE BUTTONS ========== */
+.enterprise-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #fff;
+}
+
+.enterprise-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+}
+
+.enterprise-btn:active {
+    transform: translateY(0);
+}
+
+/* ========== MODAL ENHANCEMENTS ========== */
+.modal-overlay {
+    animation: modal-fade-in 0.25s ease;
+}
+
+@keyframes modal-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-content {
+    animation: modal-slide-up 0.3s ease;
+}
+
+@keyframes modal-slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ========== FOCUS VISIBLE (ACCESSIBILITY) ========== */
+:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+button:focus-visible,
+.btn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+/* ========== SMOOTH SCROLLBAR ========== */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(100, 116, 139, 0.3);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.5);
+}
+
+/* ========== SKELETON LOADING ========== */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 8px;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ========== ENHANCED BADGE STYLES ========== */
+.badge-success {
+    background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+    color: #065f46;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.badge-warning {
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
+    color: #92400e;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.badge-danger {
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
+    color: #991b1b;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.badge-info {
+    background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+    color: #1e40af;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+/* ========== RESPONSIVE ENTERPRISE ========== */
+@media (max-width: 600px) {
+    .kpi-card {
+        padding: 12px !important;
+    }
+
+    .kpi-card div:first-child {
+        font-size: 0.7rem !important;
+    }
+
+    .kpi-card div:nth-child(2) {
+        font-size: 1.1rem !important;
+    }
+
+    #crm-modal .modal-content,
+    #loyalty-modal .modal-content,
+    #stock-history-modal .modal-content,
+    #promotions-modal .modal-content {
+        max-width: 95vw;
+        max-height: 90vh;
+    }
+}
