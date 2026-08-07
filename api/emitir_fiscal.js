@@ -337,11 +337,17 @@ function mapearBandeira(b) {
             
             if (isCartao) {
                 obj.cartao = {
-                    "tipoIntegracao": "2",
-                    "cnpjCredenciadora": p.cnpj ? String(p.cnpj).replace(/\D/g, '') : undefined,
-                    "tipoBandeira": p.bandeira || "99",
-                    "autorizacao": p.aut ? String(p.aut).trim().substring(0, 20) : undefined
+                    "tipoIntegracao": "2"
                 };
+                
+                const cnpjCred = p.cnpj ? String(p.cnpj).replace(/\D/g, '') : "";
+                if (cnpjCred.length === 14) {
+                    obj.cartao.cnpjCredenciadora = cnpjCred;
+                    obj.cartao.tipoBandeira = p.bandeira || "99";
+                    if (p.aut) {
+                        obj.cartao.autorizacao = String(p.aut).trim().substring(0, 20);
+                    }
+                }
             }
             return obj;
         });
