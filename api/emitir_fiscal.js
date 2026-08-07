@@ -340,30 +340,26 @@ function mapearBandeira(b) {
                 
                 // Tenta formato camelCase padrão (provável para Geranet)
                 obj.cartao = {
-                    "tipoIntegracao": "1",
+                    "tipoIntegracao": 1, // INTEIRO
                     "cnpj": cnpjCred || "10440482000154",
                     "cnpjCredenciadora": cnpjCred || "10440482000154",
                     "bandeira": p.bandeira || "99",
-                    "tipoBandeira": p.bandeira || "99"
+                    "tipoBandeira": p.bandeira || "99",
+                    "autorizacao": p.aut ? String(p.aut).trim().substring(0, 20) : "000000",
+                    "numeroAutorizacao": p.aut ? String(p.aut).trim().substring(0, 20) : "000000"
                 };
                 
                 // Tenta formato literal do XML (pois Geranet faz map direto em IBSCBS)
                 obj.card = {
-                    "tpIntegra": "1",
+                    "tpIntegra": 1, // INTEIRO
                     "CNPJ": cnpjCred || "10440482000154",
-                    "tBand": p.bandeira || "99"
+                    "tBand": p.bandeira || "99",
+                    "cAut": p.aut ? String(p.aut).trim().substring(0, 20) : "000000"
                 };
-
-                if (p.aut) {
-                    const autFormatada = String(p.aut).trim().substring(0, 20);
-                    obj.cartao.autorizacao = autFormatada;
-                    obj.cartao.numeroAutorizacao = autFormatada;
-                    obj.card.cAut = autFormatada;
-                }
                 
                 // Tenta direto no nível do pagamento (alguns schemas fazem isso)
-                obj.tipoIntegracao = "1";
-                obj.tpIntegra = "1";
+                obj.tipoIntegracao = 1; // INTEIRO
+                obj.tpIntegra = 1; // INTEIRO
             }
             return obj;
         });
