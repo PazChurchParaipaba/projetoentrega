@@ -336,19 +336,34 @@ function mapearBandeira(b) {
             };
             
             if (isCartao) {
+                const cnpjCred = p.cnpj ? String(p.cnpj).replace(/\D/g, '') : "";
+                
+                // Tenta formato camelCase padrão (provável para Geranet)
                 obj.cartao = {
-                    "tipoIntegracao": "1"
+                    "tipoIntegracao": "1",
+                    "cnpj": cnpjCred || "00000000000000",
+                    "cnpjCredenciadora": cnpjCred || "00000000000000",
+                    "bandeira": p.bandeira || "99",
+                    "tipoBandeira": p.bandeira || "99"
                 };
                 
-                const cnpjCred = p.cnpj ? String(p.cnpj).replace(/\D/g, '') : "";
-                if (cnpjCred.length === 14) {
-                    obj.cartao.cnpjCredenciadora = cnpjCred;
+                // Tenta formato literal do XML (pois Geranet faz map direto em IBSCBS)
+                obj.card = {
+                    "tpIntegra": "1",
+                    "CNPJ": cnpjCred || "00000000000000",
+                    "tBand": p.bandeira || "99"
+                };
+
+                if (p.aut) {
+                    const autFormatada = String(p.aut).trim().substring(0, 20);
+                    obj.cartao.autorizacao = autFormatada;
+                    obj.cartao.numeroAutorizacao = autFormatada;
+                    obj.card.cAut = autFormatada;
                 }
                 
-                obj.cartao.tipoBandeira = p.bandeira || "99";
-                if (p.aut) {
-                    obj.cartao.autorizacao = String(p.aut).trim().substring(0, 20);
-                }
+                // Tenta direto no nível do pagamento (alguns schemas fazem isso)
+                obj.tipoIntegracao = "1";
+                obj.tpIntegra = "1";
             }
             return obj;
         });
