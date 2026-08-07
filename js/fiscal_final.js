@@ -571,7 +571,7 @@ const Fiscal = {
                 }
                 return { success: true, data };
             } else {
-                console.error("❌ Erro SEFAZ:", data);
+                console.error("❌ Erro SEFAZ:", JSON.stringify(data, null, 2));
                 // Monta mensagem detalhada incluindo erros de validação específicos
                 let msgErro = data.motivo_sefaz || data.message || data.error || "Erro desconhecido na emissão.";
                 if (data.validation_errors && data.validation_errors.length > 0) {

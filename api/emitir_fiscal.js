@@ -483,7 +483,15 @@ function mapearBandeira(b) {
 
         // A API Geranet pode retornar jsonGeranet vazio ou sucesso=false
         if (geranetRes.status >= 400 || !jsonGeranet || jsonGeranet.sucesso === false) {
-            const errMsgs = jsonGeranet?.mensagem || "Erro na API da Geranet";
+            let errMsgs = jsonGeranet?.mensagem || "Erro na API da Geranet";
+            if (jsonGeranet?.erros && Array.isArray(jsonGeranet.erros)) {
+                errMsgs += "\nDetalhamento: " + jsonGeranet.erros.join("; ");
+            } else if (jsonGeranet?.erros) {
+                errMsgs += "\nDetalhamento: " + JSON.stringify(jsonGeranet.erros);
+            }
+            if (jsonGeranet?.errosDeValidacao) {
+                errMsgs += "\nValidação: " + JSON.stringify(jsonGeranet.errosDeValidacao);
+            }
             return res.status(200).json({ sucesso: false, status: 'erro', message: errMsgs, raw: jsonGeranet });
         }
 
