@@ -150,7 +150,19 @@ export default async function handler(req, res) {
             numReservado = Math.floor((Date.now() % 10000000)) || 1;
         }
 
-        let listaItens = (Array.isArray(items_payload) && items_payload.length) ? items_payload : [{ nome: "CONSUMO", qtd: 1, price: order.total_pago }];
+        let parsedObs = null;
+        try {
+            if (order.observacao) parsedObs = JSON.parse(order.observacao);
+        } catch (e) {}
+
+        let fallbackItems = [];
+        if (parsedObs) {
+            if (Array.isArray(parsedObs.items) && parsedObs.items.length) fallbackItems = parsedObs.items;
+            else if (Array.isArray(parsedObs.itens) && parsedObs.itens.length) fallbackItems = parsedObs.itens;
+            else if (Array.isArray(parsedObs) && parsedObs.length) fallbackItems = parsedObs;
+        }
+
+        let listaItens = (Array.isArray(items_payload) && items_payload.length) ? items_payload : (fallbackItems.length ? fallbackItems : [{ nome: "CONSUMO", qtd: 1, price: order.total_pago }]);
         const productIds = listaItens.map(i => i.id || i.product_id).filter(Boolean);
 
         let dbProducts = [];
@@ -294,10 +306,7 @@ function mapearBandeira(b) {
                 aut: p.aut || p.autorizacao || p.nsu || ""
             }));
         } else {
-            let parsedObs = null;
-            try {
-                if (order.observacao) parsedObs = JSON.parse(order.observacao);
-            } catch (e) {}
+
 
             if (parsedObs && Array.isArray(parsedObs.pagamentos) && parsedObs.pagamentos.length) {
                 pags = parsedObs.pagamentos.map(p => ({
@@ -327,10 +336,12 @@ function mapearBandeira(b) {
             };
             
             if (isCartao) {
-                obj.cnpjCredenciadora = String(p.cnpj || "").replace(/\D/g, '');
-                obj.tipoBandeira = p.bandeira || "99";
-                obj.autorizacao = String(p.aut || "").trim().substring(0, 20);
-                obj.tipoIntegracao = "2"; // 2=Pagamento não integrado
+                obj.cartao = {
+                    "tipoIntegracao": "2",
+                    "cnpjCredenciadora": p.cnpj ? String(p.cnpj).replace(/\D/g, '') : undefined,
+                    "tipoBandeira": p.bandeira || "99",
+                    "autorizacao": p.aut ? String(p.aut).trim().substring(0, 20) : undefined
+                };
             }
             return obj;
         });
