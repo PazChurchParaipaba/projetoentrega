@@ -341,8 +341,8 @@ function mapearBandeira(b) {
                 // Tenta formato camelCase padrão (provável para Geranet)
                 obj.cartao = {
                     "tipoIntegracao": "1",
-                    "cnpj": cnpjCred || "00000000000000",
-                    "cnpjCredenciadora": cnpjCred || "00000000000000",
+                    "cnpj": cnpjCred || "10440482000154",
+                    "cnpjCredenciadora": cnpjCred || "10440482000154",
                     "bandeira": p.bandeira || "99",
                     "tipoBandeira": p.bandeira || "99"
                 };
@@ -350,7 +350,7 @@ function mapearBandeira(b) {
                 // Tenta formato literal do XML (pois Geranet faz map direto em IBSCBS)
                 obj.card = {
                     "tpIntegra": "1",
-                    "CNPJ": cnpjCred || "00000000000000",
+                    "CNPJ": cnpjCred || "10440482000154",
                     "tBand": p.bandeira || "99"
                 };
 
