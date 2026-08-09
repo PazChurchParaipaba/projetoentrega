@@ -355,7 +355,7 @@ const GuiasSystem = {
             .eq('store_id', App.state.storeId)
             .not('guide_name', 'is', null)
             .neq('guide_name', '')
-            .or(`status.eq.ocupada,status.eq.livre,and(status.in.(fechada,paga),updated_at.gte.${dI}T00:00:00,updated_at.lte.${dF}T23:59:59)`)
+            .or(`status.eq.ocupada,status.eq.aberta,status.eq.pagando,status.eq.livre,and(status.in.(fechada,paga),updated_at.gte.${dI}T00:00:00,updated_at.lte.${dF}T23:59:59)`)
             .order('numero');
 
         if (errorComandas) {
@@ -429,8 +429,9 @@ const GuiasSystem = {
                 // Tenta achar a chave correspondente no relatorio atual por inclusão
                 let matchedKey = guiaKey;
                 if (!relatorio[matchedKey]) {
+                    // Tenta achar ignorando maiúsculas e espaços extras
                     for (let existingKey in relatorio) {
-                        if (existingKey.includes(guiaKey) || guiaKey.includes(existingKey)) {
+                        if (existingKey === guiaKey) {
                             matchedKey = existingKey;
                             break;
                         }
@@ -501,13 +502,27 @@ const GuiasSystem = {
                 // 🔥 Usa comparação bidirecional robusta (evita falhar quando nome salvo difere do digitado)
                 if (!guiaPassaFiltro(guiaKey)) return;
 
-                // Tenta achar a chave correspondente no relatorio atual por inclusão
-                let matchedKey = guiaKey;
-                if (!relatorio[matchedKey]) {
-                    for (let existingKey in relatorio) {
-                        if (existingKey.includes(guiaKey) || guiaKey.includes(existingKey)) {
-                            matchedKey = existingKey;
+                let matchedKey = null;
+
+                // 1. Tenta encontrar pelo ID do guia (mais seguro)
+                if (c.guide_id) {
+                    for (let key in relatorio) {
+                        if (relatorio[key].id === c.guide_id) {
+                            matchedKey = key;
                             break;
+                        }
+                    }
+                }
+
+                // 2. Fallback para busca exata pelo nome
+                if (!matchedKey) {
+                    matchedKey = guiaKey;
+                    if (!relatorio[matchedKey]) {
+                        for (let existingKey in relatorio) {
+                            if (existingKey === guiaKey) {
+                                matchedKey = existingKey;
+                                break;
+                            }
                         }
                     }
                 }
@@ -591,7 +606,7 @@ const GuiasSystem = {
             // Sub-total do guia
             const subtotalGuia = `
                 <tr style="border-bottom:2px solid #475569;">
-                    <td style="padding:6px 12px 6px 24px; color:#94a3b8; font-style:italic;">Sub-total ${g.nome.split(' ')[0]}:</td>
+                    <td style="padding:6px 12px 6px 24px; color:#94a3b8; font-style:italic;">Sub-total ${g.nome}:</td>
                     <td align="right" style="padding:6px 8px; color:#e2e8f0; font-weight:bold;">R$ ${g.vendaTotal.toFixed(2)}</td>
                     <td align="right" style="padding:6px 12px; color:#4ade80; font-weight:bold;">R$ ${g.comissaoTotal.toFixed(2)}</td>
                 </tr>`;

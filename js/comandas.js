@@ -562,7 +562,7 @@ Object.assign(App.store, {
         resumo.style.display = 'block';
         App.store.recalcularCheckoutRapido();
         document.getElementById('checkout-info-txt').innerHTML = (comanda.items?.length || 0) + " itens | " + 
-            (comanda.guide_name?.split(' ')[0] || 'S/ Guia') + 
+            (comanda.guide_name || 'S/ Guia') + 
             ` <span style="color:#60a5fa; cursor:pointer; font-weight:bold; margin-left:5px;" onclick="GuiasSystem.selecionarGuiaParaComanda('${comanda.id}', '${comanda.numero}')">✏️ Alterar</span>`;
     },
 
@@ -1304,7 +1304,7 @@ Object.assign(App.store, {
                     const comissao = sub * (pct / 100);
                     return `<div style="border-top:1px solid #334155; padding-top:10px; margin-top:5px;">
                                     <div style="display:flex; justify-content:space-between; color:#818cf8; margin-bottom:3px; align-items:center;">
-                                        <span style="font-size:0.85rem;">👔 Guia: <strong>${guia.name.split(' ')[0]}</strong></span>
+                                        <span style="font-size:0.85rem;">👔 Guia: <strong>${guia.name}</strong></span>
                                         <button class="btn btn-secondary btn-xs" style="padding: 2px 6px; font-size: 0.75rem;" onclick="GuiasSystem.selecionarGuiaParaComanda(App.state.currentComanda, App.state.currentMesaNum)">Alterar</button>
                                         <span style="font-size:0.85rem;">${pct}%</span>
                                     </div>
@@ -1420,9 +1420,9 @@ Object.assign(App.store, {
                     const pct = parseFloat(guia.commission_percentage) || 10;
                     const comissaoGuia = subtotalToPay * (pct / 100);
                     return '<div style="border-top:1px solid #334155; padding-top:10px; margin-top:5px; background:#1e1b4b; border-radius:8px; padding:10px; margin-top:10px;">' +
-                        '<div style="font-size:0.8rem; color:#818cf8; margin-bottom:5px; font-weight:600;">&#x1F454; COMISSÃO DO GUIA</div>' +
-                        '<div style="display:flex; justify-content:space-between; color:#818cf8; margin-bottom:3px;">' +
-                        '<span style="font-size:0.9rem;">' + guia.name.split(' ')[0] + ' (' + pct + '%)</span>' +
+                        '<div style="font-size:0.8rem; color:#818cf8; margin-bottom:5px; font-weight:600;">💼 COMISSÃO DO GUIA</div>' +
+                        '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+                        '<span style="font-size:0.9rem;">' + guia.name + ' (' + pct + '%)</span>' +
                         '<span style="font-size:0.9rem;">R$ ' + comissaoGuia.toFixed(2) + '</span>' +
                         '</div>' +
                         '</div>';
@@ -3739,7 +3739,7 @@ Object.assign(App.store, {
         const style = `border-color:${borderCol}; background:${bgCol};`;
         const statusTxt = c.status === 'livre' ? 'LIVRE' : (c.status === 'reservada' ? 'RESERVADA' : 'OCUPADA');
         const total = c.items?.reduce((a, b) => a + (b.price * b.qtd), 0) || 0;
-        const guide = c.guide_name ? c.guide_name.split(' ')[0] : '';
+        const guide = c.guide_name ? c.guide_name : '';
 
         // Safe items string
         const itemsSafe = encodeURIComponent(JSON.stringify(c.items || []));
