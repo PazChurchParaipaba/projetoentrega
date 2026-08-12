@@ -818,7 +818,8 @@ const Fiscal = {
             .eq('store_id', App.state.storeId)
             .not('xml_arquivo', 'is', null) // <--- CORREÇÃO: Nome da coluna atualizada
             .gte('created_at', `${isoInicio}T00:00:00`)
-            .lte('created_at', `${isoFim}T23:59:59`);
+            .lte('created_at', `${isoFim}T23:59:59`)
+            .limit(50000);
 
         if (error) {
             console.error(error);
