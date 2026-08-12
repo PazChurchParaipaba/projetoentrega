@@ -342,6 +342,21 @@ export default async function handler(req, res) {
             
             if (isCartao) {
                 // Padrão IN87/2025 SEFAZ CE: Pagamento DEVE ser integrado (1) com CNPJ e Autorização (TEF/MFE)
+                
+                // Mapeamento flat (muitas APIs que achatam os itens também achatam os pagamentos)
+                obj.tipoIntegracao = 1;
+                obj.tpIntegra = 1;
+                obj.cnpjCredenciadora = cnpjVal;
+                obj.cnpj = cnpjVal;
+                obj.CNPJ = cnpjVal;
+                obj.bandeira = tBand;
+                obj.tipoBandeira = tBand;
+                obj.tBand = tBand;
+                obj.autorizacao = autVal;
+                obj.numeroAutorizacao = autVal;
+                obj.cAut = autVal;
+
+                // Mapeamento aninhado 1 (camelCase padrão)
                 obj.cartao = {
                     "tipoIntegracao": 1, // 1 = Pagamento Integrado
                     "cnpj": cnpjVal,
