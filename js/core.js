@@ -138,6 +138,19 @@ const App = {
                         console.log("✅ User Session Restored");
                         App.router.renderNav();
 
+                        // Validar se a senha não foi alterada remotamente (desloga dispositivos desatualizados)
+                        if (profile.role === 'loja_admin' && window._sb && profile.password) {
+                            window._sb.from('profiles').select('password').eq('id', profile.id).single()
+                                .then(({ data: remoteProfile }) => {
+                                    if (remoteProfile && remoteProfile.password && remoteProfile.password !== profile.password) {
+                                        console.warn("⚠️ Senha alterada remotamente. Deslogando...");
+                                        localStorage.removeItem('logimoveis_session');
+                                        if (App.utils && App.utils.toast) App.utils.toast("Sessão expirada: A senha desta conta foi alterada.", "error");
+                                        setTimeout(() => location.reload(), 1500);
+                                    }
+                                }).catch(err => console.error("Erro ao validar sessão:", err));
+                        }
+
                         // ✅ GARÇOM: Se já escolheu a loja hoje, entra direto sem pedir nada
                         if (profile.role === 'garcom') {
                             const today = new Date().toISOString().slice(0, 10);
