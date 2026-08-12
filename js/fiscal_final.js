@@ -812,19 +812,39 @@ const Fiscal = {
 
         App.utils.toast("📦 Buscando e processando XMLs...", "info");
 
-        // 2. Busca no banco (Coluna xml_arquivo é a correta para o BYTEA)
-        const { data: notas, error } = await _sb.from('orders')
-            .select('*')
-            .eq('store_id', App.state.storeId)
-            .not('xml_arquivo', 'is', null) // <--- CORREÇÃO: Nome da coluna atualizada
-            .gte('created_at', `${isoInicio}T00:00:00`)
-            .lte('created_at', `${isoFim}T23:59:59`)
-            .limit(50000);
+        // 2. Busca no banco com paginação para contornar o limite de 1000 da API Supabase
+        let allNotas = [];
+        let from = 0;
+        const limit = 1000;
+        let fetchMore = true;
 
-        if (error) {
-            console.error(error);
-            return alert("Erro ao buscar notas: " + error.message);
+        while (fetchMore) {
+            const { data: chunk, error } = await _sb.from('orders')
+                .select('*')
+                .eq('store_id', App.state.storeId)
+                .not('xml_arquivo', 'is', null) // <--- CORREÇÃO: Nome da coluna atualizada
+                .gte('created_at', `${isoInicio}T00:00:00`)
+                .lte('created_at', `${isoFim}T23:59:59`)
+                .range(from, from + limit - 1);
+
+            if (error) {
+                console.error(error);
+                return alert("Erro ao buscar notas: " + error.message);
+            }
+
+            if (chunk && chunk.length > 0) {
+                allNotas = allNotas.concat(chunk);
+                from += limit;
+                App.utils.toast(`📦 Buscando XMLs... ${allNotas.length} encontrados`, "info");
+            }
+
+            // Se vieram menos que o limite, não há mais páginas
+            if (!chunk || chunk.length < limit) {
+                fetchMore = false;
+            }
         }
+
+        const notas = allNotas;
 
         if (!notas || notas.length === 0) {
             return alert("Nenhuma nota com XML encontrada neste período.");
