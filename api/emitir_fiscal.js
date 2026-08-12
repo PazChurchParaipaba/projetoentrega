@@ -282,42 +282,31 @@ export default async function handler(req, res) {
 
         const vNF_Final = somaTotalProdutos;
 
-function mapearBandeira(b) {
-    const t = String(b || "").toUpperCase().trim();
-    if (t.includes('VISA')) return '01';
-    if (t.includes('MASTER')) return '02';
-    if (t.includes('AMEX')) return '03';
-    if (t.includes('SORO')) return '04';
-    if (t.includes('DINER')) return '05';
-    if (t.includes('ELO')) return '06';
-    if (t.includes('HIPER')) return '07';
-    if (t.includes('AURA')) return '08';
-    if (t.includes('CABAL')) return '09';
-    return '99';
-}
-
         let pags = [];
         if (Array.isArray(payments_payload) && payments_payload.length) {
             pags = payments_payload.map(p => ({
                 code: mapearMeioPagamento(p.code || p.tipo || p.metodo || p.payment_method || p.method),
                 val: round2(parseMonetario(p.valor || p.amount || p.val)),
-                cnpj: p.cnpj || p.cnpjCredenciadora || "",
-                bandeira: mapearBandeira(p.bandeira || p.tipoBandeira),
-                aut: p.aut || p.autorizacao || p.nsu || ""
+                bandeira: p.bandeira || p.tipoBandeira || "",
+                aut: p.aut || p.autorizacao || p.nsu || "",
+                cnpj: p.cnpj || p.cnpjCredenciadora || ""
             }));
         } else {
-
+            let parsedObs = null;
+            try {
+                if (order.observacao) parsedObs = JSON.parse(order.observacao);
+            } catch (e) {}
 
             if (parsedObs && Array.isArray(parsedObs.pagamentos) && parsedObs.pagamentos.length) {
                 pags = parsedObs.pagamentos.map(p => ({
                     code: mapearMeioPagamento(p.code || p.tipo || p.metodo || p.payment_method || p.method),
                     val: round2(parseMonetario(p.valor || p.amount || p.val)),
-                    cnpj: p.cnpj || "",
-                    bandeira: mapearBandeira(p.bandeira),
-                    aut: p.aut || p.nsu || ""
+                    bandeira: p.bandeira || p.tipoBandeira || "",
+                    aut: p.aut || p.autorizacao || p.nsu || "",
+                    cnpj: p.cnpj || p.cnpjCredenciadora || ""
                 }));
             } else {
-                pags.push({ code: mapearMeioPagamento(order.metodo_pagamento), val: vNF_Final, cnpj: "", bandeira: "99", aut: "" });
+                pags.push({ code: mapearMeioPagamento(order.metodo_pagamento), val: vNF_Final });
             }
         }
 
@@ -328,38 +317,47 @@ function mapearBandeira(b) {
         }
 
         const detPag = pags.map(p => {
-            const isCartao = ['03', '04'].includes(p.code);
+            const bandStr = String(p.bandeira || '').toUpperCase();
+            let tBand = '99';
+            if (bandStr.includes('VISA')) tBand = '01';
+            else if (bandStr.includes('MASTER')) tBand = '02';
+            else if (bandStr.includes('AMEX')) tBand = '03';
+            else if (bandStr.includes('ELO')) tBand = '06';
+            else if (bandStr.includes('ALELO')) tBand = '10';
+            else if (bandStr.includes('TICKET')) tBand = '24';
+            else if (p.code === '17') tBand = '99';
+
+            const isCartao = ['03', '04', '17'].includes(p.code);
+            const cnpjVal = p.cnpj ? String(p.cnpj).replace(/\D/g, '') : "10440482000154";
+            const autVal = p.aut ? String(p.aut).trim().substring(0, 20) : "000000";
+
+            // Híbrido: garante os campos do schema da API (tipo/valor/cartao) e as tags literais do XML SEFAZ (tPag/vPag/card)
             const obj = {
                 "tipo": p.code,
                 "valor": p.val,
-                "indicadorPagamento": "0" 
+                "indicadorPagamento": "0",
+                "tPag": p.code,
+                "vPag": p.val
             };
             
             if (isCartao) {
-                const cnpjCred = p.cnpj ? String(p.cnpj).replace(/\D/g, '') : "";
-                
-                // Tenta formato camelCase padrão (provável para Geranet)
+                // Padrão IN87/2025 SEFAZ CE: Pagamento DEVE ser integrado (1) com CNPJ e Autorização (TEF/MFE)
                 obj.cartao = {
-                    "tipoIntegracao": 1, // INTEIRO
-                    "cnpj": cnpjCred || "10440482000154",
-                    "cnpjCredenciadora": cnpjCred || "10440482000154",
-                    "bandeira": p.bandeira || "99",
-                    "tipoBandeira": p.bandeira || "99",
-                    "autorizacao": p.aut ? String(p.aut).trim().substring(0, 20) : "000000",
-                    "numeroAutorizacao": p.aut ? String(p.aut).trim().substring(0, 20) : "000000"
+                    "tipoIntegracao": 1, // 1 = Pagamento Integrado
+                    "cnpj": cnpjVal,
+                    "cnpjCredenciadora": cnpjVal, // Algumas APIs usam esse nome
+                    "bandeira": tBand,
+                    "autorizacao": autVal,
+                    "numeroAutorizacao": autVal
                 };
                 
-                // Tenta formato literal do XML (pois Geranet faz map direto em IBSCBS)
+                // Mapeamento literal para caso a API converta direto para XML
                 obj.card = {
-                    "tpIntegra": 1, // INTEIRO
-                    "CNPJ": cnpjCred || "10440482000154",
-                    "tBand": p.bandeira || "99",
-                    "cAut": p.aut ? String(p.aut).trim().substring(0, 20) : "000000"
+                    "tpIntegra": 1,
+                    "CNPJ": cnpjVal,
+                    "tBand": tBand,
+                    "cAut": autVal
                 };
-                
-                // Tenta direto no nível do pagamento (alguns schemas fazem isso)
-                obj.tipoIntegracao = 1; // INTEIRO
-                obj.tpIntegra = 1; // INTEIRO
             }
             return obj;
         });

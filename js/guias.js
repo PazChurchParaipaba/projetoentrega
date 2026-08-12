@@ -283,7 +283,7 @@ const GuiasSystem = {
         }
 
         const btnHtml = `
-            <div id="modal-filtro-guia" class="modal-overlay" style="display:flex; z-index:10005;">
+            <div id="modal-filtro-guia" class="modal-overlay" style="display:flex; z-index:10005;" onkeydown="if(event.key === 'Enter') { event.stopPropagation(); event.preventDefault(); GuiasSystem.executarRelatorioFiltrado(); }">
                 <div class="modal-content" style="max-width:400px; background:var(--surface);">
                     <div class="modal-header"><h3>🚩 Filtro de Relatório</h3><button class="btn btn-secondary btn-sm" onclick="this.closest('.modal-overlay').remove()">✕</button></div>
                     <div class="modal-body">
@@ -302,6 +302,7 @@ const GuiasSystem = {
             </div>
         `;
         document.body.insertAdjacentHTML('beforeend', btnHtml);
+        setTimeout(() => document.getElementById('filtro-guia-nome').focus(), 100);
     },
 
     executarRelatorioFiltrado: async () => {

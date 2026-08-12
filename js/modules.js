@@ -1203,8 +1203,8 @@ Object.assign(App, {
             if (c === 'Roupas' || c === 'Calçados') document.getElementById('clothing-options-area').style.display = 'block';
             if (c === 'Autopeças') document.getElementById('autopecas-options-area').style.display = 'block';
 
-            // NOVA LÓGICA: Se for Comida, Bebida ou Drinks, mostra config de Impressora e Taxa
-            if (c === 'Comidas' || c === 'Bebidas' || c === 'Drinks') {
+            // NOVA LÓGICA: Se for Comida, Bebida, Drinks ou Sobremesas, mostra config de Impressora e Taxa
+            if (c === 'Comidas' || c === 'Bebidas' || c === 'Drinks' || c === 'Sobremesas') {
                 document.getElementById('delivery-options-area').style.display = 'block';
                 document.getElementById('printer-target-area').style.display = 'block'; // <--- O CAMPO NOVO
             }
