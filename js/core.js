@@ -140,18 +140,21 @@ const App = {
 
                         // Validar se a senha não foi alterada remotamente (desloga dispositivos desatualizados)
                         if (profile.role === 'loja_admin' && typeof _sb !== 'undefined') {
-                            _sb.from('profiles').select('password').eq('id', profile.id).single()
-                                .then(({ data: remoteProfile }) => {
-                                    if (remoteProfile) {
-                                        console.log("🔒 Validação de sessão:", { local: profile.password, remote: remoteProfile.password });
-                                        if (remoteProfile.password !== profile.password) {
-                                            console.warn("⚠️ Senha alterada remotamente. Deslogando...");
+                            const validateSession = () => {
+                                _sb.from('profiles').select('password').eq('id', profile.id).single()
+                                    .then(({ data: remoteProfile }) => {
+                                        if (remoteProfile && remoteProfile.password !== profile.password) {
+                                            console.warn("⚠️ Senha alterada remotamente. Deslogando imediatamente...");
                                             localStorage.removeItem('logimoveis_session');
                                             if (App.utils && App.utils.toast) App.utils.toast("Sessão expirada: A senha desta conta foi alterada.", "error");
                                             setTimeout(() => location.reload(), 1500);
                                         }
-                                    }
-                                }).catch(err => console.error("Erro ao validar sessão:", err));
+                                    }).catch(err => console.error("Erro ao validar sessão:", err));
+                            };
+
+                            // Valida na hora e depois a cada 10 segundos (monitoramento contínuo)
+                            validateSession();
+                            setInterval(validateSession, 10000);
                         }
 
                         // ✅ GARÇOM: Se já escolheu a loja hoje, entra direto sem pedir nada
