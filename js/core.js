@@ -139,8 +139,8 @@ const App = {
                         App.router.renderNav();
 
                         // Validar se a senha não foi alterada remotamente (desloga dispositivos desatualizados)
-                        if (profile.role === 'loja_admin' && window._sb && profile.password) {
-                            window._sb.from('profiles').select('password').eq('id', profile.id).single()
+                        if (profile.role === 'loja_admin' && typeof _sb !== 'undefined' && profile.password) {
+                            _sb.from('profiles').select('password').eq('id', profile.id).single()
                                 .then(({ data: remoteProfile }) => {
                                     if (remoteProfile && remoteProfile.password && remoteProfile.password !== profile.password) {
                                         console.warn("⚠️ Senha alterada remotamente. Deslogando...");
