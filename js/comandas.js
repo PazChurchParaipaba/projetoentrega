@@ -1490,7 +1490,7 @@ Object.assign(App.store, {
 
     liberarMesaSeguro: async (id) => {
         const senha = await NaxioUI.prompt('🔒 Autorização', 'Digite a senha do gerente para prosseguir:', '', '', 'password');
-        if (senha !== '2580' && senha !== '4567' && senha !== '1809') { App.utils.toast('Senha incorreta.', 'error'); return; }
+        if (senha !== '1564' && senha !== '4567' && senha !== '1809') { App.utils.toast('Senha incorreta.', 'error'); return; }
         if (await NaxioUI.confirm('Confirmação', 'Tem certeza que deseja cancelar esta comanda?')) {
             const motivo = await NaxioUI.prompt('📝 Motivo do Cancelamento', 'Por favor, informe o motivo para registro no sistema:', '', 'Ex: Cliente desistiu', 'text');
             if (motivo === null) return;
@@ -2107,7 +2107,7 @@ Object.assign(App.store, {
 
         // 2. Pedir a senha (somente se a quantidade for válida)
         const senha = await NaxioUI.prompt('🔒 Autorização', 'Digite a senha do gerente para prosseguir:', '', '', 'password');
-        if (senha !== '2580' && senha !== '4567' && senha !== '1809') { App.utils.toast('Senha incorreta.', 'error'); return; }
+        if (senha !== '1564' && senha !== '4567' && senha !== '1809') { App.utils.toast('Senha incorreta.', 'error'); return; }
 
         if (!await NaxioUI.confirm('Confirmação', `Deseja realmente excluir ${nExcluir} unidade(s) de "${itemNome}"?`)) return;
 
@@ -2185,7 +2185,7 @@ Object.assign(App.store, {
     // 🔥 NOVA FUNÇÃO: TRANSFERIR MESA
     transferirMesa: async () => {
         const senha = await NaxioUI.prompt('🔒 Autorização', 'Digite a senha do gerente para prosseguir:', '', '', 'password');
-        if (senha !== '2580' && senha !== '4567' && senha !== '1809') { App.utils.toast('Senha incorreta.', 'error'); return; }
+        if (senha !== '1564' && senha !== '4567' && senha !== '1809') { App.utils.toast('Senha incorreta.', 'error'); return; }
         const destino = await NaxioUI.prompt(
             '🔄 Transferir Mesa',
             'Para qual mesa deseja transferir TODOS os itens?',
@@ -2237,7 +2237,7 @@ Object.assign(App.store, {
     // 🔥 TRANSFERÊNCIA DE ITENS (PARCIAL)
     abrirModalTransferenciaItens: async () => {
         const senha = await NaxioUI.prompt('🔒 Autorização', 'Digite a senha do gerente para prosseguir com a transferência:', '', '', 'password');
-        if (senha !== '2580' && senha !== '4567' && senha !== '1809') { App.utils.toast('Senha incorreta.', 'error'); return; }
+        if (senha !== '1564' && senha !== '4567' && senha !== '1809') { App.utils.toast('Senha incorreta.', 'error'); return; }
 
         const items = App.state.currentComandaItems || [];
         if (items.length === 0) return alert("Nenhum item para transferir.");
@@ -3991,7 +3991,7 @@ Object.assign(App.store, {
 
     reabrirComanda: async (id) => {
         const senha = await NaxioUI.prompt('🔒 Autorização', 'Senha do gerente para reabrir:', '', '', 'password');
-        if (senha !== '2580' && senha !== '4567' && senha !== '1809') { App.utils.toast('Senha incorreta.', 'error'); return; }
+        if (senha !== '1564' && senha !== '4567' && senha !== '1809') { App.utils.toast('Senha incorreta.', 'error'); return; }
 
         const { data: comanda } = await _sb.from('comandas').select('*').eq('id', id).single();
         if (!comanda) return;
@@ -4028,7 +4028,7 @@ Object.assign(App.store, {
     // 🔥 REABERTURA DE MESA INTERNA (para correção de erros do dia)
     reabrirMesaInterna: async (id, numero) => {
         const senha = await NaxioUI.prompt('🔒 Autorização', `Senha do gerente para reabrir a mesa interna ${numero}:`, '', '', 'password');
-        if (senha !== '2580' && senha !== '4567' && senha !== '1809') { App.utils.toast('Senha incorreta.', 'error'); return; }
+        if (senha !== '1564' && senha !== '4567' && senha !== '1809') { App.utils.toast('Senha incorreta.', 'error'); return; }
 
         const motivo = await NaxioUI.prompt(
             '📝 Motivo da Reabertura',
