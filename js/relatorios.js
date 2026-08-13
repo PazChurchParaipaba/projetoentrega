@@ -717,6 +717,175 @@ const RelatoriosEnterprise = {
     },
 
     // --- 🖥️ MODAL VISUAL (NA TELA) - CENTRALIZADO ---
+
+    // 📅 RELATÓRIO DE CAIXA POR PERÍODO (Z-READ FORMAT)
+    relatorioCaixaPorPeriodo: async () => {
+        if (!await RelatoriosEnterprise.checkStore()) return;
+
+        const hojeObj = new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000);
+        const toUTC = (dateStr) => {
+            const d = new Date(dateStr);
+            if (isNaN(d.getTime())) return dateStr;
+            return d.toISOString();
+        };
+
+        const dataInicioStr = await NaxioUI.datetimePicker('📅 Início', 'Data e hora inicial:', hojeObj.toISOString().slice(0, 10) + 'T00:00');
+        if (!dataInicioStr) return;
+        const dataFimStr = await NaxioUI.datetimePicker('📅 Fim', 'Data e hora final:', hojeObj.toISOString().slice(0, 10) + 'T23:59');
+        if (!dataFimStr) return;
+
+        const dInicioRaw = dataInicioStr.length === 16 ? dataInicioStr + ':00' : (dataInicioStr.includes('T') ? dataInicioStr : dataInicioStr + 'T00:00:00');
+        const dFimRaw = dataFimStr.length === 16 ? dataFimStr + ':59' : (dataFimStr.includes('T') ? dataFimStr : dataFimStr + 'T23:59:59');
+
+        const adjustedStart = toUTC(dInicioRaw);
+        const fim = toUTC(dFimRaw);
+
+        App.utils.toast("Buscando dados do período...", "info");
+
+        let { data: vendas, error: erroVendas } = await _sb.from('orders')
+            .select('*, products(nome)')
+            .eq('store_id', App.state.storeId)
+            .not('status', 'in', '(cancelado,cancelada,devolvido,devolvida,CANCELADO,CANCELADA,DEVOLVIDO,DEVOLVIDA,estornado,ESTORNADO)')
+            .gte('created_at', adjustedStart)
+            .lte('created_at', fim);
+            
+        let { data: movimentos } = await _sb.from('cash_movements')
+            .select('*')
+            .eq('store_id', App.state.storeId)
+            .gte('created_at', adjustedStart)
+            .lte('created_at', fim);
+            
+        let { data: sessoes } = await _sb.from('cash_sessions')
+            .select('*')
+            .eq('store_id', App.state.storeId)
+            .gte('created_at', adjustedStart)
+            .lte('created_at', fim);
+
+        if (erroVendas) {
+            console.error("Erro ao buscar vendas:", erroVendas);
+            await NaxioUI.alert('Erro', 'Erro ao buscar dados.', 'error');
+            return;
+        }
+
+        let breakdownVendas = { dinheiro: 0, pix: 0, credito: 0, debito: 0 };
+        let vendasHoje = 0;
+        
+        (vendas || []).forEach(v => {
+            const valorPago = parseFloat(v.total_pago || v.total || 0);
+            vendasHoje += valorPago;
+            
+            let metodosPag = [];
+            try {
+                if (v.observacao && v.observacao.startsWith('{')) {
+                    const obsObj = JSON.parse(v.observacao);
+                    if (obsObj.pagamentos && Array.isArray(obsObj.pagamentos)) metodosPag = obsObj.pagamentos;
+                }
+            } catch (e) {}
+
+            if (metodosPag.length === 0 && v.payments_info) {
+                try { metodosPag = typeof v.payments_info === 'string' ? JSON.parse(v.payments_info) : v.payments_info; } catch (e) {}
+            }
+            if (metodosPag.length === 0) {
+                metodosPag = [{ method: v.metodo_pagamento || v.pagamento || 'Dinheiro', amount: valorPago }];
+            }
+
+            metodosPag.forEach(p => {
+                 let method = (p.method || p.tipo || '').toLowerCase();
+                 let val = parseFloat(p.amount || p.val || 0);
+                 if (method.includes('dinheiro') || method === 'din') breakdownVendas.dinheiro += val;
+                 else if (method.includes('pix')) breakdownVendas.pix += val;
+                 else if (method.includes('credit') || method.includes('crédito') || method.includes('credito') || p.code === '03') breakdownVendas.credito += val;
+                 else if (method.includes('debit') || method.includes('débito') || method.includes('debito') || p.code === '04') breakdownVendas.debito += val;
+                 else breakdownVendas.dinheiro += val;
+            });
+        });
+        
+        let breakdownAnteriores = { dinheiro: 0, pix: 0, credito: 0, debito: 0 };
+        let totalEntradas = 0;
+        let totalDespesas = 0;
+        
+        (movimentos || []).forEach(m => {
+             const val = parseFloat(m.amount || 0);
+             if (m.type === 'entrada') {
+                  totalEntradas += val;
+                  let method = (m.method || '').toLowerCase();
+                  if (method.includes('pix')) breakdownAnteriores.pix += val;
+                  else if (method.includes('credit') || method.includes('crédito') || method.includes('credito')) breakdownAnteriores.credito += val;
+                  else if (method.includes('debit') || method.includes('débito') || method.includes('debito')) breakdownAnteriores.debito += val;
+                  else breakdownAnteriores.dinheiro += val;
+             } else if (m.type === 'saida' || m.type === 'sangria' || m.type === 'despesa') {
+                  totalDespesas += val;
+             }
+        });
+        
+        let fundoInicial = 0;
+        (sessoes || []).forEach(s => {
+             fundoInicial += parseFloat(s.valor_inicial || 0);
+        });
+        
+        let esperadoGaveta = fundoInicial + breakdownVendas.dinheiro + breakdownAnteriores.dinheiro - totalDespesas;
+
+        const fmt = (v) => 'R$ ' + (parseFloat(v)||0).toFixed(2);
+        const linha = (l, v) => `<div style="display:flex; justify-content:space-between; margin-bottom: 2px;"><span>${l}</span><span>${fmt(v)}</span></div>`;
+        const div = `<div style="border-top:1px dashed #555; margin:8px 0;"></div>`;
+
+        const nomeLoja = (App.state.currentStore?.nome_loja) || App.state.profile?.nome_loja || 'RESTAURANTE';
+
+        const htmlTabela = `
+            <div id="caixa-table-container" style="font-family:'Courier New', monospace; max-width: 350px; margin: 0 auto; background: #fff; color: #000; padding: 15px; border-radius: 4px; font-weight: bold;">
+                <div style="text-align:center; margin-bottom: 10px;">
+                    <h3 style="margin:0; font-size:16px;">FECHAMENTO CAIXA</h3>
+                    <div style="font-size:14px; text-transform:uppercase;">${nomeLoja}</div>
+                    <div style="font-size:12px; margin-top:5px;">${new Date(adjustedStart).toLocaleString()} a ${new Date(fim).toLocaleString()}</div>
+                    <div style="font-size:12px; margin-top:5px;">OP: PERÍODO</div>
+                </div>
+                ${div}
+                ${linha('Fundo Inicial:', fundoInicial)}
+                ${div}
+                
+                <div style="text-decoration:underline; font-size:14px; margin-bottom:4px;">VENDAS (PERÍODO)</div>
+                ${linha('Dinheiro:', breakdownVendas.dinheiro)}
+                ${linha('Pix:', breakdownVendas.pix)}
+                ${linha('Crédito:', breakdownVendas.credito)}
+                ${linha('Débito:', breakdownVendas.debito)}
+                ${linha('TOTAL VENDAS:', vendasHoje)}
+                ${div}
+                
+                <div style="text-decoration:underline; font-size:14px; margin-bottom:4px;">ENTRADAS</div>
+                ${linha('Dinheiro:', breakdownAnteriores.dinheiro)}
+                ${linha('Pix:', breakdownAnteriores.pix)}
+                ${linha('Crédito:', breakdownAnteriores.credito)}
+                ${linha('Débito:', breakdownAnteriores.debito)}
+                ${linha('TOTAL ENTRADAS:', totalEntradas)}
+                ${div}
+                
+                <div style="text-decoration:underline; font-size:14px; margin-bottom:4px;">DESPESAS / SANGRIA</div>
+                ${linha('Outros:', totalDespesas)}
+                ${linha('TOTAL DESPESAS:', totalDespesas)}
+                ${div}
+                
+                <div style="font-size: 14px; margin-top: 5px;">
+                    ${linha('GAVETA ESPERADO:', esperadoGaveta)}
+                </div>
+                <div style="font-size:10px; text-align:right;">(Fundo + Dinheiro - Desp.Din)</div>
+                <br/>
+                ${linha('INFORMADO:', 0)}
+                ${linha('DIFERENÇA:', 0)}
+                
+                <div style="margin-top:40px; border-top:1px solid #000; text-align:center; padding-top:5px; font-size:12px;">Assinatura Responsável</div>
+            </div>
+        `;
+
+        if (typeof RelatoriosEnterprise !== 'undefined' && RelatoriosEnterprise.exibirModal) {
+            RelatoriosEnterprise.exibirModal(
+                `💰 Relatório de Caixa (Período)`,
+                `Período: ${new Date(adjustedStart).toLocaleString()} a ${new Date(fim).toLocaleString()}`,
+                htmlTabela,
+                null
+            );
+        }
+    },
+
     exibirModal: (titulo, subtitulo, linhas, total) => {
         RelatoriosEnterprise.dadosRelatorioAtual = { titulo, subtitulo, linhas, total };
 
@@ -1526,6 +1695,7 @@ const PainelRelatorios = {
             <h5 style="color: var(--success); border-bottom: 1px solid var(--border);">💰 Financeiro</h5>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px;">
                 <button class="btn btn-secondary" onclick="RelatoriosEnterprise.historicoCaixas()"> <i class="ri-wallet-3-line"></i> Histórico Caixas </button>
+                <button class="btn btn-secondary" onclick="RelatoriosEnterprise.relatorioCaixaPorPeriodo()"> <i class="ri-calendar-check-line"></i> Caixa por Período </button>
                 <button class="btn btn-secondary" onclick="RelatoriosEnterprise.relatorioDespesasDia()"> <i class="ri-money-dollar-circle-line"></i> Despesas </button>
             </div>
         `;
