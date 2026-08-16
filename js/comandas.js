@@ -2353,11 +2353,22 @@ Object.assign(App.store, {
 
     // 🔥 IMPRESSÃO TÉRMICA CORRIGIDA (ESCURA E COM 10%) - Agrupa mesmo produto numa linha
     imprimirConferenciaInternal: async (id) => {
-        const items = App.state.currentComandaItems;
-        const num = App.state.currentMesaNum;
-
-        // Lê do estado global (controlado pelo toggle na tela de pagamento/pedido)
+        let items = App.state.currentComandaItems;
+        let num = App.state.currentMesaNum;
         let comTaxa = App.store.state.comTaxa;
+
+        if (id && id !== App.state.currentComanda) {
+            try {
+                const { data: comandaFetch } = await _sb.from('comandas').select('*').eq('id', id).single();
+                if (comandaFetch) {
+                    items = comandaFetch.items || [];
+                    num = comandaFetch.numero;
+                    const MESAS_BALCAO_SEM_TAXA = ['200', '201', '202', '203', '204', '205', '206', '207', '208', '209', '210', '300', '301', '302', '304', '305', '306', '307', '308'];
+                    const ehBalcao = MESAS_BALCAO_SEM_TAXA.includes(String(num)) || comandaFetch.tipo_comanda === 'interna';
+                    comTaxa = !ehBalcao;
+                }
+            } catch (e) { console.error("Erro ao buscar comanda", e); }
+        }
 
         // Sobrescrita de Segurança: se for 300 ou interna, forçosamente remove os 10%
         if (num == 300 || num == '300') comTaxa = false;
