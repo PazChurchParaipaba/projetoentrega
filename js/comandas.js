@@ -2827,8 +2827,38 @@ Object.assign(App.store, {
     },
 
     confirmarFechamentoMesa: async () => {
+        if (App.store._isProcessingFechamento) return;
+        App.store._isProcessingFechamento = true;
+        const btnConfirma = document.getElementById('btn-confirma-mesa');
+        if (btnConfirma) {
+            btnConfirma.disabled = true;
+            btnConfirma.innerHTML = '<i class="ri-loader-4-line ri-spin"></i> Processando...';
+        }
+        try {
+            await App.store._confirmarFechamentoMesaImpl();
+        } finally {
+            App.store._isProcessingFechamento = false;
+            const btnConfirmaReset = document.getElementById('btn-confirma-mesa');
+            if (btnConfirmaReset) {
+                btnConfirmaReset.disabled = false;
+                btnConfirmaReset.innerHTML = '✅ CONFIRMAR PAGAMENTO';
+            }
+        }
+    },
+
+    _confirmarFechamentoMesaImpl: async () => {
         const comanda = App.store.fastCheckoutComanda;
         if (!comanda) return;
+
+        // 🔥 VERIFICA NO BANCO SE A COMANDA JÁ FOI FECHADA (evita duplicidade por timeout/lentidão)
+        const { data: comandaCheck } = await _sb.from('comandas').select('status').eq('id', comanda.id).single();
+        if (comandaCheck && comandaCheck.status === 'fechada') {
+            NaxioUI.alert('Aviso', 'Esta comanda já foi fechada e o pagamento já foi registrado.', 'warning');
+            App.store.fastCheckoutComanda = null;
+            document.getElementById('modal-fechamento-mesa')?.remove();
+            return;
+        }
+
 
         // Captura CPF e Nome
         const cpfNota = document.getElementById('mesa-cpf-nota').value.trim();
@@ -3039,6 +3069,16 @@ Object.assign(App.store, {
 
     // --- FECHAMENTO VIA MODAL DE DETALHES ---
     fecharMesaViaModal: async () => {
+        if (App.store._isProcessingFechamentoModal) return;
+        App.store._isProcessingFechamentoModal = true;
+        try {
+            await App.store._fecharMesaViaModalImpl();
+        } finally {
+            App.store._isProcessingFechamentoModal = false;
+        }
+    },
+
+    _fecharMesaViaModalImpl: async () => {
         if (typeof Caixa === 'undefined' || !Caixa.state.session) {
             NaxioUI.alert("🚫 CAIXA FECHADO", "Abra o caixa antes de receber valores.", 'warning');
             return;
@@ -3057,6 +3097,13 @@ Object.assign(App.store, {
         const { data: comanda } = await _sb.from('comandas').select('*').eq('id', comandaId).single();
         if (!comanda) {
             NaxioUI.alert('Erro', "Erro ao buscar comanda.", 'error');
+            return;
+        }
+
+        // 🔥 VERIFICA NO BANCO SE A COMANDA JÁ FOI FECHADA
+        if (comanda.status === 'fechada') {
+            NaxioUI.alert('Aviso', 'Esta comanda já foi fechada e registrada no caixa.', 'warning');
+            document.getElementById('split-pay-modal')?.remove();
             return;
         }
 
@@ -3136,6 +3183,13 @@ Object.assign(App.store, {
             metodo_pagamento: pagamento.method,
             created_at: new Date().toISOString()
         }).select().single();
+
+        // 🔥 Vincula esta ordem à comanda (para permitir estorno automático na reabertura)
+        if (newOrder) {
+            const updatedPayments = payments.map(p => ({ ...p }));
+            updatedPayments.push({ _order_id: newOrder.id });
+            await _sb.from('comandas').update({ payments_info: updatedPayments }).eq('id', comandaId);
+        }
 
         // 3. Baixa Estoque
         if (items && items.length > 0) {
@@ -4017,10 +4071,52 @@ Object.assign(App.store, {
             } else {
                 console.error("Erro ao cancelar ordens:", cancelError);
             }
+        } else {
+            // Fallback: search by mesa num para estorno caso não tenha _order_id (fechamentos antigos)
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            const { data: recentOrders } = await _sb.from('orders')
+                .select('*')
+                .eq('store_id', App.state.storeId)
+                .in('origem_venda', ['comanda', 'consumo_interno'])
+                .gte('created_at', hoje.toISOString())
+                .order('created_at', { ascending: false })
+                .limit(20);
+                
+            let lastOrder = null;
+            if (recentOrders) {
+                for (let o of recentOrders) {
+                    try {
+                        const obsStr = o.observacao || '';
+                        let obsMesa = null;
+                        if (obsStr.startsWith('{')) {
+                            const obs = JSON.parse(obsStr);
+                            obsMesa = obs.mesa;
+                        } else if (obsStr.includes('Mesa ' + comanda.numero)) {
+                            obsMesa = comanda.numero;
+                        }
+                        
+                        if (obsMesa && String(obsMesa) === String(comanda.numero) && o.status !== 'cancelado') {
+                            lastOrder = o;
+                            break;
+                        }
+                    } catch (e) { }
+                }
+            }
+            if (lastOrder) {
+                await _sb.from('orders').update({
+                    status: 'cancelado',
+                    observacao: (lastOrder.observacao || '') + ' [ESTORNADA E REABERTA NO PDV]'
+                }).eq('id', lastOrder.id);
+                App.utils.toast("Venda anterior cancelada no financeiro (fallback)!", "info");
+            }
         }
 
         await _sb.from('comandas').update({ status: 'ocupada', total_pago: null, payments_info: null }).eq('id', id);
         App.utils.toast("Comanda reaberta com sucesso!", "success");
+        if (window.Caixa && window.Caixa.calcTotals) {
+            await window.Caixa.calcTotals();
+        }
         const btnTodas = Array.from(document.querySelectorAll('.filtro-comanda')).find(x => x.textContent.trim() === 'TODAS');
         App.store.filtrar('todas', btnTodas);
     },
@@ -4113,6 +4209,9 @@ Object.assign(App.store, {
         }
 
         App.utils.toast(`✅ Mesa interna ${numero} reaberta! Itens restaurados para correção.`, 'success');
+        if (window.Caixa && window.Caixa.calcTotals) {
+            await window.Caixa.calcTotals();
+        }
         // Fecha o painel de historico resetando o filtro correto para 'todas'
         const btnTodas = Array.from(document.querySelectorAll('.filtro-comanda')).find(x => x.textContent.trim() === 'TODAS');
         App.store.filtrar('todas', btnTodas);
