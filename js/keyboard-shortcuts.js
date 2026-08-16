@@ -322,7 +322,7 @@ const NaxioKeyboardShortcuts = {
         // 🔥 CALCULANDO VALOR TOTAL (Subtotal + Taxa de Serviço se houver)
         const items = comanda.items || [];
         const subtotal = items.reduce((acc, i) => acc + ((parseFloat(i.price) || 0) * (parseFloat(i.qtd) || 0)), 0);
-        const MESAS_BALCAO_ISENTA = ['300', '301', '302', '304', '305', '306', '307', '308'];
+        const MESAS_BALCAO_ISENTA = ['200', '201', '202', '203', '204', '205', '206', '207', '208', '209', '210', '300', '301', '302', '304', '305', '306', '307', '308'];
         const isMesaIsenta = (MESAS_BALCAO_ISENTA.includes(String(comanda.numero)) || comanda.tipo_comanda === 'interna');
         let taxa = 0;
         if (!isMesaIsenta) {
@@ -393,7 +393,7 @@ const NaxioKeyboardShortcuts = {
         const subtotal = items.reduce((acc, i) => acc + ((parseFloat(i.price) || 0) * (parseFloat(i.qtd) || 0)), 0);
 
         // Regra de Taxa (Padão 10% exceto mesas de balão ou internas)
-        const MESAS_BALCAO_ISENTA = ['300', '301', '302', '304', '305', '306', '307', '308'];
+        const MESAS_BALCAO_ISENTA = ['200', '201', '202', '203', '204', '205', '206', '207', '208', '209', '210', '300', '301', '302', '304', '305', '306', '307', '308'];
         const isMesaIsenta = (MESAS_BALCAO_ISENTA.includes(String(comanda.numero)) || comanda.tipo_comanda === 'interna');
         let taxa = 0;
         if (!isMesaIsenta) {

@@ -140,7 +140,7 @@ Object.assign(App.store, {
             const num = String(App.state?.currentMesaNum || document.getElementById('checkout-mesa-num')?.value || '1');
             if (this._taxaPorComanda[num] !== undefined) return this._taxaPorComanda[num];
             // Mesas balcão (sem 10%): 300 (interna) + 304, 305, 307, 308 (balcão)
-            const MESAS_BALCAO = ['300', '301', '302', '304', '305', '306', '307', '308'];
+            const MESAS_BALCAO = ['200', '201', '202', '203', '204', '205', '206', '207', '208', '209', '210', '300', '301', '302', '304', '305', '306', '307', '308'];
             return MESAS_BALCAO.includes(num) ? false : true;
         },
         set comTaxa(val) {
@@ -544,7 +544,7 @@ Object.assign(App.store, {
             // Inicializa pra tabela de controle global se for undefined
             if (App.store.state._taxaPorComanda === undefined) App.store.state._taxaPorComanda = {};
             if (App.store.state._taxaPorComanda[comanda.numero] === undefined) {
-                const MESAS_BALCAO_SEM_TAXA = ['300', '301', '302', '304', '305', '306', '307', '308'];
+                const MESAS_BALCAO_SEM_TAXA = ['200', '201', '202', '203', '204', '205', '206', '207', '208', '209', '210', '300', '301', '302', '304', '305', '306', '307', '308'];
                 const ehBalcao = MESAS_BALCAO_SEM_TAXA.includes(String(comanda.numero)) || comanda.tipo_comanda === 'interna';
                 App.store.state._taxaPorComanda[comanda.numero] = !ehBalcao;
             }
@@ -995,7 +995,7 @@ Object.assign(App.store, {
         if (mesaFresca) App.store.state.currentMesaStatus = mesaFresca.status;
         if (App.store.state._taxaPorComanda === undefined) App.store.state._taxaPorComanda = {};
         if (App.store.state._taxaPorComanda[numero] === undefined) {
-            const MESAS_BALCAO_SEM_TAXA = ['300', '301', '302', '304', '305', '306', '307', '308'];
+            const MESAS_BALCAO_SEM_TAXA = ['200', '201', '202', '203', '204', '205', '206', '207', '208', '209', '210', '300', '301', '302', '304', '305', '306', '307', '308'];
             const ehBalcao = MESAS_BALCAO_SEM_TAXA.includes(String(numero)) || (mesaFresca && mesaFresca.tipo_comanda === 'interna');
             App.store.state.comTaxa = !ehBalcao;
         }
@@ -3334,7 +3334,7 @@ Object.assign(App.store, {
         if (mesaFresca) App.store.state.currentMesaStatus = mesaFresca.status;
         if (App.store.state._taxaPorComanda === undefined) App.store.state._taxaPorComanda = {};
         if (App.store.state._taxaPorComanda[numero] === undefined) {
-            const MESAS_BALCAO_SEM_TAXA = ['300', '301', '302', '304', '305', '306', '307', '308'];
+            const MESAS_BALCAO_SEM_TAXA = ['200', '201', '202', '203', '204', '205', '206', '207', '208', '209', '210', '300', '301', '302', '304', '305', '306', '307', '308'];
             const ehBalcao = MESAS_BALCAO_SEM_TAXA.includes(String(numero)) || (mesaFresca && mesaFresca.tipo_comanda === 'interna');
             App.store.state.comTaxa = !ehBalcao;
         }

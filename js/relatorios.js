@@ -1140,8 +1140,8 @@ const RelatoriosEnterprise = {
             itensHtml = '<tr><td colspan="3" style="text-align:center;">Nenhum item</td></tr>';
         }
 
-        // Mesas balcão sem taxa de serviço: 300 (interna), 301, 302, 304, 305, 306, 307, 308
-        const MESAS_BALCAO = ['300', '301', '302', '304', '305', '306', '307', '308'];
+        // Mesas balcão sem taxa de serviço: 200 a 210, 300 (interna), 301, 302, 304, 305, 306, 307, 308
+        const MESAS_BALCAO = ['200', '201', '202', '203', '204', '205', '206', '207', '208', '209', '210', '300', '301', '302', '304', '305', '306', '307', '308'];
         const isIntMsg = c.tipo_comanda === 'interna';
         const isMesaBalcao = MESAS_BALCAO.includes(String(c.numero));
         const aplicarTaxa = !isIntMsg && !isMesaBalcao;
