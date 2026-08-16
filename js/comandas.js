@@ -3908,9 +3908,11 @@ Object.assign(App.store, {
                 '<td style="padding:8px;">' + new Date(c.updated_at).toLocaleTimeString().slice(0, 5) + '</td>' +
                 '<td style="padding:8px; display:flex; gap:5px; flex-wrap:wrap;">' +
                 (isInterna
-                    ? '<button class="btn btn-sm btn-warning" onclick="App.store.reabrirMesaInterna(\'' + c.id + '\', \'' + c.numero + '\')"><i class="ri-refresh-line"></i> Reabrir</button>'
-                    : '<button class="btn btn-sm btn-outline-secondary" onclick="App.store.exportarFaturaPDF(\'' + c.id + '\')"><i class="ri-file-pdf-line"></i> Fatura</button>' +
-                    '<button class="btn btn-sm btn-primary" onclick="App.store.reabrirComanda(\'' + c.id + '\')">Reabrir</button>'
+                    ? '<button class="btn btn-sm btn-info" onclick="App.store.imprimirConferenciaInternal(\'' + c.id + '\')" title="Reimprimir Comanda"><i class="ri-printer-line"></i> Reimprimir</button>' +
+                      '<button class="btn btn-sm btn-warning" onclick="App.store.reabrirMesaInterna(\'' + c.id + '\', \'' + c.numero + '\')"><i class="ri-refresh-line"></i> Reabrir</button>'
+                    : '<button class="btn btn-sm btn-info" onclick="App.store.imprimirConferenciaInternal(\'' + c.id + '\')" title="Reimprimir Comanda"><i class="ri-printer-line"></i> Reimprimir</button>' +
+                      '<button class="btn btn-sm btn-outline-secondary" onclick="App.store.exportarFaturaPDF(\'' + c.id + '\')"><i class="ri-file-pdf-line"></i> Fatura</button>' +
+                      '<button class="btn btn-sm btn-primary" onclick="App.store.reabrirComanda(\'' + c.id + '\')">Reabrir</button>'
                 ) +
                 orderButton +
                 '</td>' +
