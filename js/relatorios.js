@@ -204,7 +204,7 @@ const RelatoriosEnterprise = {
             });
         }
 
-        // Busca vendas do periodo
+        // Busca vendas do periodo com paginação
         let queryVendas = _sb.from('orders')
             .select('id, observacao, products(nome, categoria)')
             .gte('created_at', dInicio)
@@ -217,7 +217,15 @@ const RelatoriosEnterprise = {
             queryVendas = queryVendas.eq('store_id', App.state.storeId);
         }
 
-        const { data: orders } = await queryVendas;
+        let orders = [];
+        let p_ord = 0;
+        while(true) {
+            const { data: b_ord, error: e_ord } = await queryVendas.range(p_ord * 1000, (p_ord + 1) * 1000 - 1);
+            if (e_ord) break;
+            if (b_ord) orders = orders.concat(b_ord);
+            if (!b_ord || b_ord.length < 1000) break;
+            p_ord++;
+        }
 
         // 🔥 BUSCA TODAS AS COMANDAS QUE FORAM FECHADAS NO PERÍODO
         let queryComandas = _sb.from('comandas')
@@ -232,7 +240,15 @@ const RelatoriosEnterprise = {
             queryComandas = queryComandas.eq('store_id', App.state.storeId);
         }
 
-        const { data: todasComandasFechadasBD } = await queryComandas;
+        let todasComandasFechadasBD = [];
+        let p_com = 0;
+        while(true) {
+            const { data: b_com, error: e_com } = await queryComandas.range(p_com * 1000, (p_com + 1) * 1000 - 1);
+            if (e_com) break;
+            if (b_com) todasComandasFechadasBD = todasComandasFechadasBD.concat(b_com);
+            if (!b_com || b_com.length < 1000) break;
+            p_com++;
+        }
 
         // Função auxiliar para normalizar número de mesa/comanda (Remove zeros à esquerda)
         const normMesa = (m) => {
@@ -742,12 +758,22 @@ const RelatoriosEnterprise = {
 
         App.utils.toast("Buscando dados do período...", "info");
 
-        let { data: vendas, error: erroVendas } = await _sb.from('orders')
-            .select('*, products(nome)')
-            .eq('store_id', App.state.storeId)
-            .not('status', 'in', '(cancelado,cancelada,devolvido,devolvida,CANCELADO,CANCELADA,DEVOLVIDO,DEVOLVIDA,estornado,ESTORNADO)')
-            .gte('created_at', adjustedStart)
-            .lte('created_at', fim);
+        // 🔥 FIX: Paginação para evitar limite de 1000 registros do Supabase
+        let vendas = [];
+        let erroVendas = null;
+        let p = 0;
+        while(true) {
+            let res = await _sb.from('orders')
+                .select('*, products(nome)')
+                .eq('store_id', App.state.storeId)
+                .gte('created_at', adjustedStart)
+                .lte('created_at', fim)
+                .range(p * 1000, (p + 1) * 1000 - 1);
+            if (res.error) { erroVendas = res.error; break; }
+            if (res.data) vendas = vendas.concat(res.data);
+            if (!res.data || res.data.length < 1000) break;
+            p++;
+        }
             
         let { data: movimentos } = await _sb.from('cash_movements')
             .select('*')
@@ -769,9 +795,23 @@ const RelatoriosEnterprise = {
 
         let breakdownVendas = { dinheiro: 0, pix: 0, credito: 0, debito: 0 };
         let vendasHoje = 0;
+        let totalSefaz = 0;
         
         (vendas || []).forEach(v => {
             const valorPago = parseFloat(v.total_pago || v.total || 0);
+            
+            // SEFAZ sempre conta se a nota foi emitida, mesmo se a venda foi estornada no sistema depois
+            const sefazStatus = (v.status_sefaz || '').toLowerCase();
+            if (sefazStatus === 'autorizado') {
+                totalSefaz += valorPago;
+            }
+            
+            // Se o pedido foi cancelado no sistema, não entra nas contas do CAIXA LOCAL
+            const statusOrd = (v.status || '').toLowerCase();
+            if (['cancelado', 'cancelada', 'devolvido', 'devolvida', 'estornado'].includes(statusOrd)) {
+                return;
+            }
+
             vendasHoje += valorPago;
             
             let metodosPag = [];
@@ -848,7 +888,10 @@ const RelatoriosEnterprise = {
                 ${linha('Pix:', breakdownVendas.pix)}
                 ${linha('Crédito:', breakdownVendas.credito)}
                 ${linha('Débito:', breakdownVendas.debito)}
-                ${linha('TOTAL VENDAS:', vendasHoje)}
+                <div style="margin-top:5px; border-top:1px dashed #ddd; padding-top:5px;"></div>
+                ${linha('TOTAL SISTEMA (Real):', vendasHoje)}
+                ${linha('TOTAL EMIT. SEFAZ:', totalSefaz)}
+                <div style="font-size:10px; text-align:right; color:#555; margin-bottom:5px;">*Apenas Notas Autorizadas</div>
                 ${div}
                 
                 <div style="text-decoration:underline; font-size:14px; margin-bottom:4px;">ENTRADAS</div>
