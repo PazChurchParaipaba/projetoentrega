@@ -2973,7 +2973,7 @@ setInterval(() => {
     if (btnComandas && btnLote) {
         btnLote.style.display = btnComandas.style.display !== 'none' ? 'inline-flex' : 'none';
     }
-}, 2000);
+}, 10000);
 
 
 // Função de LANÇAR PRODUTO EM LOTE (Ajustada)
@@ -3225,7 +3225,7 @@ App.store.optimizeDashboard = () => {
 };
 
 // Executar otimização periodicamente
-setInterval(App.store.optimizeDashboard, 2000);
+setInterval(App.store.optimizeDashboard, 15000);
 
 // Injeta CSS Facelift (Melhorias Visuais Sutis)
 (function () {

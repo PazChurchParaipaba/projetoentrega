@@ -90,7 +90,6 @@ Object.assign(App.store, {
             .on('postgres_changes', { event: '*', schema: 'public', table: 'comandas', filter: 'store_id=eq.' + storeId }, (payload) => {
                 // BUG FIX: Evita processar DELETE sem payload.new
                 if (!payload.new || !payload.new.id) {
-                    App.store._loadThrottleBypass = true;
                     App.store.loadComandas();
                     return;
                 }
@@ -119,7 +118,6 @@ Object.assign(App.store, {
                     App.store.updateSingleComandaDOM(payload.new);
                 } else {
                     // Para DELETE ou mudanças estruturais, recarrega a lista
-                    App.store._loadThrottleBypass = true;
                     App.store.loadComandas();
                 }
 
@@ -3835,7 +3833,6 @@ Object.assign(App.store, {
                 (filtro === 'livre' && c.status === 'livre');
 
             if (matchStatus) {
-                App.store._loadThrottleBypass = true;
                 App.store.loadComandas();
             }
             return;
@@ -3844,8 +3841,7 @@ Object.assign(App.store, {
         // Se for fechada, remove do DOM e força refresh para mostrar estado correto
         if (c.status === 'fechada' || c.status === 'arquivada') {
             el.remove();
-            // 🔥 Bypass throttle para garantir que o grid reflita o fechamento imediatamente
-            App.store._loadThrottleBypass = true;
+            // Permite que o debounce gerencie o recarregamento
             App.store.loadComandas();
             return;
         }

@@ -1,0 +1,270 @@
+{
+  "session_14_updates": {
+    "resumo_vendas": {
+      "qtdVendas": 62,
+      "vendasHoje": 12566.12,
+      "totalDespesas": 1324,
+      "esperadoGaveta": 116.56,
+      "breakdownVendas": {
+        "pix": 3591.75,
+        "debito": 0,
+        "credito": 0,
+        "dinheiro": 1440.56
+      },
+      "breakdownDespesas": {
+        "pix": 0,
+        "debito": 0,
+        "credito": 0,
+        "dinheiro": 1324
+      },
+      "movements": [
+        {
+          "id": "e5f2c08b-9ee7-4fc2-b736-9b421bbc8fe8",
+          "tipo": "despesa",
+          "valor": 33,
+          "metodo": "dinheiro",
+          "descricao": "marcos taxi",
+          "created_at": "2026-08-14T20:28:30.621606+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "bb30d1bd-c51f-4c2a-8a5e-b0a2625fae31",
+          "tipo": "despesa",
+          "valor": 111,
+          "metodo": "dinheiro",
+          "descricao": "bruna planeta",
+          "created_at": "2026-08-14T20:28:14.405879+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "3a99e799-b7d5-42db-bda7-e081ff32be30",
+          "tipo": "despesa",
+          "valor": 279,
+          "metodo": "dinheiro",
+          "descricao": "lizomar",
+          "created_at": "2026-08-14T20:27:57.865052+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "748c13fc-2beb-44f8-a594-a5493ae6b999",
+          "tipo": "despesa",
+          "valor": 161,
+          "metodo": "dinheiro",
+          "descricao": "jairo elo",
+          "created_at": "2026-08-14T20:27:42.991539+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "82336a57-742f-4958-aa0c-7d17745f9f59",
+          "tipo": "despesa",
+          "valor": 132,
+          "metodo": "dinheiro",
+          "descricao": "tereza girafatur",
+          "created_at": "2026-08-14T20:27:26.663879+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "02fa4aec-6f0e-4bb2-ac73-9e390b3b8e78",
+          "tipo": "despesa",
+          "valor": 233,
+          "metodo": "dinheiro",
+          "descricao": "michelle cafe",
+          "created_at": "2026-08-14T20:27:10.271162+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "16e14acf-7bfa-44e8-93ca-5f7ad95eeb76",
+          "tipo": "despesa",
+          "valor": 215,
+          "metodo": "dinheiro",
+          "descricao": "vera reseve",
+          "created_at": "2026-08-14T20:26:48.981675+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "6862859f-2b33-4c92-b2e7-a38013419f33",
+          "tipo": "despesa",
+          "valor": 125,
+          "metodo": "dinheiro",
+          "descricao": "agnaldo",
+          "created_at": "2026-08-14T20:26:33.075056+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "4419f113-4187-4fc2-9b1d-7362376c2f64",
+          "tipo": "despesa",
+          "valor": 35,
+          "metodo": "dinheiro",
+          "descricao": "levi flecheiras",
+          "created_at": "2026-08-14T20:26:18.801191+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        }
+      ],
+      "entradasAnteriores": 0,
+      "breakdownAnteriores": {
+        "pix": 0,
+        "debito": 0,
+        "credito": 0,
+        "dinheiro": 0
+      }
+    },
+    "total_vendas": 12566.12,
+    "total_despesas": 1324,
+    "valor_fechamento": 12566.12,
+    "fechamento": "2026-08-14T23:59:59+00:00"
+  },
+  "session_17_new": {
+    "store_id": "f9b59170-dc78-4331-a213-30da11e79639",
+    "user_id": "3acbbc81-95a7-415a-8fd7-98ae8cce3374",
+    "nome": "CX MARAMBAIA (17/08)",
+    "abertura": "2026-08-17T09:00:00+00:00",
+    "fechamento": "2026-08-18T12:25:39.259+00:00",
+    "status": "fechado",
+    "created_at": "2026-08-17T09:00:00+00:00",
+    "updated_at": "2026-08-18T12:25:39.259+00:00",
+    "resumo_vendas": {
+      "qtdVendas": 56,
+      "vendasHoje": 8158.3,
+      "totalDespesas": 647,
+      "esperadoGaveta": 215.9,
+      "breakdownVendas": {
+        "pix": 2256.38,
+        "debito": 0,
+        "credito": 0,
+        "dinheiro": 862.9
+      },
+      "breakdownDespesas": {
+        "pix": 0,
+        "debito": 0,
+        "credito": 0,
+        "dinheiro": 647
+      },
+      "movements": [
+        {
+          "id": "09aaebce-1112-4e29-889d-9c5f365a8553",
+          "tipo": "despesa",
+          "valor": 16,
+          "metodo": "dinheiro",
+          "descricao": "BRITO TAXI",
+          "created_at": "2026-08-17T20:18:16.053122+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "9ddec769-2448-43f3-b9d4-0989f8439fbc",
+          "tipo": "despesa",
+          "valor": 194,
+          "metodo": "dinheiro",
+          "descricao": "TEREZA GIRAFATUR",
+          "created_at": "2026-08-17T20:18:04.326241+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "bed7fb3e-f150-4425-9633-f4d29651f8a8",
+          "tipo": "despesa",
+          "valor": 203,
+          "metodo": "dinheiro",
+          "descricao": "LARA CAFE",
+          "created_at": "2026-08-17T20:17:51.486977+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "5dfb05ed-db68-4587-86bf-a28362eada9f",
+          "tipo": "despesa",
+          "valor": 198,
+          "metodo": "dinheiro",
+          "descricao": "ZE CARLOS SANTURISMO",
+          "created_at": "2026-08-17T20:17:38.670256+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "27bace73-d334-4652-9950-a4a52588525b",
+          "tipo": "despesa",
+          "valor": 21,
+          "metodo": "dinheiro",
+          "descricao": "VALERIA TAXI",
+          "created_at": "2026-08-17T20:17:21.527548+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "58383e7a-0715-465e-a9d6-a14803b45633",
+          "tipo": "despesa",
+          "valor": 15,
+          "metodo": "dinheiro",
+          "descricao": "PAULO TAXI",
+          "created_at": "2026-08-17T20:16:59.743903+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        }
+      ],
+      "entradasAnteriores": 0,
+      "breakdownAnteriores": {
+        "pix": 0,
+        "debito": 0,
+        "credito": 0,
+        "dinheiro": 0
+      }
+    },
+    "total_vendas": 8158.3,
+    "total_despesas": 647,
+    "valor_fechamento": 8158.3,
+    "valor_inicial": 3476.2,
+    "diferenca": 0.0
+  },
+  "orders_to_update": [
+    "ac0fd2df-6806-4d55-8c50-c9dda3ca0bf4",
+    "3ef4231a-2a54-449d-a7c7-c0cac7695ff9",
+    "094d9b3d-cbdf-459a-823d-ec5267669615",
+    "e5b92dcc-00e9-4c2b-80dc-d400abbe12a7",
+    "130a3f12-1a00-46be-bc2a-342e8794fdec",
+    "c34dc950-cdca-474f-99fb-08c3f7bb2100",
+    "6db9965c-3b5b-4499-a9f6-b8f55f7cf64e",
+    "6af6c5e1-071b-49fb-b454-c4a1edc183b8",
+    "8b9a10e6-4e27-4616-951a-8bd9441b584f",
+    "83281ca1-6467-4b76-aca8-e6cff0f399b4",
+    "e4c30a57-09b4-4cd2-8484-6a11ac866bf7",
+    "9abb2430-1c65-493d-bdec-8e7d4346760b",
+    "0466d20b-971a-4183-87ef-97df21ec1980",
+    "9f102366-d73e-43b0-8da2-86e5a67ba7dd",
+    "a0b6697e-4cb1-423f-aca3-951dfde3d433",
+    "168a8c81-0672-4978-80c3-0dc4b31b1e0f",
+    "5dacb000-b129-49a7-b390-97cf36c8c94f",
+    "6ae8a534-191f-4bfa-8832-418bc2861f8c",
+    "5c2672e6-2cdc-46c0-9164-e8c703ebb1af",
+    "d3d08e1f-70fb-4002-91fe-1fd846f7c9a1",
+    "879efea8-b2bc-4864-b299-283a06257752",
+    "4e7da140-f415-4864-85ff-2ad8d9f12aba",
+    "38a3451f-8f1c-498b-b2ef-e007b07f50d2",
+    "3185c9ae-d5f6-45dd-81eb-563c4807c2c8",
+    "d5fbd4d3-3bda-46c6-a8ec-19cb379e1533",
+    "fb5d698c-34ec-4f62-8c88-b0107104780a",
+    "d3653b93-3d08-4d54-a4e1-94b572f1517d",
+    "39476c8d-8d79-4d13-9d85-bc68f7eeb296",
+    "689a5b4d-7c19-493f-85ee-b56b0e684117",
+    "ab023616-ba10-4d58-ae38-1bd79d3583d6",
+    "b3aa5b47-79b1-4bd2-9080-3d6fe3984bf0",
+    "affcda32-eff7-4dc2-b12f-dac57eeaac4c",
+    "337c7b6f-414e-4eab-a346-df97ce9580cf",
+    "62123fe7-b67e-44a2-a115-85931f320ddb",
+    "b5e6bd97-6b26-4b12-a8ad-a85562fed33b",
+    "94d0895e-b6a3-41cb-8256-794c6177c939",
+    "646b9fcc-22ef-4eef-b054-a15d648fe3e8",
+    "84b297fd-ca9c-4a85-99be-19a11fd39fe4",
+    "cbfe81ee-5ecf-4f45-b3ae-89db2158b4d9",
+    "d0769593-c274-4ba5-bc76-33d005207b80",
+    "b88cc224-4fbc-4288-8817-4746dd0170ad",
+    "580b10b4-9f78-4265-aff5-bfe5839f789c",
+    "02e1b5f7-8125-4e24-bb8b-ed130a6a5b6a",
+    "21648bc9-5f63-4103-829c-18fd6bad971b",
+    "650e4364-46b3-423c-a376-2491311f3b51",
+    "018244db-53e5-492b-9647-9b25ca321266",
+    "03f53628-e705-4fca-8c3e-673b9383f2a8",
+    "84da9b27-25da-44aa-92c8-a8fc91ef3db0",
+    "24ed40b8-241b-4969-8b85-5c2e474da441",
+    "2a52fb9b-1200-4eba-a1dc-873b7cc42aef",
+    "6dabf63c-418d-4ff2-b85b-6566827fd3e6",
+    "d94d94e6-d483-4f1f-bb33-4257754aaec3",
+    "923cb0f9-fe72-43d7-ae67-663d03f4d300",
+    "9124df2e-9f96-4bdf-bb34-f338b78db639",
+    "9c2c10c2-1407-4048-b215-bbf7dc4d696d",
+    "5db02466-d358-4077-9274-1c9d4bf94553"
+  ]
+}

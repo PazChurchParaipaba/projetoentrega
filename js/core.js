@@ -152,9 +152,9 @@ const App = {
                                     }).catch(err => console.error("Erro ao validar sessão:", err));
                             };
 
-                            // Valida na hora e depois a cada 10 segundos (monitoramento contínuo)
+                            // Valida na hora e depois a cada 1 minuto (reduz carga no banco)
                             validateSession();
-                            setInterval(validateSession, 10000);
+                            setInterval(validateSession, 60000);
                         }
 
                         // ✅ GARÇOM: Se já escolheu a loja hoje, entra direto sem pedir nada

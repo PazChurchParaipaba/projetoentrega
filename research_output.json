@@ -1,0 +1,3072 @@
+{
+  "session": {
+    "id": "f2199359-7926-45bb-8f3f-43a29e10f166",
+    "store_id": "f9b59170-dc78-4331-a213-30da11e79639",
+    "user_id": "3acbbc81-95a7-415a-8fd7-98ae8cce3374",
+    "abertura": "2026-08-14T11:44:15.604+00:00",
+    "fechamento": "2026-08-18T12:25:39.259+00:00",
+    "valor_inicial": 3476.2,
+    "valor_final_sistema": 0,
+    "valor_final_informado": 0,
+    "status": "fechado",
+    "resumo_vendas": {
+      "fundo": 3476.2,
+      "contado": 0,
+      "session": {
+        "id": "f2199359-7926-45bb-8f3f-43a29e10f166",
+        "nome": "CX MARAMBAIA",
+        "status": "aberto",
+        "user_id": "3acbbc81-95a7-415a-8fd7-98ae8cce3374",
+        "abertura": "2026-08-14T11:44:15.604+00:00",
+        "store_id": "f9b59170-dc78-4331-a213-30da11e79639",
+        "diferenca": -2040.6600000000003,
+        "created_at": "2026-08-14T11:46:22.456182+00:00",
+        "fechamento": null,
+        "updated_at": "2026-08-14T11:46:22.456182+00:00",
+        "observacoes": "",
+        "total_vendas": 0,
+        "resumo_vendas": {
+          "fundo": 2238.76,
+          "contado": 0,
+          "session": {
+            "id": "f2199359-7926-45bb-8f3f-43a29e10f166",
+            "nome": "CX MARAMBAIA",
+            "status": "aberto",
+            "user_id": "3acbbc81-95a7-415a-8fd7-98ae8cce3374",
+            "abertura": "2026-08-14T11:44:15.604+00:00",
+            "store_id": "f9b59170-dc78-4331-a213-30da11e79639",
+            "diferenca": null,
+            "created_at": "2026-08-14T11:46:22.456182+00:00",
+            "fechamento": null,
+            "updated_at": "2026-08-14T11:46:22.456182+00:00",
+            "observacoes": "",
+            "total_vendas": 0,
+            "resumo_vendas": null,
+            "valor_inicial": 2238.76,
+            "total_despesas": 0,
+            "data_fechamento": null,
+            "valor_fechamento": 0,
+            "valor_final_sistema": 0,
+            "valor_final_informado": 0
+          },
+          "sessions": [
+            {
+              "id": "f2199359-7926-45bb-8f3f-43a29e10f166",
+              "nome": "CX MARAMBAIA",
+              "status": "aberto",
+              "user_id": "3acbbc81-95a7-415a-8fd7-98ae8cce3374",
+              "abertura": "2026-08-14T11:44:15.604+00:00",
+              "store_id": "f9b59170-dc78-4331-a213-30da11e79639",
+              "diferenca": null,
+              "created_at": "2026-08-14T11:46:22.456182+00:00",
+              "fechamento": null,
+              "updated_at": "2026-08-14T11:46:22.456182+00:00",
+              "observacoes": "",
+              "total_vendas": 0,
+              "resumo_vendas": null,
+              "valor_inicial": 2238.76,
+              "total_despesas": 0,
+              "data_fechamento": null,
+              "valor_fechamento": 0,
+              "valor_final_sistema": 0,
+              "valor_final_informado": 0
+            }
+          ],
+          "diferenca": -2040.6600000000003,
+          "movements": [
+            {
+              "id": "e5f2c08b-9ee7-4fc2-b736-9b421bbc8fe8",
+              "tipo": "despesa",
+              "valor": 33,
+              "metodo": "dinheiro",
+              "descricao": "marcos taxi",
+              "created_at": "2026-08-14T20:28:30.621606+00:00",
+              "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+            },
+            {
+              "id": "bb30d1bd-c51f-4c2a-8a5e-b0a2625fae31",
+              "tipo": "despesa",
+              "valor": 111,
+              "metodo": "dinheiro",
+              "descricao": "bruna planeta",
+              "created_at": "2026-08-14T20:28:14.405879+00:00",
+              "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+            },
+            {
+              "id": "3a99e799-b7d5-42db-bda7-e081ff32be30",
+              "tipo": "despesa",
+              "valor": 279,
+              "metodo": "dinheiro",
+              "descricao": "lizomar",
+              "created_at": "2026-08-14T20:27:57.865052+00:00",
+              "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+            },
+            {
+              "id": "748c13fc-2beb-44f8-a594-a5493ae6b999",
+              "tipo": "despesa",
+              "valor": 161,
+              "metodo": "dinheiro",
+              "descricao": "jairo elo",
+              "created_at": "2026-08-14T20:27:42.991539+00:00",
+              "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+            },
+            {
+              "id": "82336a57-742f-4958-aa0c-7d17745f9f59",
+              "tipo": "despesa",
+              "valor": 132,
+              "metodo": "dinheiro",
+              "descricao": "tereza girafatur",
+              "created_at": "2026-08-14T20:27:26.663879+00:00",
+              "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+            },
+            {
+              "id": "02fa4aec-6f0e-4bb2-ac73-9e390b3b8e78",
+              "tipo": "despesa",
+              "valor": 233,
+              "metodo": "dinheiro",
+              "descricao": "michelle cafe",
+              "created_at": "2026-08-14T20:27:10.271162+00:00",
+              "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+            },
+            {
+              "id": "16e14acf-7bfa-44e8-93ca-5f7ad95eeb76",
+              "tipo": "despesa",
+              "valor": 215,
+              "metodo": "dinheiro",
+              "descricao": "vera reseve",
+              "created_at": "2026-08-14T20:26:48.981675+00:00",
+              "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+            },
+            {
+              "id": "6862859f-2b33-4c92-b2e7-a38013419f33",
+              "tipo": "despesa",
+              "valor": 125,
+              "metodo": "dinheiro",
+              "descricao": "agnaldo",
+              "created_at": "2026-08-14T20:26:33.075056+00:00",
+              "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+            },
+            {
+              "id": "4419f113-4187-4fc2-9b1d-7362376c2f64",
+              "tipo": "despesa",
+              "valor": 35,
+              "metodo": "dinheiro",
+              "descricao": "levi flecheiras",
+              "created_at": "2026-08-14T20:26:18.801191+00:00",
+              "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+            }
+          ],
+          "qtdVendas": 57,
+          "vendasHoje": 12251.460000000005,
+          "totalDespesas": 1324,
+          "esperadoGaveta": 2040.6600000000003,
+          "breakdownVendas": {
+            "pix": 3591.75,
+            "debito": 2829.8,
+            "credito": 4704.009999999999,
+            "dinheiro": 1125.9
+          },
+          "breakdownDespesas": {
+            "pix": 0,
+            "debito": 0,
+            "credito": 0,
+            "dinheiro": 1324
+          },
+          "entradasAnteriores": 0,
+          "breakdownAnteriores": {
+            "pix": 0,
+            "debito": 0,
+            "credito": 0,
+            "dinheiro": 0
+          }
+        },
+        "valor_inicial": 3476.2,
+        "total_despesas": 0,
+        "data_fechamento": null,
+        "valor_fechamento": 12251.46,
+        "valor_final_sistema": 0,
+        "valor_final_informado": 0
+      },
+      "sessions": [
+        {
+          "id": "f2199359-7926-45bb-8f3f-43a29e10f166",
+          "nome": "CX MARAMBAIA",
+          "status": "aberto",
+          "user_id": "3acbbc81-95a7-415a-8fd7-98ae8cce3374",
+          "abertura": "2026-08-14T11:44:15.604+00:00",
+          "store_id": "f9b59170-dc78-4331-a213-30da11e79639",
+          "diferenca": -2040.6600000000003,
+          "created_at": "2026-08-14T11:46:22.456182+00:00",
+          "fechamento": null,
+          "updated_at": "2026-08-14T11:46:22.456182+00:00",
+          "observacoes": "",
+          "total_vendas": 0,
+          "resumo_vendas": {
+            "fundo": 2238.76,
+            "contado": 0,
+            "session": {
+              "id": "f2199359-7926-45bb-8f3f-43a29e10f166",
+              "nome": "CX MARAMBAIA",
+              "status": "aberto",
+              "user_id": "3acbbc81-95a7-415a-8fd7-98ae8cce3374",
+              "abertura": "2026-08-14T11:44:15.604+00:00",
+              "store_id": "f9b59170-dc78-4331-a213-30da11e79639",
+              "diferenca": null,
+              "created_at": "2026-08-14T11:46:22.456182+00:00",
+              "fechamento": null,
+              "updated_at": "2026-08-14T11:46:22.456182+00:00",
+              "observacoes": "",
+              "total_vendas": 0,
+              "resumo_vendas": null,
+              "valor_inicial": 2238.76,
+              "total_despesas": 0,
+              "data_fechamento": null,
+              "valor_fechamento": 0,
+              "valor_final_sistema": 0,
+              "valor_final_informado": 0
+            },
+            "sessions": [
+              {
+                "id": "f2199359-7926-45bb-8f3f-43a29e10f166",
+                "nome": "CX MARAMBAIA",
+                "status": "aberto",
+                "user_id": "3acbbc81-95a7-415a-8fd7-98ae8cce3374",
+                "abertura": "2026-08-14T11:44:15.604+00:00",
+                "store_id": "f9b59170-dc78-4331-a213-30da11e79639",
+                "diferenca": null,
+                "created_at": "2026-08-14T11:46:22.456182+00:00",
+                "fechamento": null,
+                "updated_at": "2026-08-14T11:46:22.456182+00:00",
+                "observacoes": "",
+                "total_vendas": 0,
+                "resumo_vendas": null,
+                "valor_inicial": 2238.76,
+                "total_despesas": 0,
+                "data_fechamento": null,
+                "valor_fechamento": 0,
+                "valor_final_sistema": 0,
+                "valor_final_informado": 0
+              }
+            ],
+            "diferenca": -2040.6600000000003,
+            "movements": [
+              {
+                "id": "e5f2c08b-9ee7-4fc2-b736-9b421bbc8fe8",
+                "tipo": "despesa",
+                "valor": 33,
+                "metodo": "dinheiro",
+                "descricao": "marcos taxi",
+                "created_at": "2026-08-14T20:28:30.621606+00:00",
+                "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+              },
+              {
+                "id": "bb30d1bd-c51f-4c2a-8a5e-b0a2625fae31",
+                "tipo": "despesa",
+                "valor": 111,
+                "metodo": "dinheiro",
+                "descricao": "bruna planeta",
+                "created_at": "2026-08-14T20:28:14.405879+00:00",
+                "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+              },
+              {
+                "id": "3a99e799-b7d5-42db-bda7-e081ff32be30",
+                "tipo": "despesa",
+                "valor": 279,
+                "metodo": "dinheiro",
+                "descricao": "lizomar",
+                "created_at": "2026-08-14T20:27:57.865052+00:00",
+                "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+              },
+              {
+                "id": "748c13fc-2beb-44f8-a594-a5493ae6b999",
+                "tipo": "despesa",
+                "valor": 161,
+                "metodo": "dinheiro",
+                "descricao": "jairo elo",
+                "created_at": "2026-08-14T20:27:42.991539+00:00",
+                "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+              },
+              {
+                "id": "82336a57-742f-4958-aa0c-7d17745f9f59",
+                "tipo": "despesa",
+                "valor": 132,
+                "metodo": "dinheiro",
+                "descricao": "tereza girafatur",
+                "created_at": "2026-08-14T20:27:26.663879+00:00",
+                "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+              },
+              {
+                "id": "02fa4aec-6f0e-4bb2-ac73-9e390b3b8e78",
+                "tipo": "despesa",
+                "valor": 233,
+                "metodo": "dinheiro",
+                "descricao": "michelle cafe",
+                "created_at": "2026-08-14T20:27:10.271162+00:00",
+                "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+              },
+              {
+                "id": "16e14acf-7bfa-44e8-93ca-5f7ad95eeb76",
+                "tipo": "despesa",
+                "valor": 215,
+                "metodo": "dinheiro",
+                "descricao": "vera reseve",
+                "created_at": "2026-08-14T20:26:48.981675+00:00",
+                "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+              },
+              {
+                "id": "6862859f-2b33-4c92-b2e7-a38013419f33",
+                "tipo": "despesa",
+                "valor": 125,
+                "metodo": "dinheiro",
+                "descricao": "agnaldo",
+                "created_at": "2026-08-14T20:26:33.075056+00:00",
+                "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+              },
+              {
+                "id": "4419f113-4187-4fc2-9b1d-7362376c2f64",
+                "tipo": "despesa",
+                "valor": 35,
+                "metodo": "dinheiro",
+                "descricao": "levi flecheiras",
+                "created_at": "2026-08-14T20:26:18.801191+00:00",
+                "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+              }
+            ],
+            "qtdVendas": 57,
+            "vendasHoje": 12251.460000000005,
+            "totalDespesas": 1324,
+            "esperadoGaveta": 2040.6600000000003,
+            "breakdownVendas": {
+              "pix": 3591.75,
+              "debito": 2829.8,
+              "credito": 4704.009999999999,
+              "dinheiro": 1125.9
+            },
+            "breakdownDespesas": {
+              "pix": 0,
+              "debito": 0,
+              "credito": 0,
+              "dinheiro": 1324
+            },
+            "entradasAnteriores": 0,
+            "breakdownAnteriores": {
+              "pix": 0,
+              "debito": 0,
+              "credito": 0,
+              "dinheiro": 0
+            }
+          },
+          "valor_inicial": 3476.2,
+          "total_despesas": 0,
+          "data_fechamento": null,
+          "valor_fechamento": 12251.46,
+          "valor_final_sistema": 0,
+          "valor_final_informado": 0
+        }
+      ],
+      "diferenca": -3335,
+      "movements": [
+        {
+          "id": "09aaebce-1112-4e29-889d-9c5f365a8553",
+          "tipo": "despesa",
+          "valor": 16,
+          "metodo": "dinheiro",
+          "descricao": "BRITO TAXI",
+          "created_at": "2026-08-17T20:18:16.053122+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "9ddec769-2448-43f3-b9d4-0989f8439fbc",
+          "tipo": "despesa",
+          "valor": 194,
+          "metodo": "dinheiro",
+          "descricao": "TEREZA GIRAFATUR",
+          "created_at": "2026-08-17T20:18:04.326241+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "bed7fb3e-f150-4425-9633-f4d29651f8a8",
+          "tipo": "despesa",
+          "valor": 203,
+          "metodo": "dinheiro",
+          "descricao": "LARA CAFE",
+          "created_at": "2026-08-17T20:17:51.486977+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "5dfb05ed-db68-4587-86bf-a28362eada9f",
+          "tipo": "despesa",
+          "valor": 198,
+          "metodo": "dinheiro",
+          "descricao": "ZE CARLOS SANTURISMO",
+          "created_at": "2026-08-17T20:17:38.670256+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "27bace73-d334-4652-9950-a4a52588525b",
+          "tipo": "despesa",
+          "valor": 21,
+          "metodo": "dinheiro",
+          "descricao": "VALERIA TAXI",
+          "created_at": "2026-08-17T20:17:21.527548+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "58383e7a-0715-465e-a9d6-a14803b45633",
+          "tipo": "despesa",
+          "valor": 15,
+          "metodo": "dinheiro",
+          "descricao": "PAULO TAXI",
+          "created_at": "2026-08-17T20:16:59.743903+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "e5f2c08b-9ee7-4fc2-b736-9b421bbc8fe8",
+          "tipo": "despesa",
+          "valor": 33,
+          "metodo": "dinheiro",
+          "descricao": "marcos taxi",
+          "created_at": "2026-08-14T20:28:30.621606+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "bb30d1bd-c51f-4c2a-8a5e-b0a2625fae31",
+          "tipo": "despesa",
+          "valor": 111,
+          "metodo": "dinheiro",
+          "descricao": "bruna planeta",
+          "created_at": "2026-08-14T20:28:14.405879+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "3a99e799-b7d5-42db-bda7-e081ff32be30",
+          "tipo": "despesa",
+          "valor": 279,
+          "metodo": "dinheiro",
+          "descricao": "lizomar",
+          "created_at": "2026-08-14T20:27:57.865052+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "748c13fc-2beb-44f8-a594-a5493ae6b999",
+          "tipo": "despesa",
+          "valor": 161,
+          "metodo": "dinheiro",
+          "descricao": "jairo elo",
+          "created_at": "2026-08-14T20:27:42.991539+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "82336a57-742f-4958-aa0c-7d17745f9f59",
+          "tipo": "despesa",
+          "valor": 132,
+          "metodo": "dinheiro",
+          "descricao": "tereza girafatur",
+          "created_at": "2026-08-14T20:27:26.663879+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "02fa4aec-6f0e-4bb2-ac73-9e390b3b8e78",
+          "tipo": "despesa",
+          "valor": 233,
+          "metodo": "dinheiro",
+          "descricao": "michelle cafe",
+          "created_at": "2026-08-14T20:27:10.271162+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "16e14acf-7bfa-44e8-93ca-5f7ad95eeb76",
+          "tipo": "despesa",
+          "valor": 215,
+          "metodo": "dinheiro",
+          "descricao": "vera reseve",
+          "created_at": "2026-08-14T20:26:48.981675+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "6862859f-2b33-4c92-b2e7-a38013419f33",
+          "tipo": "despesa",
+          "valor": 125,
+          "metodo": "dinheiro",
+          "descricao": "agnaldo",
+          "created_at": "2026-08-14T20:26:33.075056+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        },
+        {
+          "id": "4419f113-4187-4fc2-9b1d-7362376c2f64",
+          "tipo": "despesa",
+          "valor": 35,
+          "metodo": "dinheiro",
+          "descricao": "levi flecheiras",
+          "created_at": "2026-08-14T20:26:18.801191+00:00",
+          "session_id": "f2199359-7926-45bb-8f3f-43a29e10f166"
+        }
+      ],
+      "qtdVendas": 106,
+      "vendasHoje": 20062.659999999996,
+      "totalDespesas": 1971,
+      "esperadoGaveta": 3335,
+      "breakdownVendas": {
+        "pix": 5848.13,
+        "debito": 5408.78,
+        "credito": 6975.950000000002,
+        "dinheiro": 1829.8000000000002
+      },
+      "breakdownDespesas": {
+        "pix": 0,
+        "debito": 0,
+        "credito": 0,
+        "dinheiro": 1971
+      },
+      "entradasAnteriores": 0,
+      "breakdownAnteriores": {
+        "pix": 0,
+        "debito": 0,
+        "credito": 0,
+        "dinheiro": 0
+      }
+    },
+    "total_despesas": 0.0,
+    "total_vendas": 0.0,
+    "data_fechamento": null,
+    "created_at": "2026-08-14T11:46:22.456182+00:00",
+    "updated_at": "2026-08-14T11:46:22.456182+00:00",
+    "valor_fechamento": 20062.66,
+    "observacoes": "",
+    "diferenca": -3335,
+    "nome": "CX MARAMBAIA"
+  },
+  "orders": [
+    {
+      "id": "2b8c9d02-b411-4ed0-a184-634dc299e50f",
+      "created_at": "2026-08-14T19:53:34.967+00:00",
+      "total_pago": 1378.3,
+      "metodo_pagamento": "Multiplos",
+      "payments_info": [
+        {
+          "aut": "212047",
+          "nsu": "001681",
+          "val": 130,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 130,
+          "method": "Debit",
+          "bandeira": "ELO"
+        },
+        {
+          "aut": "212047",
+          "nsu": "001680",
+          "val": 398,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 398,
+          "method": "Debit",
+          "bandeira": "ELO"
+        },
+        {
+          "aut": "15728962",
+          "nsu": "295180946",
+          "val": 200,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 200,
+          "method": "Pix",
+          "bandeira": "ELO"
+        },
+        {
+          "aut": "15728962",
+          "nsu": "29521981",
+          "val": 434.7,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 434.7,
+          "method": "Pix",
+          "bandeira": "ELO"
+        },
+        {
+          "aut": "15728956",
+          "nsu": "295170424",
+          "val": 215.6,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 215.6,
+          "method": "Pix",
+          "bandeira": "ELO"
+        }
+      ]
+    },
+    {
+      "id": "6b8ab5d5-e78e-4744-a3e0-048698911b8e",
+      "created_at": "2026-08-14T20:02:58.012+00:00",
+      "total_pago": 352,
+      "metodo_pagamento": "Multiplos",
+      "payments_info": [
+        {
+          "aut": "414698",
+          "nsu": "002356",
+          "val": 5,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 5,
+          "method": "Debit",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "065702",
+          "nsu": "001958",
+          "val": 6,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 6,
+          "method": "Debit",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "f83488",
+          "nsu": "002369",
+          "val": 6,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 6,
+          "method": "Credit",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "139713",
+          "nsu": "001658",
+          "val": 11.9,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 11.9,
+          "method": "Debit",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "15728956",
+          "nsu": "295119670",
+          "val": 5,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 5,
+          "method": "Pix",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "208188",
+          "nsu": "001651",
+          "val": 34,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 34,
+          "method": "Debit",
+          "bandeira": "ELO"
+        },
+        {
+          "aut": "15728947",
+          "nsu": "294970542",
+          "val": 87.17,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 87.17,
+          "method": "Pix",
+          "bandeira": "ELO"
+        },
+        {
+          "aut": "tbuxen",
+          "nsu": "002363",
+          "val": 86.07,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 86.07,
+          "method": "Credit",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "15728947",
+          "nsu": "294967975",
+          "val": 80.57,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 80.57,
+          "method": "Pix",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "",
+          "nsu": "",
+          "val": 30.29,
+          "cnpj": "",
+          "code": "01",
+          "amount": 30.29,
+          "method": "Dinheiro",
+          "bandeira": ""
+        }
+      ]
+    },
+    {
+      "id": "d554c741-c59b-42e0-a921-8f1dc470b5eb",
+      "created_at": "2026-08-14T20:04:05.706+00:00",
+      "total_pago": 146.3,
+      "metodo_pagamento": "Dinheiro",
+      "payments_info": [
+        {
+          "aut": "",
+          "nsu": "",
+          "val": 146.3,
+          "cnpj": "",
+          "code": "01",
+          "amount": 146.3,
+          "method": "Dinheiro",
+          "bandeira": ""
+        }
+      ]
+    },
+    {
+      "id": "f1753e82-b67c-4353-b906-174faac38dc3",
+      "created_at": "2026-08-14T20:16:25.597+00:00",
+      "total_pago": 0,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": null
+    },
+    {
+      "id": "567368f0-661f-4c1d-8ef7-0b462c11ea11",
+      "created_at": "2026-08-14T20:23:23.633+00:00",
+      "total_pago": 13,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": null
+    },
+    {
+      "id": "ac0fd2df-6806-4d55-8c50-c9dda3ca0bf4",
+      "created_at": "2026-08-17T19:15:13.73+00:00",
+      "total_pago": 118.8,
+      "metodo_pagamento": "Dinheiro",
+      "payments_info": [
+        {
+          "aut": "",
+          "nsu": "",
+          "val": 118.8,
+          "cnpj": "",
+          "code": "01",
+          "amount": 118.8,
+          "method": "Dinheiro",
+          "bandeira": ""
+        }
+      ]
+    },
+    {
+      "id": "3ef4231a-2a54-449d-a7c7-c0cac7695ff9",
+      "created_at": "2026-08-17T16:58:09.75+00:00",
+      "total_pago": 61.6,
+      "metodo_pagamento": "Dinheiro",
+      "payments_info": [
+        {
+          "aut": "",
+          "nsu": "",
+          "val": 61.6,
+          "cnpj": "",
+          "code": "01",
+          "amount": 61.6,
+          "method": "Dinheiro",
+          "bandeira": ""
+        }
+      ]
+    },
+    {
+      "id": "4c078143-064e-4760-9675-0e1330ee7aa2",
+      "created_at": "2026-08-15T16:58:21.93+00:00",
+      "total_pago": 15,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": null
+    },
+    {
+      "id": "094d9b3d-cbdf-459a-823d-ec5267669615",
+      "created_at": "2026-08-17T18:54:20.645+00:00",
+      "total_pago": 108.9,
+      "metodo_pagamento": "Debit",
+      "payments_info": [
+        {
+          "aut": "7UHWKV",
+          "nsu": "001688",
+          "val": 108.9,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 108.9,
+          "method": "Debit",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "e5b92dcc-00e9-4c2b-80dc-d400abbe12a7",
+      "created_at": "2026-08-17T20:16:38.894+00:00",
+      "total_pago": 127,
+      "metodo_pagamento": "Dinheiro",
+      "payments_info": [
+        {
+          "aut": "",
+          "nsu": "",
+          "val": 127,
+          "cnpj": "",
+          "code": "01",
+          "amount": 127,
+          "method": "Dinheiro",
+          "bandeira": ""
+        }
+      ]
+    },
+    {
+      "id": "130a3f12-1a00-46be-bc2a-342e8794fdec",
+      "created_at": "2026-08-17T20:48:37.353+00:00",
+      "total_pago": 5,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": null
+    },
+    {
+      "id": "08bf8f8d-d31b-4e55-9368-c7a0e6c11b1d",
+      "created_at": "2026-08-14T18:14:26.544+00:00",
+      "total_pago": 18.7,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "M73781",
+          "nsu": "000003205",
+          "val": 18.7,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 18.7,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        }
+      ]
+    },
+    {
+      "id": "f3dd3195-6b2b-4c8e-a6fc-d23c6381f70c",
+      "created_at": "2026-08-14T15:28:43.962+00:00",
+      "total_pago": 120,
+      "metodo_pagamento": "Multiplos",
+      "payments_info": [
+        {
+          "aut": "310660",
+          "nsu": "001648",
+          "val": 15,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 15,
+          "method": "Debit",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "15728956",
+          "nsu": "294530101",
+          "val": 15,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 15,
+          "method": "Pix",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "15728956",
+          "nsu": "294534428",
+          "val": 15,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 15,
+          "method": "Pix",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "15728940",
+          "nsu": "294418995",
+          "val": 15,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 15,
+          "method": "Pix",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "15728940",
+          "nsu": "294432346",
+          "val": 15,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 15,
+          "method": "Pix",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "15728956",
+          "nsu": "294730628",
+          "val": 15,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 15,
+          "method": "Pix",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "15728940",
+          "nsu": "294399308",
+          "val": 15,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 15,
+          "method": "Pix",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "15728940",
+          "nsu": "294417976",
+          "val": 15,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 15,
+          "method": "Pix",
+          "bandeira": "MASTER"
+        }
+      ]
+    },
+    {
+      "id": "3edb3833-74d6-4780-b827-00b87efd811d",
+      "created_at": "2026-08-14T15:42:50.108+00:00",
+      "total_pago": 242,
+      "metodo_pagamento": "Credit",
+      "payments_info": [
+        {
+          "aut": "493751",
+          "nsu": "001653",
+          "val": 242,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 242,
+          "method": "Credit",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "fe50a7b9-5c69-4797-a6d5-264556c85ba0",
+      "created_at": "2026-08-14T16:54:46.532+00:00",
+      "total_pago": 220,
+      "metodo_pagamento": "Dinheiro",
+      "payments_info": [
+        {
+          "aut": "",
+          "nsu": "",
+          "val": 220,
+          "cnpj": "",
+          "code": "01",
+          "amount": 220,
+          "method": "Dinheiro",
+          "bandeira": ""
+        }
+      ]
+    },
+    {
+      "id": "04b1b124-692e-4c75-aedb-7d7c6e66d97d",
+      "created_at": "2026-08-14T17:52:54.737+00:00",
+      "total_pago": 86,
+      "metodo_pagamento": "Multiplos",
+      "payments_info": [
+        {
+          "aut": "323fws",
+          "nsu": "002372",
+          "val": 43,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 43,
+          "method": "Debit",
+          "bandeira": "VISA"
+        },
+        {
+          "aut": "15728947",
+          "nsu": "295014038",
+          "val": 43,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 43,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "06000516-fcfe-411a-9323-14251821faf3",
+      "created_at": "2026-08-14T18:18:46.181+00:00",
+      "total_pago": 189.2,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "683909",
+          "nsu": "000003207",
+          "val": 189.2,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 189.2,
+          "method": "CARTAO",
+          "bandeira": "AMEX            "
+        }
+      ]
+    },
+    {
+      "id": "003b8541-3f7d-47ed-84f3-3349c3e21419",
+      "created_at": "2026-08-14T17:04:07.818+00:00",
+      "total_pago": 41.8,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "294919626",
+          "val": 41.8,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 41.8,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "33bc3b97-f7f0-43ab-b3bb-bfa5f3de0e69",
+      "created_at": "2026-08-14T17:14:48.011+00:00",
+      "total_pago": 117.7,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "294949656",
+          "val": 117.7,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 117.7,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "2c2341eb-dd1d-4eb7-a1a2-e2808e65716e",
+      "created_at": "2026-08-14T17:15:41.499+00:00",
+      "total_pago": 143,
+      "metodo_pagamento": "Multiplos",
+      "payments_info": [
+        {
+          "aut": "962498",
+          "nsu": "002358",
+          "val": 95.34,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 95.34,
+          "method": "Debit",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "524625",
+          "nsu": "002357",
+          "val": 47.66,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 47.66,
+          "method": "Debit",
+          "bandeira": "MASTER"
+        }
+      ]
+    },
+    {
+      "id": "4d688e8e-08c0-4daf-ab66-65b2a8fe0214",
+      "created_at": "2026-08-14T17:16:24.635+00:00",
+      "total_pago": 212.3,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "294882841",
+          "val": 212.3,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 212.3,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "2a97097c-4528-4bb2-a31b-ef44c088a51c",
+      "created_at": "2026-08-14T17:29:03.176+00:00",
+      "total_pago": 363.99,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "M40771",
+          "nsu": "000003185",
+          "val": 363.99,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 363.99,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        }
+      ]
+    },
+    {
+      "id": "4572920e-1be8-49a9-8f9d-a60778ee15de",
+      "created_at": "2026-08-14T17:51:09.153+00:00",
+      "total_pago": 193.38,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "139558",
+          "nsu": "000003195",
+          "val": 193.38,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 193.38,
+          "method": "CARTAO",
+          "bandeira": "VISA            "
+        }
+      ]
+    },
+    {
+      "id": "72cd75de-697f-4047-bb98-d081c94a8db7",
+      "created_at": "2026-08-14T18:21:18.362+00:00",
+      "total_pago": 112.2,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "880770",
+          "nsu": "000003209",
+          "val": 112.2,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 112.2,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        }
+      ]
+    },
+    {
+      "id": "0a55657d-7c92-4ef1-8d45-3644de872eb7",
+      "created_at": "2026-08-14T18:34:28.718+00:00",
+      "total_pago": 161.7,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "642243",
+          "nsu": "000003347",
+          "val": 161.7,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 161.7,
+          "method": "CARTAO",
+          "bandeira": "VISA            "
+        }
+      ]
+    },
+    {
+      "id": "e623c07d-9936-4dbd-bc3e-6cce487b9b6a",
+      "created_at": "2026-08-14T17:55:32.306+00:00",
+      "total_pago": 38.39,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "295018873",
+          "val": 38.39,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 38.39,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "0d7f2584-2bc7-4236-bb50-c5f0bcf47752",
+      "created_at": "2026-08-14T18:02:36.54+00:00",
+      "total_pago": 136.4,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "TFB98P",
+          "nsu": "000003199",
+          "val": 68.2,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 68.2,
+          "method": "CARTAO",
+          "bandeira": "VISA            "
+        },
+        {
+          "aut": "763315",
+          "nsu": "000003201",
+          "val": 68.2,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 68.2,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        }
+      ]
+    },
+    {
+      "id": "8dba8cfc-1824-4043-9c01-c44849dddda7",
+      "created_at": "2026-08-14T18:04:08.075+00:00",
+      "total_pago": 214,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "778349",
+          "nsu": "000003203",
+          "val": 214,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 214,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        }
+      ]
+    },
+    {
+      "id": "b4896c53-c4c7-497c-bdaf-2270ec9ca381",
+      "created_at": "2026-08-14T18:04:21.491+00:00",
+      "total_pago": 176,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "295026632",
+          "val": 176,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 176,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "6e11b5b1-ed34-4bb6-902a-7bf18a899999",
+      "created_at": "2026-08-14T18:05:46.109+00:00",
+      "total_pago": 371.79999999999995,
+      "metodo_pagamento": "Multiplos",
+      "payments_info": [
+        {
+          "aut": "15728948",
+          "nsu": "295026652",
+          "val": 69.66,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 69.66,
+          "method": "Pix",
+          "bandeira": "VISA"
+        },
+        {
+          "aut": "465891",
+          "nsu": "001963",
+          "val": 96.66,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 96.66,
+          "method": "Debit",
+          "bandeira": "VISA"
+        },
+        {
+          "aut": "9YYRSO",
+          "nsu": "001959",
+          "val": 62.66,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 62.66,
+          "method": "Debit",
+          "bandeira": "VISA"
+        },
+        {
+          "aut": "15728948",
+          "nsu": "295025034",
+          "val": 75.16,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 75.16,
+          "method": "Pix",
+          "bandeira": "VISA"
+        },
+        {
+          "aut": "871758",
+          "nsu": "001964",
+          "val": 67.66,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 67.66,
+          "method": "Credit",
+          "bandeira": "MASTER"
+        }
+      ]
+    },
+    {
+      "id": "02c8f9bd-b59c-4587-9b21-dbed24e0645f",
+      "created_at": "2026-08-14T18:27:10.542+00:00",
+      "total_pago": 271.59,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "264160",
+          "nsu": "000003215",
+          "val": 271.59,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 271.59,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        }
+      ]
+    },
+    {
+      "id": "db950790-5be9-4966-8c58-c7304edebd72",
+      "created_at": "2026-08-14T18:28:12.302+00:00",
+      "total_pago": 191.4,
+      "metodo_pagamento": "Dinheiro",
+      "payments_info": [
+        {
+          "aut": "",
+          "nsu": "",
+          "val": 191.4,
+          "cnpj": "",
+          "code": "01",
+          "amount": 191.4,
+          "method": "Dinheiro",
+          "bandeira": ""
+        }
+      ]
+    },
+    {
+      "id": "aa57894f-35c9-475b-99c1-a7e08a81d261",
+      "created_at": "2026-08-14T18:29:50.839+00:00",
+      "total_pago": 298.87,
+      "metodo_pagamento": "Multiplos",
+      "payments_info": [
+        {
+          "aut": "15728940",
+          "nsu": "295073293",
+          "val": 138.44,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 138.44,
+          "method": "Pix",
+          "bandeira": "VISA"
+        },
+        {
+          "aut": "QOQPRS",
+          "nsu": "002503",
+          "val": 160.43,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 160.43,
+          "method": "Credit",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "906b0921-19f8-4093-b1df-2df1a15ddc00",
+      "created_at": "2026-08-14T18:27:56.691+00:00",
+      "total_pago": 220.77,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "050502",
+          "nsu": "000003217",
+          "val": 220.77,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 220.77,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        }
+      ]
+    },
+    {
+      "id": "20809994-bb74-47d2-b933-21a57e8b0537",
+      "created_at": "2026-08-14T18:30:54.179+00:00",
+      "total_pago": 324.16999999999996,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "F89477",
+          "nsu": "000003219",
+          "val": 81.05,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 81.05,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        },
+        {
+          "aut": "550663",
+          "nsu": "000003221",
+          "val": 81.05,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 81.05,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        },
+        {
+          "aut": "744441",
+          "nsu": "000003223",
+          "val": 81.05,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 81.05,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        },
+        {
+          "aut": "212508",
+          "nsu": "000003225",
+          "val": 81.02,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 81.02,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        }
+      ]
+    },
+    {
+      "id": "2c290c03-d0e7-4f71-ab00-35e86545cd1f",
+      "created_at": "2026-08-14T18:34:03.09+00:00",
+      "total_pago": 217.8,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "063918",
+          "nsu": "000003345",
+          "val": 217.8,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 217.8,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        }
+      ]
+    },
+    {
+      "id": "6d627d82-b374-4323-9a17-e11d65ceb9d8",
+      "created_at": "2026-08-14T18:34:25.933+00:00",
+      "total_pago": 194.37,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "635611",
+          "nsu": "000003227",
+          "val": 194.37,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 194.37,
+          "method": "CARTAO",
+          "bandeira": "VISA            "
+        }
+      ]
+    },
+    {
+      "id": "97fc4ee6-e415-44b2-b071-c0092d4e82a2",
+      "created_at": "2026-08-14T18:34:20.498+00:00",
+      "total_pago": 270.6,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "295085797",
+          "val": 270.6,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 270.6,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "5338eac7-f38a-426b-a066-08cff586c07e",
+      "created_at": "2026-08-14T18:39:02.867+00:00",
+      "total_pago": 313.39,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "187855",
+          "nsu": "000003349",
+          "val": 313.39,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 313.39,
+          "method": "CARTAO",
+          "bandeira": "VISA            "
+        }
+      ]
+    },
+    {
+      "id": "57b6ed5c-f4ed-493b-9719-e4df911ae394",
+      "created_at": "2026-08-14T18:40:16.11+00:00",
+      "total_pago": 72.6,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "295095296",
+          "val": 72.6,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 72.6,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "e942882f-dd76-4c3d-8109-0711b84be2cb",
+      "created_at": "2026-08-14T18:41:05.557+00:00",
+      "total_pago": 226.6,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "295080742",
+          "val": 226.6,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 226.6,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "f07096f1-e482-4eea-a3bc-cecd1c4e316a",
+      "created_at": "2026-08-14T18:39:41.86+00:00",
+      "total_pago": 379.28,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "681965",
+          "nsu": "000003229",
+          "val": 189.64,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 189.64,
+          "method": "CARTAO",
+          "bandeira": "VISA            "
+        },
+        {
+          "aut": "683694",
+          "nsu": "000003231",
+          "val": 189.64,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 189.64,
+          "method": "CARTAO",
+          "bandeira": "VISA            "
+        }
+      ]
+    },
+    {
+      "id": "9e99180c-c846-4e79-aa4c-49b18b3df156",
+      "created_at": "2026-08-14T18:44:28.967+00:00",
+      "total_pago": 209,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "442068",
+          "nsu": "000003237",
+          "val": 209,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 209,
+          "method": "CARTAO",
+          "bandeira": "VISA            "
+        }
+      ]
+    },
+    {
+      "id": "c378bb6e-1cc9-410f-9155-82048b06acf7",
+      "created_at": "2026-08-14T18:57:55.252+00:00",
+      "total_pago": 196.57,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "485802",
+          "nsu": "000003243",
+          "val": 98.29,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 98.29,
+          "method": "CARTAO",
+          "bandeira": "VISA            "
+        },
+        {
+          "aut": "QKDFJF",
+          "nsu": "000003245",
+          "val": 98.28,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 98.28,
+          "method": "CARTAO",
+          "bandeira": "VISA            "
+        }
+      ]
+    },
+    {
+      "id": "f17cbc52-ad6c-4e36-b357-038c277bf684",
+      "created_at": "2026-08-14T18:42:08.955+00:00",
+      "total_pago": 323.4,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "086750",
+          "nsu": "000003351",
+          "val": 323.4,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 323.4,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        }
+      ]
+    },
+    {
+      "id": "e47cc7a7-6c94-4286-86aa-63e58441df66",
+      "created_at": "2026-08-14T18:43:44.444+00:00",
+      "total_pago": 198,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "631078",
+          "nsu": "000003235",
+          "val": 198,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 198,
+          "method": "CARTAO",
+          "bandeira": "VISA            "
+        }
+      ]
+    },
+    {
+      "id": "e3a40b4d-6200-42dd-90db-7e81fed81f72",
+      "created_at": "2026-08-14T18:48:23.899+00:00",
+      "total_pago": 156.2,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "087263",
+          "nsu": "000003241",
+          "val": 156.2,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 156.2,
+          "method": "CARTAO",
+          "bandeira": "VISA            "
+        }
+      ]
+    },
+    {
+      "id": "8a5f2e51-3d5f-4985-b85f-603b5743e002",
+      "created_at": "2026-08-14T18:48:18.932+00:00",
+      "total_pago": 174.68,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "277457",
+          "nsu": "000003353",
+          "val": 174.68,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 174.68,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        }
+      ]
+    },
+    {
+      "id": "45f8fb63-f893-4268-8f76-952ebcc3ab2c",
+      "created_at": "2026-08-14T19:16:47.79+00:00",
+      "total_pago": 166.1,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "295113251",
+          "val": 166.1,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 166.1,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "275f6353-b44b-4052-ae9d-049ca9ea136f",
+      "created_at": "2026-08-14T19:01:49.796+00:00",
+      "total_pago": 377.3,
+      "metodo_pagamento": "Multiplos",
+      "payments_info": [
+        {
+          "aut": "496192",
+          "nsu": "001657",
+          "val": 185.3,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 185.3,
+          "method": "Debit",
+          "bandeira": "VISA"
+        },
+        {
+          "aut": "15728947",
+          "nsu": "295127810",
+          "val": 92,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 92,
+          "method": "Pix",
+          "bandeira": "VISA"
+        },
+        {
+          "aut": "15728947",
+          "nsu": "295118896",
+          "val": 100,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 100,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "46de10a4-73b7-42d9-8187-8c3285b4c5a2",
+      "created_at": "2026-08-14T19:14:34.037+00:00",
+      "total_pago": 52.36,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728956",
+          "nsu": "295123032",
+          "val": 52.36,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 52.36,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "d39a1bec-a84d-46b7-9689-36aaeabb85d8",
+      "created_at": "2026-08-14T19:15:04.34+00:00",
+      "total_pago": 93.5,
+      "metodo_pagamento": "Debit",
+      "payments_info": [
+        {
+          "aut": "211451",
+          "nsu": "001655",
+          "val": 93.5,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 93.5,
+          "method": "Debit",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "0ec9152e-41d5-40f5-a623-e19d0f0d34ce",
+      "created_at": "2026-08-14T19:16:10.727+00:00",
+      "total_pago": 236.06,
+      "metodo_pagamento": "Dinheiro",
+      "payments_info": [
+        {
+          "aut": "",
+          "nsu": "",
+          "val": 236.06,
+          "cnpj": "",
+          "code": "01",
+          "amount": 236.06,
+          "method": "Dinheiro",
+          "bandeira": ""
+        }
+      ]
+    },
+    {
+      "id": "5dc0ffbe-0a5f-449b-a419-83a28302c0dd",
+      "created_at": "2026-08-14T19:17:27.308+00:00",
+      "total_pago": 287.1,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "295111144",
+          "val": 287.1,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 287.1,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "01249ce8-2fea-404b-8929-ba2597270263",
+      "created_at": "2026-08-14T19:18:53.889+00:00",
+      "total_pago": 164.89,
+      "metodo_pagamento": "Multiplos",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "295106893",
+          "val": 82.44,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 82.44,
+          "method": "Pix",
+          "bandeira": "VISA"
+        },
+        {
+          "aut": "156773",
+          "nsu": "002405",
+          "val": 82.45,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 82.45,
+          "method": "Debit",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "8b829802-5834-40b8-8fe1-5186f6800cb2",
+      "created_at": "2026-08-14T19:24:58.859+00:00",
+      "total_pago": 183.37,
+      "metodo_pagamento": "Credit",
+      "payments_info": [
+        {
+          "aut": "466161",
+          "nsu": "005416",
+          "val": 183.37,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 183.37,
+          "method": "Credit",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "d972efe3-a6ea-4047-b973-2a2ed4f6dc47",
+      "created_at": "2026-08-14T19:26:49.511+00:00",
+      "total_pago": 140.8,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728940",
+          "nsu": "295088398",
+          "val": 140.8,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 140.8,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "39eb7a5e-5724-4bfe-8d0b-46eb0c07030b",
+      "created_at": "2026-08-14T19:20:35.541+00:00",
+      "total_pago": 181.99,
+      "metodo_pagamento": "Multiplos",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "29506958",
+          "val": 60.66,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 60.66,
+          "method": "Pix",
+          "bandeira": "VISA"
+        },
+        {
+          "aut": "930825",
+          "nsu": "002384",
+          "val": 60.67,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 60.67,
+          "method": "Credit",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "731427",
+          "nsu": "002383",
+          "val": 60.66,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 60.66,
+          "method": "Credit",
+          "bandeira": "MASTER"
+        }
+      ]
+    },
+    {
+      "id": "2fd79d46-2f9e-462f-9623-373aff876cde",
+      "created_at": "2026-08-14T19:21:07.974+00:00",
+      "total_pago": 166.98,
+      "metodo_pagamento": "Debit",
+      "payments_info": [
+        {
+          "aut": "918199",
+          "nsu": "002500",
+          "val": 166.98,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 166.98,
+          "method": "Debit",
+          "bandeira": "ELO"
+        }
+      ]
+    },
+    {
+      "id": "97d9b3b8-e6c7-4cf3-bc40-856dd07708a1",
+      "created_at": "2026-08-14T19:29:38.327+00:00",
+      "total_pago": 0,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": null
+    },
+    {
+      "id": "e7311e32-fd82-4844-9ee7-8c9515aa3401",
+      "created_at": "2026-08-14T20:06:11.277+00:00",
+      "total_pago": 286.66,
+      "metodo_pagamento": "Dinheiro",
+      "payments_info": [
+        {
+          "aut": "",
+          "nsu": "",
+          "val": 286.66,
+          "cnpj": "",
+          "code": "01",
+          "amount": 286.66,
+          "method": "Dinheiro",
+          "bandeira": ""
+        }
+      ]
+    },
+    {
+      "id": "cfa0ec0d-8d7f-4975-96fd-1b4c4173573d",
+      "created_at": "2026-08-14T20:10:57.762+00:00",
+      "total_pago": 286.66,
+      "metodo_pagamento": "Multiplos",
+      "payments_info": [
+        {
+          "aut": "832353",
+          "nsu": "002354",
+          "val": 93.33,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 93.33,
+          "method": "Credit",
+          "bandeira": "VISA"
+        },
+        {
+          "aut": "914835",
+          "nsu": "002366",
+          "val": 73.15,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 73.15,
+          "method": "Credit",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "",
+          "nsu": "",
+          "val": 120.18,
+          "cnpj": "",
+          "code": "01",
+          "amount": 120.18,
+          "method": "Dinheiro",
+          "bandeira": ""
+        }
+      ]
+    },
+    {
+      "id": "974e08cd-6d60-46a0-8360-d6c78cf94f80",
+      "created_at": "2026-08-14T20:23:49.98+00:00",
+      "total_pago": 48,
+      "metodo_pagamento": "Credit",
+      "payments_info": [
+        {
+          "aut": "685758",
+          "nsu": "002401",
+          "val": 48,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 48,
+          "method": "Credit",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "fb3981d4-8a84-4df0-bf57-3c469e9d8f89",
+      "created_at": "2026-08-14T20:12:25.335+00:00",
+      "total_pago": 416.90000000000003,
+      "metodo_pagamento": "Multiplos",
+      "payments_info": [
+        {
+          "aut": "67689",
+          "nsu": "002355",
+          "val": 93.33,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 93.33,
+          "method": "Credit",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "f83480",
+          "nsu": "002368",
+          "val": 230.9,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 230.9,
+          "method": "Credit",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "85vb4u",
+          "nsu": "002367",
+          "val": 86,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 86,
+          "method": "Credit",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "",
+          "nsu": "",
+          "val": 6.67,
+          "cnpj": "",
+          "code": "01",
+          "amount": 6.67,
+          "method": "Dinheiro",
+          "bandeira": ""
+        }
+      ]
+    },
+    {
+      "id": "bdf6673b-169a-40b6-8944-9a06a9114e9c",
+      "created_at": "2026-08-14T20:14:59.078+00:00",
+      "total_pago": 0,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": null
+    },
+    {
+      "id": "e227a58d-ab87-48ec-bff4-7ffa49f2b526",
+      "created_at": "2026-08-14T20:15:17.384+00:00",
+      "total_pago": 0,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": null
+    },
+    {
+      "id": "ce11113c-dd9b-4893-89b4-52a760ccc9da",
+      "created_at": "2026-08-14T20:16:50.961+00:00",
+      "total_pago": 175,
+      "metodo_pagamento": "Dinheiro",
+      "payments_info": [
+        {
+          "aut": "",
+          "nsu": "",
+          "val": 175,
+          "cnpj": "",
+          "code": "01",
+          "amount": 175,
+          "method": "Dinheiro",
+          "bandeira": ""
+        }
+      ]
+    },
+    {
+      "id": "c34dc950-cdca-474f-99fb-08c3f7bb2100",
+      "created_at": "2026-08-17T14:20:55.313+00:00",
+      "total_pago": 33,
+      "metodo_pagamento": "Credit",
+      "payments_info": [
+        {
+          "aut": "433248",
+          "nsu": "002426",
+          "val": 33,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 33,
+          "method": "Credit",
+          "bandeira": "MASTER"
+        }
+      ]
+    },
+    {
+      "id": "6db9965c-3b5b-4499-a9f6-b8f55f7cf64e",
+      "created_at": "2026-08-17T14:28:37.66+00:00",
+      "total_pago": 6,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": null
+    },
+    {
+      "id": "6af6c5e1-071b-49fb-b454-c4a1edc183b8",
+      "created_at": "2026-08-17T18:19:26.599+00:00",
+      "total_pago": 73.37,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "355049",
+          "nsu": "000003287",
+          "val": 73.37,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 73.37,
+          "method": "CARTAO",
+          "bandeira": "VISA            "
+        }
+      ]
+    },
+    {
+      "id": "8b9a10e6-4e27-4616-951a-8bd9441b584f",
+      "created_at": "2026-08-17T12:16:44.553+00:00",
+      "total_pago": 0,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": null
+    },
+    {
+      "id": "83281ca1-6467-4b76-aca8-e6cff0f399b4",
+      "created_at": "2026-08-17T16:13:14.044+00:00",
+      "total_pago": 311,
+      "metodo_pagamento": "Credit",
+      "payments_info": [
+        {
+          "aut": "054963",
+          "nsu": "001671",
+          "val": 311,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 311,
+          "method": "Credit",
+          "bandeira": "MASTER"
+        }
+      ]
+    },
+    {
+      "id": "e4c30a57-09b4-4cd2-8484-6a11ac866bf7",
+      "created_at": "2026-08-17T15:08:29.993+00:00",
+      "total_pago": 190.3,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "904870",
+          "nsu": "000003259",
+          "val": 190.3,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 190.3,
+          "method": "CARTAO",
+          "bandeira": "VISA            "
+        }
+      ]
+    },
+    {
+      "id": "9abb2430-1c65-493d-bdec-8e7d4346760b",
+      "created_at": "2026-08-17T15:59:18.269+00:00",
+      "total_pago": 322.19,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "846750",
+          "nsu": "000003261",
+          "val": 322.19,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 322.19,
+          "method": "CARTAO",
+          "bandeira": "VISA            "
+        }
+      ]
+    },
+    {
+      "id": "0466d20b-971a-4183-87ef-97df21ec1980",
+      "created_at": "2026-08-17T16:58:24.916+00:00",
+      "total_pago": 195.8,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "866706",
+          "nsu": "000003263",
+          "val": 195.8,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 195.8,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        }
+      ]
+    },
+    {
+      "id": "9f102366-d73e-43b0-8da2-86e5a67ba7dd",
+      "created_at": "2026-08-17T16:58:43.936+00:00",
+      "total_pago": 63.69,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "M75327",
+          "nsu": "000003265",
+          "val": 63.69,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 63.69,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        }
+      ]
+    },
+    {
+      "id": "a0b6697e-4cb1-423f-aca3-951dfde3d433",
+      "created_at": "2026-08-17T17:02:24.014+00:00",
+      "total_pago": 75,
+      "metodo_pagamento": "Multiplos",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "299156506",
+          "val": 15,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 15,
+          "method": "Pix",
+          "bandeira": "VISA"
+        },
+        {
+          "aut": "15728947",
+          "nsu": "299169287",
+          "val": 15,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 15,
+          "method": "Pix",
+          "bandeira": "VISA"
+        },
+        {
+          "aut": "15728947",
+          "nsu": "299186970",
+          "val": 15,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 15,
+          "method": "Pix",
+          "bandeira": "VISA"
+        },
+        {
+          "aut": "ATFYQC",
+          "nsu": "002424",
+          "val": 15,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 15,
+          "method": "Pix",
+          "bandeira": "VISA"
+        },
+        {
+          "aut": "15728947",
+          "nsu": "299253265",
+          "val": 15,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 15,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "168a8c81-0672-4978-80c3-0dc4b31b1e0f",
+      "created_at": "2026-08-17T17:33:41.667+00:00",
+      "total_pago": 213.4,
+      "metodo_pagamento": "Multiplos",
+      "payments_info": [
+        {
+          "aut": "H70725",
+          "nsu": "002436",
+          "val": 55,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 55,
+          "method": "Debit",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "F4HNHM",
+          "nsu": "002435",
+          "val": 158.4,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 158.4,
+          "method": "Debit",
+          "bandeira": "MASTER"
+        }
+      ]
+    },
+    {
+      "id": "5dacb000-b129-49a7-b390-97cf36c8c94f",
+      "created_at": "2026-08-17T17:39:47.199+00:00",
+      "total_pago": 228.8,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "B1EAWP",
+          "nsu": "000003277",
+          "val": 228.8,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 228.8,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        }
+      ]
+    },
+    {
+      "id": "6ae8a534-191f-4bfa-8832-418bc2861f8c",
+      "created_at": "2026-08-17T17:29:42.232+00:00",
+      "total_pago": 177.1,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "KFMUBU",
+          "nsu": "000003267",
+          "val": 177.1,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 177.1,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        }
+      ]
+    },
+    {
+      "id": "5c2672e6-2cdc-46c0-9164-e8c703ebb1af",
+      "created_at": "2026-08-17T17:35:09.735+00:00",
+      "total_pago": 215.6,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "299587081",
+          "val": 215.6,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 215.6,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "d3d08e1f-70fb-4002-91fe-1fd846f7c9a1",
+      "created_at": "2026-08-17T17:43:51.161+00:00",
+      "total_pago": 148.5,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "299635738",
+          "val": 148.5,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 148.5,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "879efea8-b2bc-4864-b299-283a06257752",
+      "created_at": "2026-08-17T18:03:51.287+00:00",
+      "total_pago": 103.4,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "299665353",
+          "val": 103.4,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 103.4,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "4e7da140-f415-4864-85ff-2ad8d9f12aba",
+      "created_at": "2026-08-17T18:40:48.862+00:00",
+      "total_pago": 6,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": null
+    },
+    {
+      "id": "38a3451f-8f1c-498b-b2ef-e007b07f50d2",
+      "created_at": "2026-08-17T18:49:52.026+00:00",
+      "total_pago": 199.1,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "680173",
+          "nsu": "000003319",
+          "val": 199.1,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 199.1,
+          "method": "CARTAO",
+          "bandeira": "AMEX            "
+        }
+      ]
+    },
+    {
+      "id": "3185c9ae-d5f6-45dd-81eb-563c4807c2c8",
+      "created_at": "2026-08-17T17:58:15.262+00:00",
+      "total_pago": 227.7,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "989775",
+          "nsu": "000003279",
+          "val": 227.7,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 227.7,
+          "method": "CARTAO",
+          "bandeira": "VISA            "
+        }
+      ]
+    },
+    {
+      "id": "d5fbd4d3-3bda-46c6-a8ec-19cb379e1533",
+      "created_at": "2026-08-17T18:01:45.275+00:00",
+      "total_pago": 272.58000000000004,
+      "metodo_pagamento": "Multiplos",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "299660660",
+          "val": 135,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 135,
+          "method": "Pix",
+          "bandeira": "VISA"
+        },
+        {
+          "aut": "15728947",
+          "nsu": "299661564",
+          "val": 137.58,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 137.58,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "fb5d698c-34ec-4f62-8c88-b0107104780a",
+      "created_at": "2026-08-17T18:13:34.548+00:00",
+      "total_pago": 196.9,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "080220",
+          "nsu": "000003283",
+          "val": 196.9,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 196.9,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        }
+      ]
+    },
+    {
+      "id": "d3653b93-3d08-4d54-a4e1-94b572f1517d",
+      "created_at": "2026-08-17T18:35:34.692+00:00",
+      "total_pago": 192.5,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "299789",
+          "nsu": "000003301",
+          "val": 192.5,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 192.5,
+          "method": "CARTAO",
+          "bandeira": "ELO             "
+        }
+      ]
+    },
+    {
+      "id": "39476c8d-8d79-4d13-9d85-bc68f7eeb296",
+      "created_at": "2026-08-17T18:25:36.457+00:00",
+      "total_pago": 235.4,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "966496",
+          "nsu": "000003291",
+          "val": 235.4,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 235.4,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        }
+      ]
+    },
+    {
+      "id": "689a5b4d-7c19-493f-85ee-b56b0e684117",
+      "created_at": "2026-08-17T18:32:07.117+00:00",
+      "total_pago": 154,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "093747",
+          "nsu": "000003293",
+          "val": 52,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 52,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        },
+        {
+          "aut": "743947",
+          "nsu": "000003295",
+          "val": 102,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 102,
+          "method": "CARTAO",
+          "bandeira": "VISA            "
+        }
+      ]
+    },
+    {
+      "id": "ab023616-ba10-4d58-ae38-1bd79d3583d6",
+      "created_at": "2026-08-17T18:36:31.49+00:00",
+      "total_pago": 229.68,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "905695",
+          "nsu": "000003303",
+          "val": 229.68,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 229.68,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        }
+      ]
+    },
+    {
+      "id": "b3aa5b47-79b1-4bd2-9080-3d6fe3984bf0",
+      "created_at": "2026-08-17T18:37:42.174+00:00",
+      "total_pago": 188.1,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "929755",
+          "nsu": "000003305",
+          "val": 188.1,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 188.1,
+          "method": "CARTAO",
+          "bandeira": "VISA            "
+        }
+      ]
+    },
+    {
+      "id": "affcda32-eff7-4dc2-b12f-dac57eeaac4c",
+      "created_at": "2026-08-17T18:41:48.326+00:00",
+      "total_pago": 202.4,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "393768",
+          "nsu": "000003311",
+          "val": 202.4,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 202.4,
+          "method": "CARTAO",
+          "bandeira": "MASTERCARD      "
+        }
+      ]
+    },
+    {
+      "id": "337c7b6f-414e-4eab-a346-df97ce9580cf",
+      "created_at": "2026-08-17T18:44:37.053+00:00",
+      "total_pago": 15,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": null
+    },
+    {
+      "id": "62123fe7-b67e-44a2-a115-85931f320ddb",
+      "created_at": "2026-08-17T18:47:03.542+00:00",
+      "total_pago": 177.1,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": [
+        {
+          "aut": "480193",
+          "nsu": "000003315",
+          "val": 177.1,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 177.1,
+          "method": "CARTAO",
+          "bandeira": "VISA            "
+        }
+      ]
+    },
+    {
+      "id": "b5e6bd97-6b26-4b12-a8ad-a85562fed33b",
+      "created_at": "2026-08-17T18:53:37.534+00:00",
+      "total_pago": 6.6,
+      "metodo_pagamento": "Dinheiro",
+      "payments_info": [
+        {
+          "aut": "",
+          "nsu": "",
+          "val": 6.6,
+          "cnpj": "",
+          "code": "01",
+          "amount": 6.6,
+          "method": "Dinheiro",
+          "bandeira": ""
+        }
+      ]
+    },
+    {
+      "id": "94d0895e-b6a3-41cb-8256-794c6177c939",
+      "created_at": "2026-08-17T18:55:44.145+00:00",
+      "total_pago": 155.1,
+      "metodo_pagamento": "Credit",
+      "payments_info": [
+        {
+          "aut": "567077",
+          "nsu": "002467",
+          "val": 155.1,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 155.1,
+          "method": "Credit",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "646b9fcc-22ef-4eef-b054-a15d648fe3e8",
+      "created_at": "2026-08-17T18:56:31.462+00:00",
+      "total_pago": 100.1,
+      "metodo_pagamento": "Debit",
+      "payments_info": [
+        {
+          "aut": "676295",
+          "nsu": "002474",
+          "val": 100.1,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 100.1,
+          "method": "Debit",
+          "bandeira": "MASTER"
+        }
+      ]
+    },
+    {
+      "id": "84b297fd-ca9c-4a85-99be-19a11fd39fe4",
+      "created_at": "2026-08-17T18:54:56.729+00:00",
+      "total_pago": 198,
+      "metodo_pagamento": "Credit",
+      "payments_info": [
+        {
+          "aut": "SP23Y7",
+          "nsu": "001686",
+          "val": 198,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 198,
+          "method": "Credit",
+          "bandeira": "MASTER"
+        }
+      ]
+    },
+    {
+      "id": "cbfe81ee-5ecf-4f45-b3ae-89db2158b4d9",
+      "created_at": "2026-08-17T19:00:25.88+00:00",
+      "total_pago": 394.9,
+      "metodo_pagamento": "Dinheiro",
+      "payments_info": [
+        {
+          "aut": "",
+          "nsu": "",
+          "val": 394.9,
+          "cnpj": "",
+          "code": "01",
+          "amount": 394.9,
+          "method": "Dinheiro",
+          "bandeira": ""
+        }
+      ]
+    },
+    {
+      "id": "d0769593-c274-4ba5-bc76-33d005207b80",
+      "created_at": "2026-08-17T19:14:41.98+00:00",
+      "total_pago": 140.69,
+      "metodo_pagamento": "Credit",
+      "payments_info": [
+        {
+          "aut": "023017",
+          "nsu": "002447",
+          "val": 140.69,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 140.69,
+          "method": "Credit",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "b88cc224-4fbc-4288-8817-4746dd0170ad",
+      "created_at": "2026-08-17T19:16:35.407+00:00",
+      "total_pago": 162,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "299674586",
+          "val": 162,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 162,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "580b10b4-9f78-4265-aff5-bfe5839f789c",
+      "created_at": "2026-08-17T18:59:17.714+00:00",
+      "total_pago": 247.5,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "299710692",
+          "val": 247.5,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 247.5,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "02e1b5f7-8125-4e24-bb8b-ed130a6a5b6a",
+      "created_at": "2026-08-17T19:01:35.488+00:00",
+      "total_pago": 127.6,
+      "metodo_pagamento": "Credit",
+      "payments_info": [
+        {
+          "aut": "67ECED",
+          "nsu": "002476",
+          "val": 127.6,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 127.6,
+          "method": "Credit",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "21648bc9-5f63-4103-829c-18fd6bad971b",
+      "created_at": "2026-08-17T19:04:51.916+00:00",
+      "total_pago": 223.3,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "299726982",
+          "val": 223.3,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 223.3,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "650e4364-46b3-423c-a376-2491311f3b51",
+      "created_at": "2026-08-17T19:03:14.063+00:00",
+      "total_pago": 179.3,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "299728716",
+          "val": 179.3,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 179.3,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "018244db-53e5-492b-9647-9b25ca321266",
+      "created_at": "2026-08-17T19:06:08.663+00:00",
+      "total_pago": 26.4,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "299725220",
+          "val": 26.4,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 26.4,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "03f53628-e705-4fca-8c3e-673b9383f2a8",
+      "created_at": "2026-08-17T19:07:07.375+00:00",
+      "total_pago": 91.3,
+      "metodo_pagamento": "Debit",
+      "payments_info": [
+        {
+          "aut": "257959",
+          "nsu": "002462",
+          "val": 91.3,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 91.3,
+          "method": "Debit",
+          "bandeira": "MASTER"
+        }
+      ]
+    },
+    {
+      "id": "84da9b27-25da-44aa-92c8-a8fc91ef3db0",
+      "created_at": "2026-08-17T19:15:47.09+00:00",
+      "total_pago": 206.8,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "299696264",
+          "val": 206.8,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 206.8,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "24ed40b8-241b-4969-8b85-5c2e474da441",
+      "created_at": "2026-08-17T19:17:27.489+00:00",
+      "total_pago": 172.7,
+      "metodo_pagamento": "Multiplos",
+      "payments_info": [
+        {
+          "aut": "15728947",
+          "nsu": "299692908",
+          "val": 86.35,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 86.35,
+          "method": "Pix",
+          "bandeira": "VISA"
+        },
+        {
+          "aut": "691722",
+          "nsu": "002453",
+          "val": 86.35,
+          "cnpj": "10.440.482/0001-54",
+          "code": "03",
+          "amount": 86.35,
+          "method": "Credit",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "2a52fb9b-1200-4eba-a1dc-873b7cc42aef",
+      "created_at": "2026-08-17T19:20:41.75+00:00",
+      "total_pago": 0,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": null
+    },
+    {
+      "id": "6dabf63c-418d-4ff2-b85b-6566827fd3e6",
+      "created_at": "2026-08-17T19:22:53.539+00:00",
+      "total_pago": 0,
+      "metodo_pagamento": "dinheiro",
+      "payments_info": null
+    },
+    {
+      "id": "d94d94e6-d483-4f1f-bb33-4257754aaec3",
+      "created_at": "2026-08-17T19:28:11.838+00:00",
+      "total_pago": 350.9,
+      "metodo_pagamento": "Multiplos",
+      "payments_info": [
+        {
+          "aut": "281963",
+          "nsu": "002478",
+          "val": 175.45,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 175.45,
+          "method": "Debit",
+          "bandeira": "MASTER"
+        },
+        {
+          "aut": "15728947",
+          "nsu": "299801373",
+          "val": 175.45,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 175.45,
+          "method": "Pix",
+          "bandeira": "MASTER"
+        }
+      ]
+    },
+    {
+      "id": "923cb0f9-fe72-43d7-ae67-663d03f4d300",
+      "created_at": "2026-08-17T19:28:47.281+00:00",
+      "total_pago": 10,
+      "metodo_pagamento": "Debit",
+      "payments_info": [
+        {
+          "aut": "H83266",
+          "nsu": "002437",
+          "val": 10,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 10,
+          "method": "Debit",
+          "bandeira": "MASTER"
+        }
+      ]
+    },
+    {
+      "id": "9124df2e-9f96-4bdf-bb34-f338b78db639",
+      "created_at": "2026-08-17T19:30:56.311+00:00",
+      "total_pago": 34,
+      "metodo_pagamento": "Multiplos",
+      "payments_info": [
+        {
+          "aut": "253752",
+          "nsu": "002438",
+          "val": 7,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 7,
+          "method": "Debit",
+          "bandeira": "ELO"
+        },
+        {
+          "aut": "310834",
+          "nsu": "002470",
+          "val": 10,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 10,
+          "method": "Debit",
+          "bandeira": "ELO"
+        },
+        {
+          "aut": "545509",
+          "nsu": "002451",
+          "val": 10,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 10,
+          "method": "Debit",
+          "bandeira": "VISA"
+        },
+        {
+          "aut": "105595",
+          "nsu": "001968",
+          "val": 7,
+          "cnpj": "10.440.482/0001-54",
+          "code": "04",
+          "amount": 7,
+          "method": "Debit",
+          "bandeira": "MASTER"
+        }
+      ]
+    },
+    {
+      "id": "9c2c10c2-1407-4048-b215-bbf7dc4d696d",
+      "created_at": "2026-08-17T19:34:02.618+00:00",
+      "total_pago": 134.2,
+      "metodo_pagamento": "Pix",
+      "payments_info": [
+        {
+          "aut": "15728928",
+          "nsu": "299805923",
+          "val": 134.2,
+          "cnpj": "10.440.482/0001-54",
+          "code": "17",
+          "amount": 134.2,
+          "method": "Pix",
+          "bandeira": "VISA"
+        }
+      ]
+    },
+    {
+      "id": "5db02466-d358-4077-9274-1c9d4bf94553",
+      "created_at": "2026-08-17T20:48:50.463+00:00",
+      "total_pago": 122,
+      "metodo_pagamento": "Dinheiro",
+      "payments_info": [
+        {
+          "aut": "",
+          "nsu": "",
+          "val": 122,
+          "cnpj": "",
+          "code": "01",
+          "amount": 122,
+          "method": "Dinheiro",
+          "bandeira": ""
+        }
+      ]
+    }
+  ]
+}
