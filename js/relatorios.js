@@ -493,13 +493,22 @@ const RelatoriosEnterprise = {
                     fundo,
                     session: caixa
                 };
-                
                 // Restaura state original
                 Caixa.state.session = originalSession;
                 Object.assign(Caixa.state, originalState);
             } else {
                 // Garante que a session esteja no resumo para o template
                 resumo.session = caixa;
+                resumo.fundo = (resumo.fundo !== undefined && resumo.fundo !== null && resumo.fundo !== 0) ? resumo.fundo : parseFloat(caixa.valor_inicial || 0);
+                
+                // Recalcula para garantir que os valores antigos considerem o fundo corretamente
+                const dinheiroVendas = resumo.breakdownVendas?.dinheiro || 0;
+                const dinheiroAnteriores = resumo.breakdownAnteriores?.dinheiro || 0;
+                const dinheiroDespesas = resumo.breakdownDespesas?.dinheiro || 0;
+                
+                resumo.esperadoGaveta = resumo.fundo + dinheiroVendas + dinheiroAnteriores - dinheiroDespesas;
+                resumo.contado = parseFloat(caixa.valor_final_informado || 0);
+                resumo.diferenca = resumo.contado - resumo.esperadoGaveta;
             }
 
             // Chama a função de geração de conteúdo do Módulo Caixa
