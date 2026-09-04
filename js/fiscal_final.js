@@ -822,7 +822,7 @@ const Fiscal = {
             const { data: chunk, error } = await _sb.from('orders')
                 .select('*')
                 .eq('store_id', App.state.storeId)
-                .not('xml_arquivo', 'is', null) // <--- CORREÇÃO: Nome da coluna atualizada
+                .or('xml_arquivo.not.is.null,xml_autorizado.not.is.null') // <--- CORREÇÃO: Pega das duas colunas possíveis
                 .gte('created_at', `${isoInicio}T00:00:00`)
                 .lte('created_at', `${isoFim}T23:59:59`)
                 .range(from, from + limit - 1);
@@ -893,7 +893,8 @@ const Fiscal = {
 
                 organizadas[statusKey].forEach(nota => {
                     // Decodifica o conteúdo do banco
-                    const xmlConteudo = hexToUtf8(nota.xml_arquivo);
+                    const rawXml = nota.xml_arquivo || nota.xml_autorizado;
+                    const xmlConteudo = hexToUtf8(rawXml);
                     const nomeArquivo = `${nota.chave_acesso || nota.id}.xml`;
 
                     if (xmlConteudo) {
