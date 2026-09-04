@@ -541,6 +541,10 @@ export default async function handler(req, res) {
             motivo_sefaz: jsonGeranet.mensagem || "Emitido com Sucesso (Geranet)"
         };
 
+        if (jsonGeranet.xml) {
+            updateData.xml_arquivo = jsonGeranet.xml;
+        }
+
         await supabase.from('orders').update(updateData).eq('id', order_id);
 
         return res.status(200).json({
