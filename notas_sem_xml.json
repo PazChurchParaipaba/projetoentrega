@@ -1,0 +1,506 @@
+[
+    {
+        "id": "f2b844b5-5c94-4c65-8ff6-ee56fdd561db",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T15:43:59.308+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "ee460388-d59e-4fc0-a2c0-bb44084ab974",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-01T19:01:37.099+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "36c96dc5-6be2-4eea-9268-fe028468661d",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-02T19:00:29.853+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "44fe7a17-925e-4d17-889e-d7dc0c3bf190",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-01T16:42:31.551+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "a320d30b-1b51-42d2-be36-8600d21b73b1",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-01T17:50:18.458+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "94fb0ab9-eb80-4170-8cca-20320d94c8db",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-01T17:08:42.303+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "c5f6be35-a844-4ca4-a110-6642017f6f02",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-01T17:56:07.782+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "39936d40-5e8e-403e-87f5-dee44a427845",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-01T17:59:48.814+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "af6475d4-430f-4d80-900a-7c582e8c85d9",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-01T18:13:58.201+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "f6825b3e-a8f5-4eed-ae48-cd67691dfc99",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-01T18:32:03.84+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "a83d3704-2c0b-4dbf-b13c-5e93c15c7332",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-01T18:32:45.833+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "2b55037b-f82b-4024-82df-21dc1ed5aa84",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-01T18:33:32.998+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "551a9e92-8e8a-4325-bcc5-9a317a0884f0",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-01T18:37:06.051+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "80705365-e296-4ad1-9f08-23b660c55e7d",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-01T18:35:12.77+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "05d49003-b177-45a8-b3b9-ac17f9457070",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-01T18:35:41.398+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "56b7b81e-74d8-46e8-ad49-7c13c5be4575",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-01T18:43:04.668+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "37407c4c-5431-4532-a16c-7e248edf046d",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-01T18:46:31.762+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "a329074b-4bce-4694-8510-1a66acc11262",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-01T18:48:58.567+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "0847f05d-4979-4ad9-93c2-10d5053c0d3b",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-01T19:07:47.643+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "80773526-3d7c-489b-8be3-13fea9f73440",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-01T19:40:32.455+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "2d689894-febc-41e6-a327-980742024cee",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-02T16:09:16.909+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "d77f70bc-a3ab-4b7a-915b-7eb7bf863870",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-02T18:28:49.069+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "74c69ed9-664c-43c0-a010-a0242107436a",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-02T18:29:19.499+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "7e48e4c6-9a0e-46c0-932d-a2751b8e2ebf",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-02T18:31:02.586+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "90224224-1f0a-401f-85e5-1f65be6b7f4c",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-02T18:41:15.217+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "7f4e1f36-350d-4224-90a2-c5573c591a9a",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-02T18:53:05.26+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "e0843d50-9678-44d6-8e20-19fd8dbb1d70",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-02T18:52:11.118+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "24cbb466-e6ba-4deb-8632-7872f7b396ac",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-02T18:54:22.581+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "8f1aeb5b-72e5-43ba-8493-26d13b687fd6",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-02T18:59:15.829+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "dcdd336a-997b-4f7f-8e9f-3dff26115544",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-02T18:58:15.312+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "301fbe01-4b53-4cf5-9314-6d7b2b4b9f06",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-02T19:07:53.315+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "32bce949-638f-46c4-b484-1d38ea6bdeaf",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-02T19:22:41.914+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "5dec3546-3755-4c13-b681-869000e5e9aa",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-02T18:46:24.252+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "91ce6c56-3972-4224-b37e-8b2da62210ef",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-02T19:10:50.04+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "fd216721-9f2f-45b3-9ff7-7a00347c0da5",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-02T19:39:19.873+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "995ef368-2321-4989-ad0e-d3c218b98968",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T15:10:55.596+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "1ff7705d-f3b7-40db-877a-914ca3f480cb",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T16:50:51.041+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "210800a4-cd7b-44f0-b36f-98ce6b1c9680",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T18:24:52.288+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "9c317b8b-7bd4-46bf-94ce-1da649fef249",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T17:41:30.561+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "afa87c12-98fc-47fc-987c-7cd10a04473a",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T17:42:07.204+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "1568d54b-2999-4408-85e7-74d0e6163489",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T18:39:58.707+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "3319eab9-26cb-46b8-a0aa-825123e53e5c",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T17:55:28.984+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "3c4fe2f9-4ea2-4e45-89dd-48c89362b553",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T18:22:02.108+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "bb11f45e-8d01-48bb-aa57-e966467f3923",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T18:31:59.487+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "1be2189b-b432-4117-b1cf-381d95d5a9a1",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T18:32:48.804+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "cabf2c38-fd0c-45dd-80d0-ea36bacd2360",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T18:29:42.907+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "e84982b8-44ca-4b6b-9137-c4452ad74b21",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T18:36:03.313+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "3bcdbcb1-fa64-41dc-97a4-2947d13475be",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T18:45:34.823+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "7b11e0fb-3320-4e2c-ac24-f6986adf6650",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T19:09:13.774+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "d19e4f57-ec4b-4035-94d7-11ae2e8df180",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T18:37:31.381+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "f34b5c2e-e3f5-47b0-9f73-c53bbac6f3eb",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T18:46:22.336+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "65cf3abc-c867-4b58-9e04-5440e0ae6586",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T18:47:04.974+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "8b9c8a0b-6683-45d3-93dc-b1122ed83545",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T18:49:46.009+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "62a49964-d6de-447c-b14c-14eead087231",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T18:54:30.168+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "07c0fe1c-5c13-417a-9517-38a5612c77b3",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T18:55:52.752+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    },
+    {
+        "id": "31360cf6-3fca-4a2d-a6bd-a33e0ddfd07b",
+        "id_nuvem": "",
+        "chave_acesso": "",
+        "created_at": "2026-09-03T19:06:53.233+00:00",
+        "status_sefaz": "autorizado",
+        "xml_arquivo": null,
+        "store_id": "c8acb3db-27d4-4626-9b32-74ff3731b687"
+    }
+]

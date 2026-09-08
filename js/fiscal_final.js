@@ -850,25 +850,37 @@ const Fiscal = {
             return alert("Nenhuma nota com XML encontrada neste período.");
         }
 
-        // 3. Função para decodificar BYTEA (Hex -> String)
+        // 3. Função para decodificar BYTEA (Hex -> String) e dupla codificação
         const hexToUtf8 = (hex) => {
             if (!hex) return "";
-            // Se não começar com \x, assume que já é texto (legado)
-            if (typeof hex === 'string' && !hex.startsWith('\\x')) return hex;
-
-            // Remove o prefixo \x
-            const cleanHex = hex.toString().replace(/^\\x/, '');
-
-            let str = '';
-            for (let i = 0; i < cleanHex.length; i += 2) {
-                str += String.fromCharCode(parseInt(cleanHex.substr(i, 2), 16));
+            
+            let cleanHex = hex.toString();
+            
+            // Se veio do banco do postgres (bytea) pode vir como \x33433... ou \x3C3F...
+            if (cleanHex.startsWith('\\x')) {
+                cleanHex = cleanHex.replace(/^\\x/, '');
+                let temp = '';
+                for (let i = 0; i < cleanHex.length; i += 2) {
+                    temp += String.fromCharCode(parseInt(cleanHex.substr(i, 2), 16));
+                }
+                cleanHex = temp; 
             }
-            try {
-                // Tenta decodificar caracteres especiais (acentos)
-                return decodeURIComponent(escape(str));
-            } catch (e) {
-                return str;
+            
+            // Agora cleanHex pode ser "3C3F786D..." (Hex string) ou "<?xml..." (Plain text)
+            // Se começar com 3C3F (que é '<?' em Hex), decodificamos a string hexadecimal para UTF8!
+            if (/^[0-9a-fA-F]+$/.test(cleanHex) && cleanHex.toUpperCase().startsWith('3C3F')) {
+                let str = '';
+                for (let i = 0; i < cleanHex.length; i += 2) {
+                    str += String.fromCharCode(parseInt(cleanHex.substr(i, 2), 16));
+                }
+                try {
+                    return decodeURIComponent(escape(str));
+                } catch(e) {
+                    return str;
+                }
             }
+            
+            return cleanHex;
         };
 
         // Organiza por status
