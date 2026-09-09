@@ -887,10 +887,16 @@ const Fiscal = {
         const organizadas = { autorizadas: [], canceladas: [], rejeitadas: [] };
 
         notas.forEach(n => {
-            let status = (n.status_sefaz || 'outros').toLowerCase();
-            if (status.includes('autorizado')) status = 'autorizadas';
-            else if (status.includes('cancelado')) status = 'canceladas';
-            else status = 'rejeitadas';
+            let statusSefaz = (n.status_sefaz || 'outros').toLowerCase();
+            let statusLoja = (n.status || '').toLowerCase();
+            
+            let status = 'rejeitadas';
+            
+            if (statusLoja.includes('cancelado') || statusSefaz.includes('cancelado')) {
+                status = 'canceladas';
+            } else if (statusSefaz.includes('autorizado')) {
+                status = 'autorizadas';
+            }
 
             organizadas[status].push(n);
         });
