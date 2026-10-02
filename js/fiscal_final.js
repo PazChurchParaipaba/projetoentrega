@@ -815,12 +815,12 @@ const Fiscal = {
         // 2. Busca no banco com paginação para contornar o limite de 1000 da API Supabase
         let allNotas = [];
         let from = 0;
-        const limit = 1000;
+        const limit = 500;
         let fetchMore = true;
 
         while (fetchMore) {
             const { data: chunk, error } = await _sb.from('orders')
-                .select('*')
+                .select('id, created_at, status_sefaz, status, xml_arquivo, xml_autorizado, chave_acesso')
                 .eq('store_id', App.state.storeId)
                 .or('xml_arquivo.not.is.null,xml_autorizado.not.is.null') // <--- CORREÇÃO: Pega das duas colunas possíveis
                 .gte('created_at', `${isoInicio}T00:00:00`)

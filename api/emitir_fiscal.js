@@ -305,6 +305,14 @@ export default async function handler(req, res) {
                     aut: p.aut || p.autorizacao || p.nsu || "",
                     cnpj: p.cnpj || p.cnpjCredenciadora || ""
                 }));
+            } else if (Array.isArray(order.payments_info) && order.payments_info.length) {
+                pags = order.payments_info.map(p => ({
+                    code: mapearMeioPagamento(p.code || p.tipo || p.metodo || p.payment_method || p.method),
+                    val: round2(parseMonetario(p.valor || p.amount || p.val)),
+                    bandeira: p.bandeira || p.tipoBandeira || "",
+                    aut: p.aut || p.autorizacao || p.nsu || "",
+                    cnpj: p.cnpj || p.cnpjCredenciadora || ""
+                }));
             } else {
                 pags.push({ code: mapearMeioPagamento(order.metodo_pagamento), val: vNF_Final });
             }

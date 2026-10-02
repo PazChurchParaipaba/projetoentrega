@@ -1554,7 +1554,10 @@ Object.assign(App.store, {
     },
 
     processarPagamento: async (metodo, valor) => {
-        const isParcial = App.store.state.paymentMode === 'parcial';
+        if (window.isSubmittingPayment) return NaxioUI.alert('Aguarde', "Processando pagamento anterior...", 'warning');
+        window.isSubmittingPayment = true;
+        try {
+            const isParcial = App.store.state.paymentMode === 'parcial';
 
         if (isParcial && (!App.store.state.paymentSelection || App.store.state.paymentSelection.length === 0)) {
             return NaxioUI.alert('Atenção', "Selecione pelo menos um item para pagamento parcial.", 'warning');
@@ -1591,6 +1594,9 @@ Object.assign(App.store, {
         }
 
         await App.store.finalizarFechamentoComanda(payments, valor, itemsToPay, itemsRemaining, cpfCliente, nomeCliente);
+        } finally {
+            window.isSubmittingPayment = false;
+        }
     },
 
     // --- NOVA LÓGICA DE TEF ATIVO (SETA VALOR DIRETO NA MÁQUINA) ---
@@ -1970,7 +1976,10 @@ Object.assign(App.store, {
 
     // Finaliza comanda (Total ou Parcial)
     finalizarFechamentoComanda: async (payments, totalPago, itemsPagos, itemsRestantes, cpf, nome) => {
-        const comandaId = App.state.currentComanda;
+        if (window.isFinalizingComanda) return NaxioUI.alert('Aguarde', "Processando fechamento anterior...", 'warning');
+        window.isFinalizingComanda = true;
+        try {
+            const comandaId = App.state.currentComanda;
 
         App.utils.toast("Processando pagamento...", "info");
 
@@ -2068,6 +2077,9 @@ Object.assign(App.store, {
             }));
 
             App.fiscal.emitirNFCeComanda(newOrder.id, App.state.storeId, itensParaFiscal, paymentsParaFiscal, cpf, nome);
+        }
+        } finally {
+            window.isFinalizingComanda = false;
         }
     },
 
