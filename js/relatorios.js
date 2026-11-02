@@ -204,12 +204,11 @@ const RelatoriosEnterprise = {
             });
         }
 
-        // Busca vendas do periodo com paginação
+        // Busca vendas do periodo com paginação (incluindo status para identificar canceladas/estornadas)
         let queryVendas = _sb.from('orders')
-            .select('id, observacao, products(nome, categoria)')
+            .select('id, status, observacao, products(nome, categoria)')
             .gte('created_at', dInicio)
-            .lte('created_at', dFim)
-            .not('status', 'in', '(cancelado,cancelada,devolvido,devolvida,CANCELADO,CANCELADA,DEVOLVIDO,DEVOLVIDA,estornado,ESTORNADO)');
+            .lte('created_at', dFim);
 
         if (Array.isArray(App.state.storeId)) {
             queryVendas = queryVendas.in('store_id', App.state.storeId);
@@ -225,6 +224,17 @@ const RelatoriosEnterprise = {
             if (b_ord) orders = orders.concat(b_ord);
             if (!b_ord || b_ord.length < 1000) break;
             p_ord++;
+        }
+
+        const statusCanceladosSet = new Set(['cancelado', 'cancelada', 'devolvido', 'devolvida', 'estornado', 'estornada']);
+        const orderIdsCancelados = new Set();
+        if (orders) {
+            orders.forEach(o => {
+                if (statusCanceladosSet.has(String(o.status || '').toLowerCase())) {
+                    orderIdsCancelados.add(o.id);
+                }
+            });
+            orders = orders.filter(o => !orderIdsCancelados.has(o.id));
         }
 
         // 🔥 BUSCA TODAS AS COMANDAS QUE FORAM FECHADAS NO PERÍODO
@@ -316,8 +326,8 @@ const RelatoriosEnterprise = {
                     if (link) linkedOrderId = link._order_id;
                 }
 
-                // Pula se já foi contabilizada via Order (evita duplicação absoluta)
-                if (linkedOrderId && orderIdsVistos.has(linkedOrderId)) return;
+                // Pula se já foi contabilizada via Order (evita duplicação absoluta) ou se a Order vinculada foi cancelada/estornada
+                if (linkedOrderId && (orderIdsVistos.has(linkedOrderId) || orderIdsCancelados.has(linkedOrderId))) return;
                 if (comandaIdsContabilizados.has(String(c.id))) return;
                 if (mesasContabilizadasViaOrder.has(normMesa(c.numero))) return;
 
@@ -654,7 +664,7 @@ const RelatoriosEnterprise = {
                         <i class="ri-printer-line"></i> Reimprimir Fita
                     </button>
                     <button class="btn btn-sm" style="padding:4px 10px; font-size:0.7rem; background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); border-radius:6px;" 
-                        onclick="if(confirm('Deseja estornar esta venda?')) { if(window.App?.autopecas?.cancelSale) App.autopecas.cancelSale('${v.id}'); else window._sb.from('orders').update({status:'cancelado'}).eq('id','${v.id}').then(()=>App.utils.toast('Estornada!','success')); this.closest('tr').style.opacity='0.3'; this.disabled=true; }">
+                        onclick="(async (btn) => { if(window.App?.autopecas?.cancelSale) { const ok = await App.autopecas.cancelSale('${v.id}'); if(ok) { const tr = btn.closest('tr'); if(tr) tr.remove(); if(window.RelatoriosEnterprise?.filtrarVendasCaixa) RelatoriosEnterprise.filtrarVendasCaixa(); } } else if(confirm('Deseja estornar esta venda?')) { await window._sb.from('orders').update({status:'cancelado'}).eq('id','${v.id}'); App.utils.toast('Estornada!','success'); const tr = btn.closest('tr'); if(tr) tr.remove(); } })(this)">
                         <i class="ri-close-circle-line"></i> Estornar
                     </button>
                 </td>

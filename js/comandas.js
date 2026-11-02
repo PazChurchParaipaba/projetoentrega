@@ -390,30 +390,58 @@ Object.assign(App.store, {
             return;
         }
 
-        // 🟢 BUSCA ÚLTIMA VENDA PARA ESSA MESA PRA TENTAR RESTAURAR
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
-        const { data: recentOrders } = await _sb.from('orders')
-            .select('*')
-            .eq('store_id', App.state.storeId)
-            .in('origem_venda', ['comanda', 'consumo_interno'])
-            .gte('created_at', hoje.toISOString())
-            .order('created_at', { ascending: false })
-            .limit(20);
+        // 🟢 1. Tenta primeiro localizar a venda pelo vínculo direto (_order_id em payments_info)
+        const pInfo = typeof comanda.payments_info === 'string' ? JSON.parse(comanda.payments_info || '[]') : (comanda.payments_info || []);
+        const linkedOrderIds = Array.isArray(pInfo) ? pInfo.filter(p => p && p._order_id).map(p => p._order_id) : [];
 
         let lastOrder = null;
-        let itensRestaurados = [];
+        let itensRestaurados = Array.isArray(comanda.items) && comanda.items.length > 0 ? comanda.items : [];
 
-        if (recentOrders) {
-            for (let o of recentOrders) {
+        if (linkedOrderIds.length > 0) {
+            const { data: linkedOrders } = await _sb.from('orders')
+                .select('*')
+                .in('id', linkedOrderIds)
+                .neq('status', 'cancelado')
+                .order('created_at', { ascending: false });
+            if (linkedOrders && linkedOrders.length > 0) {
+                lastOrder = linkedOrders[0];
                 try {
-                    const obs = JSON.parse(o.observacao);
-                    if (obs && (String(obs.mesa) === String(num)) && o.status !== 'cancelado') {
-                        lastOrder = o;
-                        itensRestaurados = obs.itens || [];
-                        break;
-                    }
+                    const obs = JSON.parse((lastOrder.observacao || '').replace(/\s*\[ESTORNADA.*$/, ''));
+                    if (obs && Array.isArray(obs.itens) && obs.itens.length > 0) itensRestaurados = obs.itens;
                 } catch (e) { }
+            }
+        }
+
+        // 🟢 2. Fallback: Busca nas últimas 300 vendas do dia para essa mesa (não apenas 20, pois cancelamentos de itens ocupam a fila)
+        if (!lastOrder) {
+            const hoje = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            const { data: recentOrders } = await _sb.from('orders')
+                .select('id, created_at, status, total_pago, origem_venda, observacao')
+                .eq('store_id', App.state.storeId)
+                .in('origem_venda', ['comanda', 'consumo_interno'])
+                .neq('status', 'cancelado')
+                .gte('created_at', hoje.toISOString())
+                .order('created_at', { ascending: false })
+                .limit(300);
+
+            if (recentOrders) {
+                for (let o of recentOrders) {
+                    try {
+                        const obsStr = (o.observacao || '').replace(/\s*\[ESTORNADA.*$/, '');
+                        if (obsStr.startsWith('{')) {
+                            const obs = JSON.parse(obsStr);
+                            if (obs && String(obs.mesa) === String(num)) {
+                                lastOrder = o;
+                                if (Array.isArray(obs.itens) && obs.itens.length > 0) itensRestaurados = obs.itens;
+                                break;
+                            }
+                        } else if (obsStr.includes('Mesa ' + num)) {
+                            lastOrder = o;
+                            break;
+                        }
+                    } catch (e) { }
+                }
             }
         }
 
@@ -431,35 +459,53 @@ Object.assign(App.store, {
 
         try {
             if (confirma) {
-                if (itensRestaurados.length > 0 && lastOrder) {
-                    // RESTAURA ITENS E MUDA PRA OCUPADA
-                    const updateObj = { status: 'ocupada', items: itensRestaurados };
+                if (lastOrder) {
+                    // RESTAURA ITENS E MUDA PRA OCUPADA (OU ABERTA SE SEM ITENS)
+                    const updateObj = {
+                        status: itensRestaurados.length > 0 ? 'ocupada' : 'aberta',
+                        items: itensRestaurados,
+                        total_pago: null,
+                        payments_info: null
+                    };
                     if (lastOrder.origem_venda === 'consumo_interno') {
                         updateObj.tipo_comanda = 'interna';
                     }
                     await _sb.from('comandas').update(updateObj).eq('id', comanda.id);
-                    // CANCELA VENDA/PAGAMENTO DO SISTEMA
-                    await _sb.from('orders').update({
-                        status: 'cancelado',
-                        observacao: (lastOrder.observacao || '') + ' [ESTORNADA E REABERTA NO PDV]'
-                    }).eq('id', lastOrder.id);
+
+                    // CANCELA VENDA/PAGAMENTO DO SISTEMA (incluindo todos os linkedOrderIds caso haja mais de um)
+                    const idsParaCancelar = linkedOrderIds.length > 0 ? linkedOrderIds : [lastOrder.id];
+                    for (const oid of idsParaCancelar) {
+                        const obsBase = oid === lastOrder.id ? (lastOrder.observacao || '') : '';
+                        const payloadCancel = { status: 'cancelado' };
+                        if (obsBase && !obsBase.includes('[ESTORNADA')) {
+                            payloadCancel.observacao = obsBase + ' [ESTORNADA E REABERTA NO PDV]';
+                        }
+                        await _sb.from('orders').update(payloadCancel).eq('id', oid);
+                    }
 
                     // DEVOLVE ESTOQUE (Multiplica por -1 para simular o reverso do 'descontar_estoque')
-                    const arrVolta = [];
-                    itensRestaurados.forEach(it => { arrVolta.push({ id: it.id, qtd: (it.qtd || 1) * -1 }); });
-                    _sb.rpc('descontar_estoque', { itens: arrVolta });
+                    if (itensRestaurados.length > 0) {
+                        const arrVolta = [];
+                        itensRestaurados.forEach(it => { if (it && it.id) arrVolta.push({ id: it.id, qtd: (it.qtd || 1) * -1 }); });
+                        if (arrVolta.length > 0) _sb.rpc('descontar_estoque', { itens: arrVolta });
+                    }
 
-                    App.utils.toast(`Mesa ${num} reaberta! Última venda estornada.`, "success");
+                    App.utils.toast(`Mesa ${num} reaberta! Venda anterior estornada do caixa e relatórios.`, "success");
 
-                    // 🔥 RECALCULA CAIXA SE ESTIVER ABERTO
+                    // 🔥 RECALCULA CAIXA E MÉTRICAS SE ESTIVEREM ABERTOS
                     if (window.Caixa && window.Caixa.calcTotals) {
                         await window.Caixa.calcTotals();
                     }
+                    if (App.store && App.store.loadMetrics) {
+                        App.store.loadMetrics();
+                    }
 
-                    App.store.renderEditList(num, itensRestaurados);
+                    if (itensRestaurados.length > 0) {
+                        App.store.renderEditList(num, itensRestaurados);
+                    }
                     App.store.checkMesaRapida();
                 } else {
-                    await _sb.from('comandas').update({ status: 'aberta' }).eq('id', comanda.id);
+                    await _sb.from('comandas').update({ status: 'aberta', total_pago: null, payments_info: null }).eq('id', comanda.id);
                     App.utils.toast("Mesa reaberta vazia com sucesso!", "success");
                 }
                 App.store.loadComandas();
@@ -2757,6 +2803,110 @@ Object.assign(App.store, {
         }
     },
 
+    // 🛡️ TRAVA ANTI-DUPLICIDADE DE COMPROVANTE (NSU E AUTORIZAÇÃO)
+    _buscarVendasAtivasSessaoOuDia: async () => {
+        const inicioDia = new Date();
+        inicioDia.setHours(0, 0, 0, 0);
+        let inicioBusca = inicioDia.toISOString();
+        if (typeof Caixa !== 'undefined' && Caixa?.state?.session?.abertura) {
+            if (Caixa.state.session.abertura < inicioBusca) {
+                inicioBusca = Caixa.state.session.abertura;
+            }
+        }
+        const { data: orders } = await _sb.from('orders')
+            .select('id, created_at, status, total_pago, observacao')
+            .eq('store_id', App.state.storeId)
+            .eq('status', 'concluido')
+            .gte('created_at', inicioBusca)
+            .order('created_at', { ascending: false })
+            .limit(600);
+        return orders || [];
+    },
+
+    validarComprovanteUnico: async (novoPag, filaAtual = []) => {
+        const m = String(novoPag.method || novoPag.tipo || '').toLowerCase();
+        const isCardOrPix = m.includes('pix') || m.includes('credit') || m.includes('crédito') || m.includes('credito') || m.includes('debit') || m.includes('débito') || m.includes('debito') || m.includes('cartao') || m.includes('cartão');
+        if (!isCardOrPix) return { ok: true };
+
+        const nsuRaw = String(novoPag.nsu || '').trim();
+        const autRaw = String(novoPag.aut || novoPag.autorizacao || '').trim();
+        const nsuNorm = nsuRaw.replace(/^0+/, '');
+        const autNorm = autRaw.replace(/^0+/, '').toUpperCase();
+        const val = parseFloat(novoPag.amount || novoPag.val || 0);
+
+        if (!nsuNorm && !autNorm) return { ok: true };
+
+        const isPix = m.includes('pix');
+        // Ignora marcadores genéricos como PIX-OK ou números de série de terminal POS (ex: 157288xx) quando avaliando AUT isoladamente
+        const isGenericAut = !autNorm || autNorm === 'PIX-OK' || /^157288\d{2}$/.test(autNorm);
+
+        const checarConflito = (pExistente, contextoStr) => {
+            const pM = String(pExistente.method || pExistente.tipo || '').toLowerCase();
+            const pNsu = String(pExistente.nsu || '').trim().replace(/^0+/, '');
+            const pAut = String(pExistente.aut || pExistente.autorizacao || '').trim().replace(/^0+/, '').toUpperCase();
+            const pVal = parseFloat(pExistente.amount || pExistente.val || 0);
+
+            // Regra 1: NSU de PIX (ou NSU longo >= 7 dígitos) NUNCA se repete
+            if (nsuNorm && pNsu && nsuNorm === pNsu && (isPix || pM.includes('pix') || nsuNorm.length >= 7)) {
+                return `O comprovante PIX de R$ ${pVal.toFixed(2)} com NSU "${nsuRaw}" já foi lançado ${contextoStr}.`;
+            }
+
+            // Regra 2: Mesmo NSU + Mesmo AUT em qualquer cartão/PIX
+            if (nsuNorm && pNsu && nsuNorm === pNsu && autNorm && pAut && autNorm === pAut) {
+                return `O comprovante com NSU "${nsuRaw}" e AUT "${autRaw}" (R$ ${pVal.toFixed(2)}) já foi lançado ${contextoStr}.`;
+            }
+
+            // Regra 3: Mesmo Código de Autorização (AUT real do banco) + Mesmo Valor no Cartão
+            if (!isGenericAut && autNorm && pAut && autNorm === pAut && Math.abs(val - pVal) < 0.01) {
+                return `O comprovante com Autorização "${autRaw}" no valor de R$ ${val.toFixed(2)} já foi lançado ${contextoStr}.`;
+            }
+
+            // Regra 4: Mesmo NSU de cartão + Mesmo Valor
+            if (nsuNorm && pNsu && nsuNorm === pNsu && Math.abs(val - pVal) < 0.01 && !isPix) {
+                return `O comprovante com NSU "${nsuRaw}" no valor de R$ ${val.toFixed(2)} já foi lançado ${contextoStr}.`;
+            }
+
+            return null;
+        };
+
+        // 1. Verifica na própria fila da comanda atual
+        for (const pFila of filaAtual) {
+            const erroFila = checarConflito(pFila, 'nesta mesma comanda (na fila abaixo)');
+            if (erroFila) return { ok: false, msg: erroFila };
+        }
+
+        // 2. Verifica em todas as vendas concluídas do caixa/dia no banco
+        try {
+            const orders = await App.store._buscarVendasAtivasSessaoOuDia();
+            for (const o of orders) {
+                let obs = {};
+                try { obs = typeof o.observacao === 'string' ? JSON.parse(o.observacao) : (o.observacao || {}); } catch (e) {}
+                const pags = (obs.pays && obs.pays.length) ? obs.pays : (obs.pagamentos || []);
+                const hora = new Date(o.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                const ctx = `hoje na Mesa ${obs.mesa || '?'} às ${hora} (Operador: ${obs.vendedor || 'Sistema'})`;
+
+                for (const p of pags) {
+                    const erroBanco = checarConflito(p, ctx);
+                    if (erroBanco) return { ok: false, msg: erroBanco };
+                }
+            }
+        } catch (err) {
+            console.error("Erro ao validar duplicidade de comprovante:", err);
+        }
+
+        return { ok: true };
+    },
+
+    validarListaComprovantes: async (pagamentosParaLancar = []) => {
+        for (let i = 0; i < pagamentosParaLancar.length; i++) {
+            const p = pagamentosParaLancar[i];
+            const anterioresNaFila = pagamentosParaLancar.slice(0, i);
+            const resComp = await App.store.validarComprovanteUnico(p, anterioresNaFila);
+            if (!resComp.ok) return resComp;
+        }
+        return { ok: true };
+    },
+
     addFastSplit: async () => {
         const amount = parseFloat(document.getElementById('mesa-pay-amount-temp').value);
         if (!amount || amount <= 0) return NaxioUI.alert('Atenção', "Digite um valor válido", 'warning');
@@ -2794,14 +2944,21 @@ Object.assign(App.store, {
 
         if (!App.state.fastCheckoutPayments) App.state.fastCheckoutPayments = [];
 
-        App.state.fastCheckoutPayments.push({
+        // 🛡️ Valida se este comprovante (NSU / Autorização) já foi usado hoje em outra mesa ou na própria fila
+        const novoItemPag = {
             method: method,
             amount: amount,
             nsu: nsu,
             aut: aut,
             bandeira: bandeira,
             cnpj: cnpj
-        });
+        };
+        const validacaoComp = await App.store.validarComprovanteUnico(novoItemPag, App.state.fastCheckoutPayments);
+        if (!validacaoComp.ok) {
+            return NaxioUI.alert('🛑 Comprovante Duplicado', validacaoComp.msg + '\n\nNão é permitido lançar o mesmo comprovante (NSU/AUT) duas vezes.', 'error');
+        }
+
+        App.state.fastCheckoutPayments.push(novoItemPag);
 
         // Limpa pra prox
         document.getElementById('mesa-pay-amount-temp').value = '';
@@ -2951,6 +3108,12 @@ Object.assign(App.store, {
             bandeira: p.bandeira,
             cnpj: p.cnpj
         }));
+
+        // 🛡️ TRAVA ANTI-DUPLICIDADE DE COMPROVANTES (NSU E AUTORIZAÇÃO)
+        const checkComp = await App.store.validarListaComprovantes(payments);
+        if (!checkComp.ok) {
+            return NaxioUI.alert('🛑 Comprovante Duplicado', checkComp.msg + '\n\nNão é permitido lançar o mesmo comprovante (NSU/AUT) duas vezes.', 'error');
+        }
 
         document.getElementById('modal-fechamento-mesa').remove();
         App.utils.toast("Fechando mesa...", "info");
@@ -4078,14 +4241,37 @@ Object.assign(App.store, {
             NaxioUI.alert('Atenção', '⚠️ Esta comanda tem pagamentos registrados em Cartão.\nA reabertura não cancela a transação na maquina. Lembre-se de estornar manualmente!', 'warning');
         }
 
-        const orderMarker = Array.isArray(pInfo) ? pInfo.find(p => p._order_id) : null;
+        let itensRestaurados = Array.isArray(comanda.items) && comanda.items.length > 0 ? comanda.items : [];
+        const orderMarker = Array.isArray(pInfo) ? pInfo.find(p => p && p._order_id) : null;
         if (orderMarker) {
-            const orderIds = pInfo.filter(p => p._order_id).map(p => p._order_id);
+            const orderIds = pInfo.filter(p => p && p._order_id).map(p => p._order_id);
+            const { data: linkedOrders } = await _sb.from('orders').select('*').in('id', orderIds);
 
-            const { error: cancelError } = await _sb.from('orders').update({
-                status: 'cancelado',
-                observacao: 'Estornada por Reabertura de Comanda'
-            }).in('id', orderIds);
+            let cancelError = null;
+            if (linkedOrders && linkedOrders.length > 0) {
+                for (const ord of linkedOrders) {
+                    if (itensRestaurados.length === 0 && ord.observacao) {
+                        try {
+                            const cleanObs = ord.observacao.replace(/\s*\[(?:ESTORNADA|CANCELAD[OA]|REABERTA).*$/i, '').trim();
+                            if (cleanObs.startsWith('{')) {
+                                const obsObj = JSON.parse(cleanObs);
+                                if (obsObj && Array.isArray(obsObj.itens) && obsObj.itens.length > 0) itensRestaurados = obsObj.itens;
+                            }
+                        } catch (e) { }
+                    }
+                    const novaObs = (ord.observacao || '').includes('[ESTORNADA')
+                        ? ord.observacao
+                        : ((ord.observacao || '') + ' [ESTORNADA E REABERTA NO PDV]').trim();
+                    const { error: errOrd } = await _sb.from('orders').update({
+                        status: 'cancelado',
+                        observacao: novaObs
+                    }).eq('id', ord.id);
+                    if (errOrd) cancelError = errOrd;
+                }
+            } else {
+                const { error: errIn } = await _sb.from('orders').update({ status: 'cancelado' }).in('id', orderIds);
+                cancelError = errIn;
+            }
 
             if (!cancelError) {
                 App.utils.toast("Vendas anteriores canceladas no financeiro!", "info");
@@ -4100,19 +4286,23 @@ Object.assign(App.store, {
                 .select('*')
                 .eq('store_id', App.state.storeId)
                 .in('origem_venda', ['comanda', 'consumo_interno'])
+                .neq('status', 'cancelado')
                 .gte('created_at', hoje.toISOString())
                 .order('created_at', { ascending: false })
-                .limit(20);
+                .limit(300);
                 
             let lastOrder = null;
             if (recentOrders) {
                 for (let o of recentOrders) {
                     try {
-                        const obsStr = o.observacao || '';
+                        const obsStr = (o.observacao || '').replace(/\s*\[(?:ESTORNADA|CANCELAD[OA]|REABERTA).*$/i, '').trim();
                         let obsMesa = null;
                         if (obsStr.startsWith('{')) {
                             const obs = JSON.parse(obsStr);
                             obsMesa = obs.mesa;
+                            if (itensRestaurados.length === 0 && Array.isArray(obs.itens) && obs.itens.length > 0) {
+                                itensRestaurados = obs.itens;
+                            }
                         } else if (obsStr.includes('Mesa ' + comanda.numero)) {
                             obsMesa = comanda.numero;
                         }
@@ -4133,10 +4323,24 @@ Object.assign(App.store, {
             }
         }
 
-        await _sb.from('comandas').update({ status: 'ocupada', total_pago: null, payments_info: null }).eq('id', id);
-        App.utils.toast("Comanda reaberta com sucesso!", "success");
+        // Devolve estoque dos itens ao reabrir
+        if (itensRestaurados.length > 0) {
+            const arrVolta = [];
+            itensRestaurados.forEach(it => { if (it && it.id) arrVolta.push({ id: it.id, qtd: (parseFloat(it.qtd) || 1) * -1 }); });
+            if (arrVolta.length > 0) _sb.rpc('descontar_estoque', { itens: arrVolta });
+        }
+
+        const updateComandaObj = { status: 'ocupada', total_pago: null, payments_info: null };
+        if (itensRestaurados.length > 0 && (!Array.isArray(comanda.items) || comanda.items.length === 0)) {
+            updateComandaObj.items = itensRestaurados;
+        }
+        await _sb.from('comandas').update(updateComandaObj).eq('id', id);
+        App.utils.toast("Comanda reaberta e venda estornada dos relatórios!", "success");
         if (window.Caixa && window.Caixa.calcTotals) {
             await window.Caixa.calcTotals();
+        }
+        if (App.store && App.store.loadMetrics) {
+            App.store.loadMetrics();
         }
         const btnTodas = Array.from(document.querySelectorAll('.filtro-comanda')).find(x => x.textContent.trim() === 'TODAS');
         App.store.filtrar('todas', btnTodas);

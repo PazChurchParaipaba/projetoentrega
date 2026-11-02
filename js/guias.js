@@ -339,10 +339,11 @@ const GuiasSystem = {
         const { data: guiasList } = await queryGuias;
         if (!guiasList || guiasList.length === 0) return alert("⚠️ Nenhum guia encontrado.");
 
-        // 1. Busca todas as ordens (Vendas finalizadas) no período
+        // 1. Busca todas as ordens (Vendas finalizadas) no período (ignorando canceladas/estornadas)
         const { data: orders, error: errorOrders } = await _sb.from('orders')
-            .select('id, total_pago, observacao, created_at')
+            .select('id, total_pago, observacao, created_at, status')
             .eq('store_id', App.state.storeId)
+            .not('status', 'in', '(cancelado,cancelada,devolvido,devolvida,CANCELADO,CANCELADA,DEVOLVIDO,DEVOLVIDA,estornado,ESTORNADO)')
             .gte('created_at', `${dI}T00:00:00`)
             .lte('created_at', `${dF}T23:59:59`);
 

@@ -33,6 +33,7 @@ function limparString(str, minLen = 2, maxLen = 120, defaultVal = "PRODUTO CONSU
 function sanitizarNCM(ncm) {
     if (!ncm) return "21069090";
     let limpo = String(ncm).replace(/\D/g, '');
+    if (limpo === "39239000") return "39231090"; // 39239000 foi extinto na TIPI
     return limpo.length === 8 ? limpo : "21069090";
 }
 

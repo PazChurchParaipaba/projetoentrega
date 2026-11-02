@@ -1011,19 +1011,22 @@ if (typeof App !== 'undefined') {
             // =========================================================================
             cancelSale: async (orderId) => {
                 const confirmed = await NaxioUI.confirm(
-                    'Cancelar Venda',
-                    'Deseja cancelar esta venda? O estoque será restaurado automaticamente.',
-                    'Confirmar Cancelamento',
+                    'Cancelar / Estornar Venda',
+                    'Deseja estornar/cancelar esta venda? O valor será retirado dos relatórios de vendas e o estoque será restaurado automaticamente.',
+                    'Confirmar Estorno',
                     'Voltar'
                 );
-                if (!confirmed) return;
+                if (!confirmed) return false;
 
-                const motivo = await NaxioUI.prompt('Motivo', 'Motivo do cancelamento:', '', 'Ex: Erro no lançamento');
+                const motivo = await NaxioUI.prompt('Motivo', 'Motivo do estorno/cancelamento:', '', 'Ex: Erro no lançamento');
 
                 const { data: order } = await _sb.from('orders').select('*').eq('id', orderId).single();
-                if (!order) return;
+                if (!order) {
+                    App.utils.toast("Venda não encontrada.", "error");
+                    return false;
+                }
 
-                // Se tem product_id, restaura estoque
+                // 1. Se tem product_id direto (balcão/varejo), restaura estoque
                 if (order.product_id) {
                     const { data: prod } = await _sb.from('products').select('estoque').eq('id', order.product_id).single();
                     if (prod) {
@@ -1031,19 +1034,81 @@ if (typeof App !== 'undefined') {
                     }
                 }
 
-                await _sb.from('orders').update({
+                // 2. Se for venda de comanda/JSON com lista de itens, devolve estoque via RPC e limpa comanda fechada
+                let obsObj = null;
+                try {
+                    const cleanObs = (order.observacao || '').replace(/\s*\[(?:ESTORNADA|CANCELAD[OA]|REABERTA).*$/i, '').trim();
+                    if (cleanObs.startsWith('{')) obsObj = JSON.parse(cleanObs);
+                } catch (e) { }
+
+                if (obsObj && Array.isArray(obsObj.itens) && obsObj.itens.length > 0 && !order.product_id) {
+                    const arrVolta = obsObj.itens.filter(it => it && it.id).map(it => ({ id: it.id, qtd: (parseFloat(it.qtd) || 1) * -1 }));
+                    if (arrVolta.length > 0) {
+                        await _sb.rpc('descontar_estoque', { itens: arrVolta });
+                    }
+                }
+
+                // 3. Atualiza status na tabela orders (usando a coluna correta 'observacao')
+                const novaObs = `${order.observacao || ''} [CANCELADO: ${motivo || 'Sem motivo'} em ${new Date().toLocaleString('pt-BR')}]`.trim();
+                const { error: updateErr } = await _sb.from('orders').update({
                     status: 'cancelado',
-                    observacoes: `[CANCELADO] ${motivo || 'Sem motivo'} em ${new Date().toLocaleString('pt-BR')}`
+                    observacao: novaObs
                 }).eq('id', orderId);
 
-                App.utils.toast("Venda cancelada!", "success");
+                if (updateErr) {
+                    console.error("Erro ao cancelar venda:", updateErr);
+                    App.utils.toast("Erro ao estornar venda: " + updateErr.message, "error");
+                    return false;
+                }
 
-                // 🔥 RECALCULA CAIXA SE ESTIVER ABERTO
+                // 4. Se a venda veio de uma Comanda/Mesa que ainda consta como 'fechada', libera/limpa a comanda
+                // para que não apareça mais nos relatórios de reposição/histórico como venda ativa
+                try {
+                    const mesaAlvo = obsObj?.mesa || (order.endereco_destino ? order.endereco_destino.replace(/^Mesa\s+/i, '').trim() : null);
+                    const { data: comandasFechadas } = await _sb.from('comandas')
+                        .select('id, numero, status, payments_info')
+                        .eq('store_id', order.store_id || App.state.storeId)
+                        .eq('status', 'fechada');
+
+                    if (comandasFechadas && comandasFechadas.length > 0) {
+                        for (const c of comandasFechadas) {
+                            const pInfo = typeof c.payments_info === 'string' ? JSON.parse(c.payments_info || '[]') : (c.payments_info || []);
+                            const temOrderId = Array.isArray(pInfo) && pInfo.some(p => p && String(p._order_id) === String(orderId));
+                            const mesmaMesa = mesaAlvo && String(c.numero).trim() === String(mesaAlvo).trim() && (!Array.isArray(pInfo) || !pInfo.some(p => p && p._order_id));
+
+                            if (temOrderId || mesmaMesa) {
+                                await _sb.from('comandas').update({
+                                    status: 'livre',
+                                    items: [],
+                                    total_pago: 0,
+                                    payments_info: null
+                                }).eq('id', c.id);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Aviso ao sincronizar comanda estornada:", e);
+                }
+
+                App.utils.toast("Venda estornada e retirada dos relatórios!", "success");
+
+                // 🔥 RECALCULA CAIXA E MÉTRICAS SE ESTIVEREM ABERTOS
                 if (window.Caixa && window.Caixa.calcTotals) {
                     await window.Caixa.calcTotals();
                 }
-
-                if (App.store.loadMyProducts) App.store.loadMyProducts();
+                if (App.store && App.store.loadMetrics) {
+                    App.store.loadMetrics();
+                }
+                if (App.store && App.store.loadComandas) {
+                    App.store.loadComandas();
+                }
+                if (App.store && App.store.filterHistory && document.getElementById('history-comandas-list')) {
+                    App.store.filterHistory();
+                }
+                if (App.store && App.store.loadMyProducts) {
+                    App.store.loadMyProducts();
+                }
+                return true;
             },
 
             returnSale: async (orderId) => {
@@ -1061,10 +1126,11 @@ if (typeof App !== 'undefined') {
                     }
                 }
 
-                // Marca como devolvido
+                // Marca como devolvido (usando a coluna correta 'observacao')
+                const novaObs = `${order.observacao || ''} [DEVOLUÇÃO: ${motivo} em ${new Date().toLocaleString('pt-BR')}]`.trim();
                 await _sb.from('orders').update({
                     status: 'devolvido',
-                    observacoes: `[DEVOLUÇÃO] ${motivo} em ${new Date().toLocaleString('pt-BR')}`
+                    observacao: novaObs
                 }).eq('id', orderId);
 
                 // Registra no financeiro como despesa (saída)

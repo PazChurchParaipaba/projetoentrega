@@ -159,6 +159,14 @@ Object.assign(App.payment, {
             }
         }
 
+        // 🛡️ TRAVA ANTI-DUPLICIDADE DE COMPROVANTE (NSU E AUTORIZAÇÃO)
+        if (App.store && App.store.validarComprovanteUnico) {
+            const checkComp = await App.store.validarComprovanteUnico({ amount, method, nsu, aut, bandeira, cnpj }, App.state.paymentSplits || []);
+            if (!checkComp.ok) {
+                return NaxioUI.alert('🛑 Comprovante Duplicado', checkComp.msg + '\n\nNão é permitido lançar o mesmo comprovante (NSU/AUT) duas vezes.', 'error');
+            }
+        }
+
         App.state.paymentSplits.push({ amount, method, nsu, aut, bandeira, cnpj });
 
         const hist = document.getElementById('split-history');
@@ -240,6 +248,14 @@ Object.assign(App.payment, {
         }
         // ---------------------------------------------------------------------------------
 
+        // 🛡️ TRAVA ANTI-DUPLICIDADE DE COMPROVANTE (NSU E AUTORIZAÇÃO)
+        if (App.store && App.store.validarListaComprovantes) {
+            const checkComp = await App.store.validarListaComprovantes(App.state.paymentSplits || []);
+            if (!checkComp.ok) {
+                return NaxioUI.alert('🛑 Comprovante Duplicado', checkComp.msg + '\n\nNão é permitido lançar o mesmo comprovante (NSU/AUT) duas vezes.', 'error');
+            }
+        }
+
         // 🔥 BUSCA INFORMAÇÃO DO GUIA ANTES DE FECHAR (Para o Relatório de Comissões)
         const { data: comandaInfo } = await _sb.from('comandas').select('guide_name').eq('id', comandaId).single();
         const guiaVinculado = comandaInfo?.guide_name || null;
@@ -279,6 +295,11 @@ Object.assign(App.payment, {
             payments_info: pagamentosArray,        // 🔥 Redundancia: tambem em coluna propria
             created_at: new Date().toISOString()
         }).select().single();
+
+        if (newOrder && newOrder.id) {
+            const pInfoComLink = [...pagamentosArray, { _order_id: newOrder.id }];
+            await _sb.from('comandas').update({ payments_info: pInfoComLink }).eq('id', comandaId);
+        }
 
         App.utils.toast("Conta Fechada!", "success");
 
