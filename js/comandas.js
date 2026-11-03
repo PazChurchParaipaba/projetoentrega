@@ -2792,6 +2792,7 @@ Object.assign(App.store, {
         const method = document.getElementById('mesa-pay-method-temp').value;
         const sefazBox = document.getElementById('sefaz-mesa-fields');
         const bandBox = document.getElementById('mesa-pay-bandeira');
+        const autInput = document.getElementById('mesa-pay-aut');
 
         if (sefazBox) {
             // Sefaz fields for Card and Pix, as requested
@@ -2800,6 +2801,9 @@ Object.assign(App.store, {
         if (bandBox) {
             // Bandeira (Card Brand) should only be shown for Cards, not Pix
             bandBox.style.display = (method === 'Pix') ? 'none' : 'block';
+        }
+        if (autInput) {
+            autInput.placeholder = (method === 'Pix') ? 'TERM (Opcional no Pix)' : 'AUT (Autorização)';
         }
     },
 
@@ -2837,33 +2841,45 @@ Object.assign(App.store, {
         if (!nsuNorm && !autNorm) return { ok: true };
 
         const isPix = m.includes('pix');
-        // Ignora marcadores genéricos como PIX-OK ou números de série de terminal POS (ex: 157288xx) quando avaliando AUT isoladamente
-        const isGenericAut = !autNorm || autNorm === 'PIX-OK' || /^157288\d{2}$/.test(autNorm);
+        // No PIX, o campo AUT geralmente recebe o número do Terminal (TERM da maquineta, ex: 15728854, 1578872) ou "PIX-OK",
+        // que se repete em várias vendas da mesma maquineta! Portanto, para PIX NUNCA bloqueamos pelo campo AUT/TERM (apenas pelo NSU).
+        // Para Cartão, também ignoramos caso o operador tenha digitado o número do terminal (157...) no campo AUT.
+        const isTerminalId = /^157\d{4,6}$/.test(autNorm) || autNorm.startsWith('TERM');
+        const isGenericAut = isPix || !autNorm || autNorm === 'PIX-OK' || isTerminalId;
 
         const checarConflito = (pExistente, contextoStr) => {
             const pM = String(pExistente.method || pExistente.tipo || '').toLowerCase();
+            const pIsPix = pM.includes('pix') || String(pExistente.code || '') === '17';
             const pNsu = String(pExistente.nsu || '').trim().replace(/^0+/, '');
             const pAut = String(pExistente.aut || pExistente.autorizacao || '').trim().replace(/^0+/, '').toUpperCase();
             const pVal = parseFloat(pExistente.amount || pExistente.val || 0);
 
-            // Regra 1: NSU de PIX (ou NSU longo >= 7 dígitos) NUNCA se repete
-            if (nsuNorm && pNsu && nsuNorm === pNsu && (isPix || pM.includes('pix') || nsuNorm.length >= 7)) {
+            // Se o NSU digitado for na verdade o número do terminal (TERM: 157...), ignora para não bloquear o terminal
+            const nsuIsTerm = /^157\d{4,6}$/.test(nsuNorm) || nsuNorm.toUpperCase().startsWith('TERM');
+
+            // Regra 1: NSU de PIX (ou NSU longo >= 7 dígitos) NUNCA se repete (exceto se digitarem o TERM no lugar do NSU)
+            if (!nsuIsTerm && nsuNorm && pNsu && nsuNorm === pNsu && (isPix || pIsPix || nsuNorm.length >= 7)) {
                 return `O comprovante PIX de R$ ${pVal.toFixed(2)} com NSU "${nsuRaw}" já foi lançado ${contextoStr}.`;
             }
 
-            // Regra 2: Mesmo NSU + Mesmo AUT em qualquer cartão/PIX
-            if (nsuNorm && pNsu && nsuNorm === pNsu && autNorm && pAut && autNorm === pAut) {
-                return `O comprovante com NSU "${nsuRaw}" e AUT "${autRaw}" (R$ ${pVal.toFixed(2)}) já foi lançado ${contextoStr}.`;
+            // Para PIX, a verificação para por aqui (apenas o NSU bloqueia no PIX; o AUT/TERM nunca bloqueia)
+            if (isPix || pIsPix) {
+                return null;
             }
 
-            // Regra 3: Mesmo Código de Autorização (AUT real do banco) + Mesmo Valor no Cartão
+            // Regra 2 (Cartão): Mesmo NSU + Mesmo AUT
+            if (!nsuIsTerm && nsuNorm && pNsu && nsuNorm === pNsu && !isGenericAut && autNorm && pAut && autNorm === pAut) {
+                return `O comprovante de Cartão com NSU "${nsuRaw}" e AUT "${autRaw}" (R$ ${pVal.toFixed(2)}) já foi lançado ${contextoStr}.`;
+            }
+
+            // Regra 3 (Cartão): Mesmo Código de Autorização (AUT real do cartão) + Mesmo Valor
             if (!isGenericAut && autNorm && pAut && autNorm === pAut && Math.abs(val - pVal) < 0.01) {
-                return `O comprovante com Autorização "${autRaw}" no valor de R$ ${val.toFixed(2)} já foi lançado ${contextoStr}.`;
+                return `O comprovante de Cartão com Autorização "${autRaw}" no valor de R$ ${val.toFixed(2)} já foi lançado ${contextoStr}.`;
             }
 
-            // Regra 4: Mesmo NSU de cartão + Mesmo Valor
-            if (nsuNorm && pNsu && nsuNorm === pNsu && Math.abs(val - pVal) < 0.01 && !isPix) {
-                return `O comprovante com NSU "${nsuRaw}" no valor de R$ ${val.toFixed(2)} já foi lançado ${contextoStr}.`;
+            // Regra 4 (Cartão): Mesmo NSU de cartão + Mesmo Valor
+            if (!nsuIsTerm && nsuNorm && pNsu && nsuNorm === pNsu && Math.abs(val - pVal) < 0.01) {
+                return `O comprovante de Cartão com NSU "${nsuRaw}" no valor de R$ ${val.toFixed(2)} já foi lançado ${contextoStr}.`;
             }
 
             return null;
@@ -2934,11 +2950,11 @@ Object.assign(App.store, {
         const isSefazRequired = method === 'Credit' || method === 'Debit' || method === 'Pix';
 
         const nsu = isSefazRequired ? document.getElementById('mesa-pay-nsu').value.trim() : '';
-        const aut = isSefazRequired ? document.getElementById('mesa-pay-aut').value.trim() : '';
+        const aut = isSefazRequired ? (document.getElementById('mesa-pay-aut').value.trim() || (method === 'Pix' ? 'PIX-OK' : '')) : '';
         const bandeira = isSefazRequired ? document.getElementById('mesa-pay-bandeira').value : '';
         const cnpj = isSefazRequired ? document.getElementById('mesa-pay-cnpj').value : '';
 
-        if (isSefazRequired && (!nsu || !aut)) {
+        if (isSefazRequired && (!nsu || (method !== 'Pix' && !aut))) {
             if (!await NaxioUI.confirm('SEFAZ', "NSU ou AUT estão vazios. A SEFAZ exige estes campos. Deseja adicionar o item mesmo assim?")) return;
         }
 

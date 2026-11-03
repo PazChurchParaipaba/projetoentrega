@@ -145,7 +145,8 @@ Object.assign(App.payment, {
         const amount = parseFloat(document.getElementById('split-amount').value);
         const method = document.getElementById('split-method').value;
         const nsu = document.getElementById('card-nsu') ? document.getElementById('card-nsu').value.trim() : '';
-        const aut = document.getElementById('card-aut') ? document.getElementById('card-aut').value.trim() : '';
+        const autRawInput = document.getElementById('card-aut') ? document.getElementById('card-aut').value.trim() : '';
+        const aut = autRawInput || (method === 'pix' ? 'PIX-OK' : '');
         const bandeira = document.getElementById('card-bandeira') ? document.getElementById('card-bandeira').value.trim() : '';
         const cnpj = document.getElementById('card-cnpj') ? document.getElementById('card-cnpj').value.trim() : '';
 
@@ -153,7 +154,7 @@ Object.assign(App.payment, {
 
         const isSefazRequired = method === 'credito' || method === 'debito' || method === 'pix';
 
-        if (isSefazRequired && (!nsu || !aut)) {
+        if (isSefazRequired && (!nsu || (method !== 'pix' && !aut))) {
             if (!await NaxioUI.confirm('Aviso SEFAZ', "Aviso: NSU ou Autorização estão vazios. A SEFAZ exige esses campos. Deseja adicionar mesmo assim?")) {
                 return;
             }
