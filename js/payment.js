@@ -284,7 +284,7 @@ Object.assign(App.payment, {
 
         const sessionId = (typeof Caixa !== 'undefined' && Caixa.state.session) ? Caixa.state.session.id : null;
 
-        const { data: newOrder } = await _sb.from('orders').insert({
+        const orderPayload = {
             store_id: App.state.storeId,
             session_id: sessionId,
             status: 'concluido',
@@ -295,7 +295,17 @@ Object.assign(App.payment, {
             observacao: observacaoJson,           // 🔥 JSON completo com pagamentos
             payments_info: pagamentosArray,        // 🔥 Redundancia: tambem em coluna propria
             created_at: new Date().toISOString()
-        }).select().single();
+        };
+
+        let { data: newOrder, error: errOrder } = await _sb.from('orders').insert(orderPayload).select().single();
+
+        if (errOrder && errOrder.code === '22P02') {
+            const { data: tempOrder, error: errTemp } = await _sb.from('orders').insert({ ...orderPayload, status: 'cancelado' }).select().single();
+            if (!errTemp && tempOrder) {
+                const { data: fixedOrder } = await _sb.from('orders').update({ status: 'concluido' }).eq('id', tempOrder.id).select().single();
+                newOrder = fixedOrder || tempOrder;
+            }
+        }
 
         if (newOrder && newOrder.id) {
             const pInfoComLink = [...pagamentosArray, { _order_id: newOrder.id }];

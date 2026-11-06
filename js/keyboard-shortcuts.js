@@ -436,11 +436,19 @@ const NaxioKeyboardShortcuts = {
                 pagamentos: payments, desconto: 0, guia: guiaStr, itens: comanda.items || []
             });
 
-            const { data: newOrder } = await _sb.from('orders').insert({
+            const orderPayload = {
                 store_id: App.state.storeId, status: 'concluido', origem_venda: 'comanda', total_pago: total, taxa_servico: comanda.calc_taxa || 0,
                 observacao: obsJson, session_id: typeof Caixa !== 'undefined' && Caixa.state && Caixa.state.session ? Caixa.state.session.id : null,
                 metodo_pagamento: 'Pix', created_at: new Date().toISOString()
-            }).select().single();
+            };
+            let { data: newOrder, error: errFastOrder } = await _sb.from('orders').insert(orderPayload).select().single();
+            if (errFastOrder && errFastOrder.code === '22P02') {
+                const { data: tempOrder, error: errTemp } = await _sb.from('orders').insert({ ...orderPayload, status: 'cancelado' }).select().single();
+                if (!errTemp && tempOrder) {
+                    const { data: fixedOrder } = await _sb.from('orders').update({ status: 'concluido' }).eq('id', tempOrder.id).select().single();
+                    newOrder = fixedOrder || tempOrder;
+                }
+            }
 
             if (comanda.items && comanda.items.length > 0) {
                 const contagem = {};

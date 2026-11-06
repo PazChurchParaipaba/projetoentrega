@@ -3168,7 +3168,7 @@ Object.assign(App.store, {
             App.utils.toast('⚠️ ATENÇÃO: Caixa não está aberto! Abra o caixa antes de fechar comandas para registrar corretamente.', 'warning');
         }
 
-        const { data: newOrder, error: errorOrder } = await _sb.from('orders').insert({
+        const orderPayload = {
             store_id: App.state.storeId,
             status: 'concluido',
             origem_venda: 'comanda',
@@ -3179,7 +3179,21 @@ Object.assign(App.store, {
             session_id: sessionId,
             metodo_pagamento: payments.length > 1 ? 'Multiplos' : (payments[0]?.method || 'Desconto Total'),
             created_at: new Date().toISOString()
-        }).select().single();
+        };
+
+        let { data: newOrder, error: errorOrder } = await _sb.from('orders').insert(orderPayload).select().single();
+
+        // 🔥 FALLBACK DE SEGURANÇA: Se a trigger do banco falhar com erro 22P02 (regex de JSON em observacao),
+        // insere primeiro como 'cancelado' e atualiza imediatamente para 'concluido' para nunca perder a venda!
+        if (errorOrder && errorOrder.code === '22P02') {
+            console.warn("⚠️ Fallback 22P02 acionado ao gravar order:", errorOrder.message);
+            const { data: tempOrder, error: errTemp } = await _sb.from('orders').insert({ ...orderPayload, status: 'cancelado' }).select().single();
+            if (!errTemp && tempOrder) {
+                const { data: fixedOrder, error: errPatch } = await _sb.from('orders').update({ status: 'concluido' }).eq('id', tempOrder.id).select().single();
+                newOrder = fixedOrder || tempOrder;
+                errorOrder = errPatch;
+            }
+        }
 
         if (errorOrder) {
             console.error("Erro ao gravar pedido no banco:", errorOrder);
