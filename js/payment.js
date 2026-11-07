@@ -261,15 +261,6 @@ Object.assign(App.payment, {
         const { data: comandaInfo } = await _sb.from('comandas').select('guide_name').eq('id', comandaId).single();
         const guiaVinculado = comandaInfo?.guide_name || null;
 
-        await _sb.from('comandas').update({
-            status: 'fechada',
-            payments_info: App.state.paymentSplits,
-            total_pago: total,
-            updated_at: new Date().toISOString()
-        }).eq('id', comandaId);
-
-        document.getElementById('split-pay-modal').style.display = 'none';
-
         const itensArray = App.state.currentComandaItems || [];
         const pagamentosArray = App.state.paymentSplits || [];
 
@@ -299,18 +290,28 @@ Object.assign(App.payment, {
 
         let { data: newOrder, error: errOrder } = await _sb.from('orders').insert(orderPayload).select().single();
 
-        if (errOrder && errOrder.code === '22P02') {
+        if (errOrder && (errOrder.code === '22P02' || errOrder.code === 'P0001')) {
             const { data: tempOrder, error: errTemp } = await _sb.from('orders').insert({ ...orderPayload, status: 'cancelado' }).select().single();
             if (!errTemp && tempOrder) {
                 const { data: fixedOrder } = await _sb.from('orders').update({ status: 'concluido' }).eq('id', tempOrder.id).select().single();
                 newOrder = fixedOrder || tempOrder;
+                errOrder = null;
             }
         }
 
-        if (newOrder && newOrder.id) {
-            const pInfoComLink = [...pagamentosArray, { _order_id: newOrder.id }];
-            await _sb.from('comandas').update({ payments_info: pInfoComLink }).eq('id', comandaId);
+        if (errOrder || !newOrder) {
+            return NaxioUI.alert('🛑 Erro ao Registrar Venda', 'Não foi possível gravar a venda no caixa: ' + (errOrder?.message || 'Erro desconhecido') + '\n\nA comanda permaneceu aberta.', 'error');
         }
+
+        const pInfoComLink = [...pagamentosArray, { _order_id: newOrder.id }];
+        await _sb.from('comandas').update({
+            status: 'fechada',
+            payments_info: pInfoComLink,
+            total_pago: total,
+            updated_at: new Date().toISOString()
+        }).eq('id', comandaId);
+
+        document.getElementById('split-pay-modal').style.display = 'none';
 
         App.utils.toast("Conta Fechada!", "success");
 

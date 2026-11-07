@@ -3136,19 +3136,7 @@ Object.assign(App.store, {
 
         const totalPago = payments.reduce((acc, p) => acc + p.amount, 0);
 
-        // 1. Atualiza Comanda para FECHADA (Soma ao caixa e some da tela principal)
-        const { error: errorComanda } = await _sb.from('comandas').update({
-            status: 'fechada',
-            items: comanda.items || [], // Mantém os itens para o relatório histórico
-            total_pago: totalPago,
-            payments_info: payments,
-            obs_geral: null,
-            updated_at: new Date().toISOString()
-        }).eq('id', comanda.id);
-
-        if (errorComanda) return NaxioUI.alert('Erro', "Erro ao fechar comanda: " + errorComanda.message, 'error');
-
-        // 2. Cria Order COM RETORNO
+        // 1. Cria Order COM RETORNO PRIMEIRO (se o banco recusar a order por qualquer motivo, a comanda NÃO fecha órfã!)
         const guiaComandaFast = comanda.guide_name || (comanda.guides && comanda.guides.name) || (App.store.state.currentGuia ? App.store.state.currentGuia.name : null);
         const obsJson = JSON.stringify({
             mesa: comanda.numero,
@@ -3159,9 +3147,6 @@ Object.assign(App.store, {
             itens: comanda.items || []
         });
 
-        // 🔥 FIX: Valida session_id ANTES de inserir — se não houver sessão de caixa aberta,
-        // a order não entra na contabilidade do caixa. Isso causava comandas no histórico
-        // mas sem registro no caixa.
         const sessionId = (typeof Caixa !== 'undefined' && Caixa?.state?.session?.id) ? Caixa.state.session.id : null;
         if (!sessionId) {
             console.warn('⚠️ AVISO: Fechando comanda SEM sessão de caixa aberta! A venda não entrará na contabilidade do caixa.');
@@ -3172,10 +3157,10 @@ Object.assign(App.store, {
             store_id: App.state.storeId,
             status: 'concluido',
             origem_venda: 'comanda',
-            total_pago: totalPago, // Valor líquido recebido
+            total_pago: totalPago,
             taxa_servico: comanda.calc_taxa || 0,
             observacao: obsJson,
-            payments_info: payments, // 🔥 FIX: Salva detalhes de pagamento na order para o histórico do caixa
+            payments_info: payments,
             session_id: sessionId,
             metodo_pagamento: payments.length > 1 ? 'Multiplos' : (payments[0]?.method || 'Desconto Total'),
             created_at: new Date().toISOString()
@@ -3183,10 +3168,10 @@ Object.assign(App.store, {
 
         let { data: newOrder, error: errorOrder } = await _sb.from('orders').insert(orderPayload).select().single();
 
-        // 🔥 FALLBACK DE SEGURANÇA: Se a trigger do banco falhar com erro 22P02 (regex de JSON em observacao),
-        // insere primeiro como 'cancelado' e atualiza imediatamente para 'concluido' para nunca perder a venda!
-        if (errorOrder && errorOrder.code === '22P02') {
-            console.warn("⚠️ Fallback 22P02 acionado ao gravar order:", errorOrder.message);
+        // 🔥 FALLBACK DE SEGURANÇA: Se a trigger do banco falhar com erro 22P02 ou P0001 (falso positivo de NSU de outra maquininha
+        // após já ter passado pela validação do frontend validarListaComprovantes), garante a criação da venda para nunca fechar comanda sem order!
+        if (errorOrder && (errorOrder.code === '22P02' || errorOrder.code === 'P0001')) {
+            console.warn("⚠️ Fallback acionado ao gravar order:", errorOrder.code, errorOrder.message);
             const { data: tempOrder, error: errTemp } = await _sb.from('orders').insert({ ...orderPayload, status: 'cancelado' }).select().single();
             if (!errTemp && tempOrder) {
                 const { data: fixedOrder, error: errPatch } = await _sb.from('orders').update({ status: 'concluido' }).eq('id', tempOrder.id).select().single();
@@ -3195,10 +3180,25 @@ Object.assign(App.store, {
             }
         }
 
-        if (errorOrder) {
+        if (errorOrder || !newOrder) {
             console.error("Erro ao gravar pedido no banco:", errorOrder);
-            App.utils.toast("⚠️ Erro crítico ao registrar venda no banco: " + errorOrder.message + " — A comanda foi fechada mas a venda pode não ter sido registrada no caixa!", "error");
+            return NaxioUI.alert("🛑 Erro ao Registrar Venda", "Não foi possível gravar a venda no caixa: " + (errorOrder?.message || 'Erro desconhecido') + "\n\nA comanda permaneceu aberta para não gerar diferença no caixa.", "error");
         }
+
+        // 2. Só fecha a comanda DEPOIS que a venda (order) já está garantida no banco!
+        const updatedPayments = payments.map(p => ({ ...p }));
+        updatedPayments.push({ _order_id: newOrder.id });
+
+        const { error: errorComanda } = await _sb.from('comandas').update({
+            status: 'fechada',
+            items: comanda.items || [],
+            total_pago: totalPago,
+            payments_info: updatedPayments,
+            obs_geral: null,
+            updated_at: new Date().toISOString()
+        }).eq('id', comanda.id);
+
+        if (errorComanda) return NaxioUI.alert('Erro', "Erro ao fechar comanda: " + errorComanda.message, 'error');
 
         // 3. Baixa Estoque
         if (comanda.items && comanda.items.length > 0) {
