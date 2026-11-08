@@ -1541,6 +1541,21 @@ Object.assign(App.store, {
 
             App.utils.toast("Cancelando e registrando...", "info");
 
+            // Busca itens atuais da comanda para salvar no log de auditoria antes de limpar
+            let itensCancelados = App.state.currentComandaItems || [];
+            let valorCancelado = 0;
+            try {
+                const { data: cmdSnap } = await _sb.from('comandas').select('items, guide_name').eq('id', id).single();
+                if (cmdSnap && Array.isArray(cmdSnap.items) && cmdSnap.items.length > 0) {
+                    itensCancelados = cmdSnap.items;
+                }
+                valorCancelado = itensCancelados.reduce((acc, it) => acc + ((parseFloat(it.price) || 0) * (parseFloat(it.qtd || it.qty) || 1)), 0);
+            } catch (e) { }
+
+            const resumoItens = itensCancelados.length > 0
+                ? ` | Vlr Itens: R$ ${valorCancelado.toFixed(2)} | Itens: ${itensCancelados.map(i => `${i.qtd || 1}x ${i.nome}`).join(', ')}`
+                : ' | (Sem itens)';
+
             // Registra o cancelamento no histórico
             const user = App.state.profile?.nome_completo || App.state.user?.email || 'Sistema';
             await _sb.from('orders').insert({
@@ -1548,8 +1563,8 @@ Object.assign(App.store, {
                 session_id: typeof Caixa !== 'undefined' && Caixa.state && Caixa.state.session ? Caixa.state.session.id : null,
                 status: 'cancelado',
                 origem_venda: 'cancelamento_comanda',
-                total_pago: 0,
-                observacao: `COMANDA CANCELADA: Mesa ${App.state.currentMesaNum} | Motivo: ${motivo || 'Sem motivo detalhado'} | Por: ${user}`,
+                total_pago: valorCancelado,
+                observacao: `COMANDA CANCELADA: Mesa ${App.state.currentMesaNum} | Motivo: ${motivo || 'Sem motivo detalhado'} | Por: ${user}${resumoItens}`,
                 created_at: new Date().toISOString()
             });
 
@@ -3366,44 +3381,56 @@ Object.assign(App.store, {
 
         App.utils.toast("Fechando mesa...", "info");
 
-        // 1. Atualiza Comanda
-        const { error } = await _sb.from('comandas').update({
-            status: 'fechada', // 🔥 Mantém como FECHADA para o relatório do Guia e reabertura
-            // items: [],       // 🔥 Não limpa os itens
-            total_pago: totalFinal,
-            payments_info: payments,
-            obs_geral: null, // 🔥 Limpa tag do Caixa logado
-            updated_at: new Date().toISOString()
-        }).eq('id', comandaId);
-
-        if (error) return NaxioUI.alert('Erro', "Erro ao fechar: " + error.message, 'error');
-
-        // 2. Cria Order COM RETORNO
-        // 🔥 BUG FIX: Adicionado payments_info e validação de session_id (igual ao confirmarFechamentoMesa)
+        // 2. Cria Order COM RETORNO PRIMEIRO (garante venda gravada antes de fechar a comanda)
         const sessionIdModal = (typeof Caixa !== 'undefined' && Caixa?.state?.session?.id) ? Caixa.state.session.id : null;
         if (!sessionIdModal) {
             console.warn('⚠️ AVISO (fecharMesaViaModal): Fechando comanda SEM sessão de caixa aberta!');
             App.utils.toast('⚠️ Caixa não está aberto! Abra o caixa antes de fechar comandas.', 'warning');
         }
-        const { data: newOrder } = await _sb.from('orders').insert({
+        const obsModalJson = JSON.stringify({
+            mesa: mesaNum,
+            vendedor: App.state.profile?.nome_completo || 'Sistema',
+            pagamentos: payments,
+            guia: comanda.guide_name || null,
+            itens: items || []
+        });
+        const orderPayloadModal = {
             store_id: App.state.storeId,
             status: 'concluido',
             origem_venda: 'comanda',
             total_pago: totalFinal,
             taxa_servico: taxa,
-            payments_info: payments, // 🔥 BUG FIX: estava omitido neste fluxo
-            observacao: "Mesa " + mesaNum + " | Fechado por: " + (App.state.profile?.nome_completo || 'Sistema'),
+            payments_info: payments,
+            observacao: obsModalJson,
             session_id: sessionIdModal,
             metodo_pagamento: pagamento.method,
             created_at: new Date().toISOString()
-        }).select().single();
-
-        // 🔥 Vincula esta ordem à comanda (para permitir estorno automático na reabertura)
-        if (newOrder) {
-            const updatedPayments = payments.map(p => ({ ...p }));
-            updatedPayments.push({ _order_id: newOrder.id });
-            await _sb.from('comandas').update({ payments_info: updatedPayments }).eq('id', comandaId);
+        };
+        let { data: newOrder, error: errOrdModal } = await _sb.from('orders').insert(orderPayloadModal).select().single();
+        if (errOrdModal && (errOrdModal.code === '22P02' || errOrdModal.code === 'P0001')) {
+            const { data: tempOrder, error: errTemp } = await _sb.from('orders').insert({ ...orderPayloadModal, status: 'cancelado' }).select().single();
+            if (!errTemp && tempOrder) {
+                const { data: fixedOrder } = await _sb.from('orders').update({ status: 'concluido' }).eq('id', tempOrder.id).select().single();
+                newOrder = fixedOrder || tempOrder;
+                errOrdModal = null;
+            }
         }
+        if (errOrdModal || !newOrder) {
+            return NaxioUI.alert('Erro', "Erro ao gravar venda no caixa: " + (errOrdModal?.message || 'Erro desconhecido'), 'error');
+        }
+
+        // 1. Atualiza Comanda DEPOIS da order garantida
+        const updatedPayments = payments.map(p => ({ ...p }));
+        updatedPayments.push({ _order_id: newOrder.id });
+        const { error } = await _sb.from('comandas').update({
+            status: 'fechada',
+            total_pago: totalFinal,
+            payments_info: updatedPayments,
+            obs_geral: null,
+            updated_at: new Date().toISOString()
+        }).eq('id', comandaId);
+
+        if (error) return NaxioUI.alert('Erro', "Erro ao fechar: " + error.message, 'error');
 
         // 3. Baixa Estoque
         if (items && items.length > 0) {
@@ -4016,13 +4043,13 @@ Object.assign(App.store, {
             ' style="border:2px solid; border-radius:10px; padding:10px; cursor:pointer; text-align:center; position:relative; ' + style + ' user-select:none; transition:transform 0.1s;"' +
             ' onmousedown="this.style.transform=\'scale(0.95)\'" onmouseup="this.style.transform=\'scale(1)\'">' +
             labelTag +
-            (guide ? '<div style="position:absolute; top:5px; right:5px; font-size:10px; background:#000; color:#fff; padding:2px 4px; border-radius:4px;">' + guide + '</div>' : '') +
+            (guide ? '<div title="' + guide.replace(/"/g, '&quot;') + '" style="position:absolute; top:2px; left:4px; right:' + (isLivre ? '18px' : '4px') + '; font-size:7px; line-height:1.1; background:rgba(0,0,0,0.85); color:#fff; padding:1px 3px; border-radius:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:none;">' + guide + '</div>' : '') +
             // Botão X para limpar individualmente (apenas se estiver livre para evitar acidentes)
             (isLivre ? '<div onclick="App.store.limparComandaUnica(event, \'' + c.id + '\', \'' + c.numero + '\')" ' +
                 'style="position:absolute; top:-8px; right:-8px; background:#ef4444; color:white; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.2); z-index:5; border:2px solid #fff;">' +
                 '<i class="ri-close-line"></i>' +
                 '</div>' : '') +
-            '<div style="font-size:1.8rem; font-weight:bold; color:#1e293b; margin-top:' + (!isLivre ? '14' : '0') + 'px;">' + c.numero + '</div>' +
+            '<div style="font-size:1.8rem; font-weight:bold; color:#1e293b; margin-top:' + (!isLivre || guide ? '12' : '0') + 'px;">' + c.numero + '</div>' +
             '<div style="font-size:0.8rem; font-weight:bold; color:#374151;">' + statusTxt + '</div>' +
             (!isLivre ? '<div style="margin-top:5px; font-weight:bold; color:#334155;">R$ ' + total.toFixed(2) + '</div>' : '') +
             '</div>';
