@@ -115,11 +115,24 @@ export default async function handler(req, res) {
         const modeloNota = modelo === 55 ? 55 : 65;
         const SERIE_EMISSAO = modeloNota === 55 ? 1 : 2;
 
+        // 🛡️ Idempotência: se já está autorizado e com XML salvo para NFC-e (modelo 65), retorna imediatamente sem duplicar nota
+        if (modeloNota === 65 && String(order.status_sefaz || '').toLowerCase() === 'autorizado' && order.xml_arquivo) {
+            return res.status(200).json({
+                sucesso: true,
+                status: 'autorizado',
+                pdf: order.url_pdf || '',
+                chave: order.chave_acesso || '',
+                xml_salvo: true,
+                motivo_sefaz: order.motivo_sefaz || "Já autorizado anteriormente (Geranet)",
+                ja_emitida: true
+            });
+        }
+
         const service = new GeranetService(apiKeyGeranet, modeloNota);
 
         let columnName = (modeloNota === 55) ? 'proximo_numero_nfe' : 'proximo_numero_nfce';
 
-        for (let i = 0; i < 5; i++) {
+        for (let i = 0; i < 12; i++) {
             let n = null;
             try {
                 const { data, error: selError } = await supabase.from('stores').select(columnName).eq('id', storeId).single();
@@ -145,7 +158,7 @@ export default async function handler(req, res) {
             } catch (e) {
                 // Ignore e tenta dnv
             }
-            await delay(300);
+            await delay(250 + Math.floor(Math.random() * 200));
         }
         if (!numReservado) {
             numReservado = Math.floor((Date.now() % 10000000)) || 1;
@@ -532,6 +545,13 @@ export default async function handler(req, res) {
             if (jsonGeranet?.errosDeValidacao) {
                 errMsgs += "\nValidação: " + JSON.stringify(jsonGeranet.errosDeValidacao);
             }
+            // Registra a tentativa com erro no banco para que o Guardião Fiscal possa reemitir automaticamente
+            try {
+                await supabase.from('orders').update({
+                    status_sefaz: 'erro_emissao',
+                    motivo_sefaz: String(errMsgs).substring(0, 500)
+                }).eq('id', order_id);
+            } catch (errUpd) {}
             return res.status(200).json({ sucesso: false, status: 'erro', message: errMsgs, raw: jsonGeranet });
         }
 

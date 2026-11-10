@@ -1563,6 +1563,8 @@ Object.assign(App.store, {
                 session_id: typeof Caixa !== 'undefined' && Caixa.state && Caixa.state.session ? Caixa.state.session.id : null,
                 status: 'cancelado',
                 origem_venda: 'cancelamento_comanda',
+                total_pago: 0,
+                observacao: `COMANDA CANCELADA: Mesa ${App.state.currentMesaNum} | Motivo: ${motivo || 'Sem motivo detalhado'} | Por: ${user}`,
                 total_pago: valorCancelado,
                 observacao: `COMANDA CANCELADA: Mesa ${App.state.currentMesaNum} | Motivo: ${motivo || 'Sem motivo detalhado'} | Por: ${user}${resumoItens}`,
                 created_at: new Date().toISOString()
@@ -3381,7 +3383,7 @@ Object.assign(App.store, {
 
         App.utils.toast("Fechando mesa...", "info");
 
-        // 2. Cria Order COM RETORNO PRIMEIRO (garante venda gravada antes de fechar a comanda)
+        // 1. Cria Order COM RETORNO PRIMEIRO (garante venda gravada antes de fechar a comanda)
         const sessionIdModal = (typeof Caixa !== 'undefined' && Caixa?.state?.session?.id) ? Caixa.state.session.id : null;
         if (!sessionIdModal) {
             console.warn('⚠️ AVISO (fecharMesaViaModal): Fechando comanda SEM sessão de caixa aberta!');
@@ -3391,7 +3393,7 @@ Object.assign(App.store, {
             mesa: mesaNum,
             vendedor: App.state.profile?.nome_completo || 'Sistema',
             pagamentos: payments,
-            guia: comanda.guide_name || null,
+            guia: comanda?.guide_name || null,
             itens: items || []
         });
         const orderPayloadModal = {
@@ -3419,7 +3421,7 @@ Object.assign(App.store, {
             return NaxioUI.alert('Erro', "Erro ao gravar venda no caixa: " + (errOrdModal?.message || 'Erro desconhecido'), 'error');
         }
 
-        // 1. Atualiza Comanda DEPOIS da order garantida
+        // 2. Atualiza Comanda DEPOIS da order garantida
         const updatedPayments = payments.map(p => ({ ...p }));
         updatedPayments.push({ _order_id: newOrder.id });
         const { error } = await _sb.from('comandas').update({
@@ -4043,12 +4045,14 @@ Object.assign(App.store, {
             ' style="border:2px solid; border-radius:10px; padding:10px; cursor:pointer; text-align:center; position:relative; ' + style + ' user-select:none; transition:transform 0.1s;"' +
             ' onmousedown="this.style.transform=\'scale(0.95)\'" onmouseup="this.style.transform=\'scale(1)\'">' +
             labelTag +
+            (guide ? '<div style="position:absolute; top:5px; right:5px; font-size:10px; background:#000; color:#fff; padding:2px 4px; border-radius:4px;">' + guide + '</div>' : '') +
             (guide ? '<div title="' + guide.replace(/"/g, '&quot;') + '" style="position:absolute; top:2px; left:4px; right:' + (isLivre ? '18px' : '4px') + '; font-size:7px; line-height:1.1; background:rgba(0,0,0,0.85); color:#fff; padding:1px 3px; border-radius:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:none;">' + guide + '</div>' : '') +
             // Botão X para limpar individualmente (apenas se estiver livre para evitar acidentes)
             (isLivre ? '<div onclick="App.store.limparComandaUnica(event, \'' + c.id + '\', \'' + c.numero + '\')" ' +
                 'style="position:absolute; top:-8px; right:-8px; background:#ef4444; color:white; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.2); z-index:5; border:2px solid #fff;">' +
                 '<i class="ri-close-line"></i>' +
                 '</div>' : '') +
+            '<div style="font-size:1.8rem; font-weight:bold; color:#1e293b; margin-top:' + (!isLivre ? '14' : '0') + 'px;">' + c.numero + '</div>' +
             '<div style="font-size:1.8rem; font-weight:bold; color:#1e293b; margin-top:' + (!isLivre || guide ? '12' : '0') + 'px;">' + c.numero + '</div>' +
             '<div style="font-size:0.8rem; font-weight:bold; color:#374151;">' + statusTxt + '</div>' +
             (!isLivre ? '<div style="margin-top:5px; font-weight:bold; color:#334155;">R$ ' + total.toFixed(2) + '</div>' : '') +
@@ -4516,34 +4520,32 @@ App.fiscal.emitirNFCeComanda = async (orderId, storeId, items, payments, cpf = n
             nome_nota: nome
         };
 
-        console.log("📤 Enviando para backend:", JSON.stringify(payload, null, 2));
-
-        // ⚠️ FIX: Determina o endpoint correto (Local ou Cloud)
-        let apiBase = '';
-        if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-            apiBase = (App.payment && App.payment.getConfig) ? App.payment.getConfig() : 'https://naxiosoftware.vercel.app';
-        }
-
-        const response = await fetch(`${apiBase}/api/emitir_fiscal`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-        });
-
-        const responseText = await response.text();
-        console.log("📡 Resposta RAW (texto):", responseText);
+        console.log("📤 Enviando para backend (com Fila + Retry Automático):", JSON.stringify(payload, null, 2));
 
         let result;
-        try {
+        if (window.Fiscal && typeof window.Fiscal._enqueueEmission === 'function' && typeof window.Fiscal._chamarApiEmitirComRetry === 'function') {
+            result = await window.Fiscal._enqueueEmission(() => window.Fiscal._chamarApiEmitirComRetry(payload, 3));
+        } else {
+            // Fallback caso Fiscal._chamarApiEmitirComRetry não esteja disponível
+            let apiBase = '';
+            if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+                apiBase = (App.payment && App.payment.getConfig) ? App.payment.getConfig() : 'https://naxiosoftware.vercel.app';
+            }
+            if (window._sb && orderId) {
+                try { await _sb.from('orders').update({ status_sefaz: 'processando' }).eq('id', orderId); } catch (e) {}
+            }
+            const response = await fetch(`${apiBase}/api/emitir_fiscal`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const responseText = await response.text();
             result = JSON.parse(responseText);
-        } catch (e) {
-            console.error("❌ ERRO AO PARSEAR JSON:", e);
-            throw new Error("Resposta inválida do servidor: " + responseText.substring(0, 200));
         }
 
         console.log("📥 Resposta fiscal completa:", result);
 
-        if (result.sucesso) {
+        if (result && (result.sucesso || result.status === 'autorizado')) {
             App.utils.toast("✅ NFC-e Autorizada!", "success");
             if (result.pdf) {
                 // 🔥 INTEGRADO: Usa o modal interno em vez de abrir nova aba
@@ -4556,7 +4558,7 @@ App.fiscal.emitirNFCeComanda = async (orderId, storeId, items, payments, cpf = n
             }
         } else {
             // 🔥 CAPTURA EXAUSTIVA DE ERROS
-            const motivo = result.motivo_sefaz || result.mensagem_sefaz || result.error || result.message || "Rejeição desconhecida da SEFAZ";
+            const motivo = result?.motivo_sefaz || result?.mensagem_sefaz || result?.error || result?.message || "Rejeição desconhecida da SEFAZ";
 
             console.error("❌ REJEIÇÃO FISCAL:", motivo);
 
@@ -4565,12 +4567,9 @@ App.fiscal.emitirNFCeComanda = async (orderId, storeId, items, payments, cpf = n
                 "",
                 "MOTIVO: " + motivo,
                 "",
-                "⚠️ O QUE FAZER?",
-                "1. Verifique o NCM dos produtos",
-                "2. Verifique o CNPJ e Inscrição Estadual da Loja",
-                "3. Verifique se o endereço da loja está completo",
+                "🛡️ O Guardião Fiscal continuará tentando reemitir esta comanda automaticamente em segundo plano.",
                 "",
-                "STATUS: " + (result.status || 'erro')
+                "STATUS: " + (result?.status || 'erro')
             ].join('\n');
 
             NaxioUI.alert('Fiscal', alertMsg, 'error');

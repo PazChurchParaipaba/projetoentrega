@@ -638,17 +638,25 @@ const RelatoriosEnterprise = {
                 let metodoNome = p.method || p.tipo || 'Desconhecido';
                 if (p.code === '03' && (metodoNome.toUpperCase() === 'CARTAO' || metodoNome.toUpperCase() === 'CARTÃO')) metodoNome = 'Crédito';
                 if (p.code === '04' && (metodoNome.toUpperCase() === 'CARTAO' || metodoNome.toUpperCase() === 'CARTÃO')) metodoNome = 'Débito';
+                if (p.code === '17') metodoNome = 'Pix';
                 const metodoVal = parseFloat(p.amount || p.val || 0);
                 if (metodoVal <= 0) return '';
-                return `<span style="display:inline-block; background:rgba(0,0,0,0.05); border: 1px solid #000; color:#000; font-weight:900; padding:1px 6px; border-radius:4px; margin:2px 4px 2px 0; font-size:0.75rem;">
+                return `<span class="badge-metodo-caixa" data-method="${metodoNome.toLowerCase()}" data-code="${p.code || ''}" style="display:inline-block; background:rgba(0,0,0,0.05); border: 1px solid #000; color:#000; font-weight:900; padding:1px 6px; border-radius:4px; margin:2px 4px 2px 0; font-size:0.75rem;">
                          ${metodoNome}: R$ ${metodoVal.toFixed(2)}
                         </span>`;
             }).join('');
 
-            const safePays = metodosPag.filter(p => (p.val || p.amount)).map(p => ({
-                method: p.method || p.tipo || 'Desconhecido',
-                amount: parseFloat(p.amount || p.val || 0)
-            }));
+            const safePays = metodosPag.filter(p => (p.val || p.amount)).map(p => {
+                let metodoNome = p.method || p.tipo || 'Desconhecido';
+                if (p.code === '03' && (metodoNome.toUpperCase() === 'CARTAO' || metodoNome.toUpperCase() === 'CARTÃO')) metodoNome = 'Crédito';
+                if (p.code === '04' && (metodoNome.toUpperCase() === 'CARTAO' || metodoNome.toUpperCase() === 'CARTÃO')) metodoNome = 'Débito';
+                if (p.code === '17') metodoNome = 'Pix';
+                return {
+                    method: metodoNome,
+                    code: p.code || '',
+                    amount: parseFloat(p.amount || p.val || 0)
+                };
+            });
             const paysJson = JSON.stringify(safePays).replace(/'/g, "&apos;").replace(/"/g, "&quot;");
 
             return `<tr class="row-venda-caixa" data-payments="${paysJson}" data-valor="${valorPago}" style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;" onmouseover="this.style.background='rgba(59,130,246,0.05)'" onmouseout="this.style.background='transparent'">
@@ -658,13 +666,13 @@ const RelatoriosEnterprise = {
                     <div style="margin-top:6px; display:flex; flex-wrap:wrap; gap:4px;">${strMetodos}</div>
                     ${desconto > 0 ? `<div style="color:#880000; font-size:0.75rem; margin-top:4px; font-weight:900;"><i class="ri-price-tag-3-line"></i> Desconto: -R$ ${desconto.toFixed(2)}</div>` : ''}
                 </td>
-                <td align="right" style="font-weight:800; color:#10b981; padding: 12px 8px; vertical-align:top; font-size:1rem;">R$ ${valorPago.toFixed(2)}</td>
+                <td class="col-valor-venda" align="right" style="font-weight:800; color:#10b981; padding: 12px 8px; vertical-align:top; font-size:1rem;">R$ ${valorPago.toFixed(2)}</td>
                 <td class="no-print-filter" align="right" style="padding: 12px 8px; vertical-align:top;">
                     <button class="btn btn-primary" style="padding:4px 10px; font-size:0.7rem; background:#3b82f6; color:#fff; border:none; border-radius:6px; margin-right:5px;" onclick="RelatoriosEnterprise.reimprimirFitaCaixa('${caixaId}')">
                         <i class="ri-printer-line"></i> Reimprimir Fita
                     </button>
                     <button class="btn btn-sm" style="padding:4px 10px; font-size:0.7rem; background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); border-radius:6px;" 
-                        onclick="(async (btn) => { if(window.App?.autopecas?.cancelSale) { const ok = await App.autopecas.cancelSale('${v.id}'); if(ok) { const tr = btn.closest('tr'); if(tr) tr.remove(); if(window.RelatoriosEnterprise?.filtrarVendasCaixa) RelatoriosEnterprise.filtrarVendasCaixa(); } } else if(confirm('Deseja estornar esta venda?')) { await window._sb.from('orders').update({status:'cancelado'}).eq('id','${v.id}'); App.utils.toast('Estornada!','success'); const tr = btn.closest('tr'); if(tr) tr.remove(); } })(this)">
+                        onclick="(async (btn) => { if(window.App?.autopecas?.cancelSale) { const ok = await App.autopecas.cancelSale('${v.id}'); if(ok) { const tr = btn.closest('tr'); if(tr) tr.remove(); if(window.RelatoriosEnterprise?.aplicarFiltroDetalhesCaixa) RelatoriosEnterprise.aplicarFiltroDetalhesCaixa(); } } else if(confirm('Deseja estornar esta venda?')) { await window._sb.from('orders').update({status:'cancelado'}).eq('id','${v.id}'); App.utils.toast('Estornada!','success'); const tr = btn.closest('tr'); if(tr) tr.remove(); if(window.RelatoriosEnterprise?.aplicarFiltroDetalhesCaixa) RelatoriosEnterprise.aplicarFiltroDetalhesCaixa(); } })(this)">
                         <i class="ri-close-circle-line"></i> Estornar
                     </button>
                 </td>
@@ -680,7 +688,7 @@ const RelatoriosEnterprise = {
                     <td class="no-print-filter"></td>
                 </tr>
                 <tr>
-                    <td colspan="2" style="font-weight:900; color:#059669;">Total Líquido (Caixa):</td>
+                    <td colspan="2" id="label-total-liquido-caixa" style="font-weight:900; color:#059669;">Total Líquido (Caixa):</td>
                     <td align="right" id="total-liquido-caixa" style="font-weight:900; color:#059669;">R$ ${totalGeral.toFixed(2)}</td>
                     <td class="no-print-filter"></td>
                 </tr>
@@ -688,26 +696,26 @@ const RelatoriosEnterprise = {
         } else {
             rodapeExtra = `
                 <tr>
-                    <td colspan="2" style="font-weight:900; color:#059669; padding-top:10px;">Total Líquido (Caixa):</td>
+                    <td colspan="2" id="label-total-liquido-caixa" style="font-weight:900; color:#059669; padding-top:10px;">Total Líquido (Caixa):</td>
                     <td align="right" id="total-liquido-caixa" style="font-weight:900; color:#059669; padding-top:10px;">R$ ${totalGeral.toFixed(2)}</td>
                     <td class="no-print-filter"></td>
                 </tr>
             `;
         }
 
-        const filterScript = `const val=this.value;const rows=document.querySelectorAll('.row-venda-caixa');let total=0;rows.forEach(r=>{const paysStr=r.getAttribute('data-payments');const pays=paysStr?JSON.parse(paysStr):[];let show=false;if(val==='todos'){show=true;total+=parseFloat(r.getAttribute('data-valor')||0);}else{let matchAmount=0;pays.forEach(p=>{let m=(p.method||'').toLowerCase();let matches=false;if(val==='dinheiro'&&(m.includes('dinheiro')||m==='din'))matches=true;else if(val==='pix'&&m.includes('pix'))matches=true;else if(val==='credito'&&(m.includes('credito')||m.includes('crédito')||m==='credit'))matches=true;else if(val==='debito'&&(m.includes('debito')||m.includes('débito')||m==='debit'))matches=true;if(matches){show=true;matchAmount+=(parseFloat(p.amount)||0);}});if(show)total+=matchAmount;}r.style.display=show?'':'none';});const elTotal=document.getElementById('total-liquido-caixa');if(elTotal)elTotal.innerText='R$ '+total.toFixed(2);const trDesc=document.getElementById('tr-descontos-caixa');if(trDesc)trDesc.style.display=(val==='todos')?'':'none';if(window.RelatoriosEnterprise&&window.RelatoriosEnterprise.dadosRelatorioAtual){window.RelatoriosEnterprise.dadosRelatorioAtual.linhas=document.getElementById('caixa-table-container').outerHTML;}`;
-
         const htmlTabela = `
-            <div id="caixa-table-container">
-                <style> @media print { .no-print-filter { display: none !important; } } </style>
-                <div class="no-print-filter" style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+            <div id="caixa-table-container" data-filtro-ativo="todos" data-filtro-label="Todos os Recebimentos">
+                <style> @media print { .no-print-filter { display: none !important; } tr[data-filtered-out="true"] { display: none !important; } } </style>
+                <div class="no-print-filter" style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; flex-wrap: wrap;">
                     <label style="font-weight: bold; color: #f1f5f9;"><i class="ri-filter-3-line"></i> Filtrar Pagamento:</label>
-                    <select onchange="${filterScript}" style="padding: 6px 12px; border-radius: 6px; background: #1e293b; color: #fff; border: 1px solid #334155; outline: none; cursor: pointer;">
+                    <select id="select-filtro-detalhes-caixa" onchange="RelatoriosEnterprise.aplicarFiltroDetalhesCaixa(this)" style="padding: 6px 12px; border-radius: 6px; background: #1e293b; color: #fff; border: 1px solid #334155; outline: none; cursor: pointer;">
                         <option value="todos">Todos os Recebimentos</option>
-                        <option value="dinheiro">Dinheiro (din)</option>
-                        <option value="pix">Pix</option>
-                        <option value="credito">Cartão de Crédito (credit)</option>
-                        <option value="debito">Cartão de Débito (debit)</option>
+                        <option value="cartao_pix">Cartão + Pix (Maquinetas)</option>
+                        <option value="cartao_todos">Todos os Cartões (Crédito + Débito)</option>
+                        <option value="pix">Só Pix</option>
+                        <option value="credito">Só Cartão de Crédito</option>
+                        <option value="debito">Só Cartão de Débito</option>
+                        <option value="dinheiro">Só Dinheiro</option>
                     </select>
                 </div>
                 <table style="width:100%; border-collapse:collapse; background:transparent; color:#f1f5f9;">
@@ -748,6 +756,109 @@ const RelatoriosEnterprise = {
                     </div>
                 </div>`;
             document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+    },
+
+    aplicarFiltroDetalhesCaixa: (selectEl) => {
+        const container = (selectEl && selectEl.closest('#caixa-table-container')) || document.getElementById('caixa-table-container');
+        if (!container) return;
+        const sel = selectEl || container.querySelector('#select-filtro-detalhes-caixa');
+        const val = sel ? sel.value : 'todos';
+        const label = sel && sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : 'Todos os Recebimentos';
+
+        container.setAttribute('data-filtro-ativo', val);
+        container.setAttribute('data-filtro-label', label);
+
+        const matchPayment = (p, filterVal) => {
+            if (filterVal === 'todos') return true;
+            const m = String(p.method || '').toLowerCase();
+            const c = String(p.code || '');
+            const isPix = m.includes('pix') || c === '17';
+            const isCred = m.includes('credito') || m.includes('crédito') || m === 'credit' || c === '03';
+            const isDeb = m.includes('debito') || m.includes('débito') || m === 'debit' || c === '04';
+            const isCartaoGenerico = (m.includes('cartao') || m.includes('cartão')) && !isCred && !isDeb;
+            const isDin = m.includes('dinheiro') || m === 'din' || c === '01';
+
+            if (filterVal === 'dinheiro') return isDin;
+            if (filterVal === 'pix') return isPix;
+            if (filterVal === 'credito') return isCred || isCartaoGenerico;
+            if (filterVal === 'debito') return isDeb;
+            if (filterVal === 'cartao_todos') return isCred || isDeb || isCartaoGenerico;
+            if (filterVal === 'cartao_pix') return isPix || isCred || isDeb || isCartaoGenerico;
+            return false;
+        };
+
+        const rows = container.querySelectorAll('.row-venda-caixa');
+        let total = 0;
+
+        rows.forEach(r => {
+            const paysStr = r.getAttribute('data-payments');
+            let pays = [];
+            try { pays = paysStr ? JSON.parse(paysStr) : []; } catch (e) {}
+
+            let show = false;
+            let rowDisplayVal = parseFloat(r.getAttribute('data-valor') || 0);
+
+            if (val === 'todos') {
+                show = true;
+                total += rowDisplayVal;
+            } else {
+                let matchAmount = 0;
+                pays.forEach(p => {
+                    if (matchPayment(p, val)) {
+                        show = true;
+                        matchAmount += (parseFloat(p.amount) || 0);
+                    }
+                });
+                if (show) {
+                    rowDisplayVal = matchAmount;
+                    total += matchAmount;
+                }
+            }
+
+            if (show) {
+                r.style.display = '';
+                r.removeAttribute('data-filtered-out');
+                const colVal = r.querySelector('.col-valor-venda');
+                if (colVal) colVal.innerText = 'R$ ' + rowDisplayVal.toFixed(2);
+
+                // Filtra também as badges de método dentro da linha para exibir/imprimir apenas a forma selecionada
+                const badges = r.querySelectorAll('.badge-metodo-caixa');
+                badges.forEach(b => {
+                    const bm = b.getAttribute('data-method') || '';
+                    const bc = b.getAttribute('data-code') || '';
+                    const bMatch = matchPayment({ method: bm, code: bc }, val);
+                    if (bMatch) {
+                        b.style.display = 'inline-block';
+                        b.removeAttribute('data-badge-hidden');
+                    } else {
+                        b.style.display = 'none';
+                        b.setAttribute('data-badge-hidden', 'true');
+                    }
+                });
+            } else {
+                r.style.display = 'none';
+                r.setAttribute('data-filtered-out', 'true');
+            }
+        });
+
+        const elTotal = container.querySelector('#total-liquido-caixa');
+        if (elTotal) elTotal.innerText = 'R$ ' + total.toFixed(2);
+
+        const elLabelTotal = container.querySelector('#label-total-liquido-caixa');
+        if (elLabelTotal) {
+            elLabelTotal.innerText = val === 'todos' ? 'Total Líquido (Caixa):' : `Total Filtrado (${label}):`;
+        }
+
+        const trDesc = container.querySelector('#tr-descontos-caixa');
+        if (trDesc) {
+            trDesc.style.display = (val === 'todos') ? '' : 'none';
+            if (val === 'todos') trDesc.removeAttribute('data-filtered-out');
+            else trDesc.setAttribute('data-filtered-out', 'true');
+        }
+
+        if (window.RelatoriosEnterprise && window.RelatoriosEnterprise.dadosRelatorioAtual) {
+            window.RelatoriosEnterprise.dadosRelatorioAtual.linhas = container.outerHTML;
         }
     },
 
@@ -812,16 +923,42 @@ const RelatoriosEnterprise = {
             return;
         }
 
+        // 🔥 Sincroniza automaticamente quaisquer notas de Cartão/Pix pendentes antes de montar os totais SEFAZ!
+        if (window.Fiscal && typeof window.Fiscal.sincronizarNotasPendentesLista === 'function') {
+            const qtdSinc = await window.Fiscal.sincronizarNotasPendentesLista(vendas || []);
+            if (qtdSinc > 0) {
+                // Recarrega vendas atualizadas após emitir as pendentes
+                vendas = [];
+                let pSync = 0;
+                while(true) {
+                    let resSync = await _sb.from('orders')
+                        .select('*, products(nome)')
+                        .eq('store_id', App.state.storeId)
+                        .gte('created_at', adjustedStart)
+                        .lte('created_at', fim)
+                        .range(pSync * 1000, (pSync + 1) * 1000 - 1);
+                    if (resSync.error) break;
+                    if (resSync.data) vendas = vendas.concat(resSync.data);
+                    if (!resSync.data || resSync.data.length < 1000) break;
+                    pSync++;
+                }
+            }
+        }
+
         let breakdownVendas = { dinheiro: 0, pix: 0, credito: 0, debito: 0 };
         let vendasHoje = 0;
         let totalSefaz = 0;
+        let sefazCartaoPix = 0;
+        let sefazDinheiroMisto = 0;
+        let cardPixSemSefaz = 0;
         
         (vendas || []).forEach(v => {
             const valorPago = parseFloat(v.total_pago || v.total || 0);
+            const sefazStatus = (v.status_sefaz || '').toLowerCase();
+            const isSefazAut = (sefazStatus === 'autorizado');
             
             // SEFAZ sempre conta se a nota foi emitida, mesmo se a venda foi estornada no sistema depois
-            const sefazStatus = (v.status_sefaz || '').toLowerCase();
-            if (sefazStatus === 'autorizado') {
+            if (isSefazAut) {
                 totalSefaz += valorPago;
             }
             
@@ -835,8 +972,9 @@ const RelatoriosEnterprise = {
             
             let metodosPag = [];
             try {
-                if (v.observacao && v.observacao.startsWith('{')) {
-                    const obsObj = JSON.parse(v.observacao);
+                const cleanObs = (v.observacao || '').replace(/\s*\[(?:ESTORNADA|CANCELAD[OA]|REABERTA).*$/i, '').trim();
+                if (cleanObs.startsWith('{')) {
+                    const obsObj = JSON.parse(cleanObs);
                     if (obsObj.pagamentos && Array.isArray(obsObj.pagamentos)) metodosPag = obsObj.pagamentos;
                 }
             } catch (e) {}
@@ -848,16 +986,42 @@ const RelatoriosEnterprise = {
                 metodosPag = [{ method: v.metodo_pagamento || v.pagamento || 'Dinheiro', amount: valorPago }];
             }
 
+            let ordCardPix = 0;
+            let ordCash = 0;
             metodosPag.forEach(p => {
                  let method = (p.method || p.tipo || '').toLowerCase();
+                 let code = String(p.code || '');
                  let val = parseFloat(p.amount || p.val || 0);
-                 if (method.includes('dinheiro') || method === 'din') breakdownVendas.dinheiro += val;
-                 else if (method.includes('pix')) breakdownVendas.pix += val;
-                 else if (method.includes('credit') || method.includes('crédito') || method.includes('credito') || p.code === '03') breakdownVendas.credito += val;
-                 else if (method.includes('debit') || method.includes('débito') || method.includes('debito') || p.code === '04') breakdownVendas.debito += val;
-                 else breakdownVendas.dinheiro += val;
+                 if (method.includes('dinheiro') || method === 'din' || code === '01') {
+                     breakdownVendas.dinheiro += val;
+                     ordCash += val;
+                 } else if (method.includes('pix') || code === '17') {
+                     breakdownVendas.pix += val;
+                     ordCardPix += val;
+                 } else if (method.includes('credit') || method.includes('crédito') || method.includes('credito') || code === '03') {
+                     breakdownVendas.credito += val;
+                     ordCardPix += val;
+                 } else if (method.includes('debit') || method.includes('débito') || method.includes('debito') || code === '04') {
+                     breakdownVendas.debito += val;
+                     ordCardPix += val;
+                 } else if (method.includes('cartao') || method.includes('cartão')) {
+                     breakdownVendas.credito += val;
+                     ordCardPix += val;
+                 } else {
+                     breakdownVendas.dinheiro += val;
+                     ordCash += val;
+                 }
             });
+
+            if (isSefazAut) {
+                sefazCartaoPix += ordCardPix;
+                sefazDinheiroMisto += ordCash;
+            } else if (ordCardPix > 0) {
+                cardPixSemSefaz += ordCardPix;
+            }
         });
+        
+        const totalCartaoPix = breakdownVendas.pix + breakdownVendas.credito + breakdownVendas.debito;
         
         let breakdownAnteriores = { dinheiro: 0, pix: 0, credito: 0, debito: 0 };
         let totalEntradas = 0;
@@ -908,8 +1072,11 @@ const RelatoriosEnterprise = {
                 ${linha('Crédito:', breakdownVendas.credito)}
                 ${linha('Débito:', breakdownVendas.debito)}
                 <div style="margin-top:5px; border-top:1px dashed #ddd; padding-top:5px;"></div>
+                ${linha('TOTAL CARTÃO + PIX:', totalCartaoPix)}
                 ${linha('TOTAL SISTEMA (Real):', vendasHoje)}
                 ${linha('TOTAL EMIT. SEFAZ:', totalSefaz)}
+                ${sefazDinheiroMisto > 0 ? `<div style="font-size:11px; color:#333;">(Cartão/Pix: ${fmt(sefazCartaoPix)} | Din: ${fmt(sefazDinheiroMisto)})</div>` : ''}
+                ${cardPixSemSefaz > 0 ? `<div style="font-size:11px; color:#b91c1c;">⚠️ Cartão/Pix Pendente SEFAZ: ${fmt(cardPixSemSefaz)}</div>` : ''}
                 <div style="font-size:10px; text-align:right; color:#555; margin-bottom:5px;">*Apenas Notas Autorizadas</div>
                 ${div}
                 
@@ -1033,16 +1200,50 @@ const RelatoriosEnterprise = {
                 <div style="text-align:center; margin-top:30px; font-size:12px; border-top:1px dashed #ccc; padding-top:5px;">Sistema Naxio</div>
             `;
         } else {
-            const isFullHtml = typeof dados.linhas === 'string' && (dados.linhas.trim().startsWith('<table') || dados.linhas.trim().startsWith('<div'));
+            let linhasParaImprimir = dados.linhas;
+            let subtituloParaImprimir = dados.subtitulo;
+
+            // 🔥 Se a tabela de Detalhes do Caixa estiver aberta na tela, clona o DOM vivo e remove TODAS as linhas/badges ocultas pelo filtro!
+            const liveContainer = document.getElementById('caixa-table-container');
+            if (liveContainer && liveContainer.querySelectorAll('.row-venda-caixa').length > 0) {
+                const clone = liveContainer.cloneNode(true);
+                const filtroAtivo = liveContainer.getAttribute('data-filtro-ativo') || 'todos';
+                const filtroLabel = liveContainer.getAttribute('data-filtro-label') || 'Todos os Recebimentos';
+
+                // Remove controles de filtro e coluna de botões (Ação)
+                clone.querySelectorAll('.no-print-filter').forEach(el => el.remove());
+
+                // Remove fisicamente todas as linhas que foram ocultadas pelo filtro
+                clone.querySelectorAll('tr').forEach(tr => {
+                    if (tr.style.display === 'none' || tr.getAttribute('data-filtered-out') === 'true') {
+                        tr.remove();
+                    }
+                });
+
+                // Remove badges de métodos que não fazem parte do filtro selecionado
+                clone.querySelectorAll('.badge-metodo-caixa').forEach(b => {
+                    if (b.style.display === 'none' || b.getAttribute('data-badge-hidden') === 'true') {
+                        b.remove();
+                    }
+                });
+
+                if (filtroAtivo !== 'todos') {
+                    subtituloParaImprimir += `<br><span style="font-size:14px; background:#000; color:#fff; padding:2px 6px; border-radius:4px;">FILTRO: ${filtroLabel.toUpperCase()}</span>`;
+                }
+
+                linhasParaImprimir = clone.outerHTML;
+            }
+
+            const isFullHtml = typeof linhasParaImprimir === 'string' && (linhasParaImprimir.trim().startsWith('<table') || linhasParaImprimir.trim().startsWith('<div'));
 
             // HTML padrão para demais relatórios
             htmlLimpo = `
                 ${lojaHeader}
                 <div style="text-align:center; font-weight:900; font-size: 22px; margin-bottom:5px;">${dados.titulo}</div>
-                <div style="text-align:center; font-size: 16px; margin-bottom:15px; color:#000; font-weight:900;">${dados.subtitulo}</div>
+                <div style="text-align:center; font-size: 16px; margin-bottom:15px; color:#000; font-weight:900;">${subtituloParaImprimir}</div>
                 <hr style="border:0; border-top:2px solid #000; margin: 15px 0;">
                 
-                ${isFullHtml ? dados.linhas : `
+                ${isFullHtml ? linhasParaImprimir : `
                 <table style="width:100%; border-collapse:collapse; font-size: 18px; font-weight:900; color:#000;">
                     <thead>
                         <tr style="border-bottom: 1px solid #000;">
@@ -1051,7 +1252,7 @@ const RelatoriosEnterprise = {
                             <th align="right" style="padding:5px;">R$</th>
                         </tr>
                     </thead>
-                    <tbody>${dados.linhas}</tbody>
+                    <tbody>${linhasParaImprimir}</tbody>
                     ${dados.total !== null ? `
                     <tfoot>
                         <tr><td colspan="3"><hr style="border:0; border-top:2px solid #000; margin: 10px 0;"></td></tr>

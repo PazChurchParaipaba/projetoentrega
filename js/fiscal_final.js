@@ -1,13 +1,196 @@
 const Fiscal = {
-    // Estado interno para controle de tentativas (Retry)
+    // Estado interno para controle de tentativas (Retry) e Fila de Emissão
     state: {
         tentativas: 0,
         maxTentativas: 3,
-        isProcessing: false
+        isProcessing: false,
+        _emissionQueue: Promise.resolve(),
+        _guardiaoTimer: null,
+        _guardiaoRunning: false
     },
 
     init: () => {
         console.log("🏛️ Módulo Fiscal Enterprise Carregado");
+        Fiscal.iniciarGuardiaoSefaz();
+    },
+
+    // 🛡️ FILA SEQUENCIAL DE EMISSÃO (Impede que duas comandas fechadas juntas se atropelem ou descartem uma à outra)
+    _enqueueEmission: (fn) => {
+        const next = Fiscal.state._emissionQueue.then(() => fn()).catch((e) => {
+            console.error("Erro na fila fiscal:", e);
+            return { success: false, erro: e?.message || 'Erro na fila' };
+        });
+        Fiscal.state._emissionQueue = next.catch(() => {});
+        return next;
+    },
+
+    // 🛡️ CHAMADA À API COM RETRY AUTOMÁTICO (Até 3 tentativas em caso de falha de rede ou oscilação da SEFAZ/Geranet)
+    _chamarApiEmitirComRetry: async (payload, maxRetries = 3) => {
+        let apiBase = '';
+        if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+            apiBase = (window.App?.payment?.getConfig) ? App.payment.getConfig() : 'https://naxiosoftware.vercel.app';
+        }
+
+        // Marca no banco que a emissão desta ordem foi solicitada
+        try {
+            if (window._sb && payload.order_id) {
+                const { data: ordCheck } = await _sb.from('orders').select('status_sefaz, xml_arquivo').eq('id', payload.order_id).maybeSingle();
+                if (ordCheck && String(ordCheck.status_sefaz || '').toLowerCase() === 'autorizado' && ordCheck.xml_arquivo && (!payload.modelo || payload.modelo === 65)) {
+                    return { sucesso: true, status: 'autorizado', xml_salvo: true, ja_emitida: true };
+                }
+                if (!ordCheck || String(ordCheck.status_sefaz || '').toLowerCase() !== 'autorizado') {
+                    await _sb.from('orders').update({ status_sefaz: 'processando' }).eq('id', payload.order_id);
+                }
+            }
+        } catch (e) {}
+
+        let lastResult = null;
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                const res = await fetch(`${apiBase}/api/emitir_fiscal`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const text = await res.text();
+                let data = null;
+                try { data = JSON.parse(text); } catch (e) {
+                    throw new Error("Resposta inválida do servidor fiscal: " + text.substring(0, 150));
+                }
+                lastResult = data;
+
+                if (data && (data.sucesso || data.status === 'autorizado')) {
+                    return data;
+                }
+
+                // Se houve erro, aguarda um pouco antes de tentar novamente (exceto na última tentativa)
+                if (attempt < maxRetries) {
+                    console.warn(`⚠️ Tentativa fiscal ${attempt}/${maxRetries} falhou para order ${payload.order_id}. Retentando em ${attempt * 2}s...`, data?.message || data?.error);
+                    await new Promise(r => setTimeout(r, attempt * 2000));
+                }
+            } catch (err) {
+                lastResult = { sucesso: false, status: 'erro', error: err.message, message: err.message };
+                if (attempt < maxRetries) {
+                    console.warn(`⚠️ Erro de rede na tentativa fiscal ${attempt}/${maxRetries} para order ${payload.order_id}. Retentando...`, err.message);
+                    await new Promise(r => setTimeout(r, attempt * 2000));
+                }
+            }
+        }
+        return lastResult || { sucesso: false, status: 'erro', message: 'Falha após múltiplas tentativas' };
+    },
+
+    // 🛡️ VERIFICA SE UMA VENDA DEVE TER NFC-e OBRIGATÓRIA (Cartão/Pix ou Solicitação Explícita)
+    _vendaPrecisaSefaz: (v) => {
+        if (!v) return false;
+        const statusOrd = String(v.status || '').toLowerCase();
+        if (['cancelado', 'cancelada', 'devolvido', 'devolvida', 'estornado'].includes(statusOrd)) return false;
+
+        const sefazStatus = String(v.status_sefaz || '').toLowerCase();
+        // Se já está autorizada e tem XML salvo, não precisa reemitir
+        if (sefazStatus === 'autorizado' && (v.xml_arquivo || v.xml_autorizado)) return false;
+        // Se foi explicitamente cancelada na SEFAZ
+        if (sefazStatus === 'cancelado') return false;
+
+        // Se foi solicitada emissão e ficou presa em processando/erro/contingencia
+        if (['processando', 'erro', 'erro_emissao', 'contingencia'].includes(sefazStatus)) return true;
+
+        // Se está 'autorizado' mas sem XML salvo, ou 'pendente', verifica se tem pagamento em Cartão ou Pix
+        let metodosPag = [];
+        try {
+            const cleanObs = String(v.observacao || '').replace(/\s*\[(?:ESTORNADA|CANCELAD[OA]|REABERTA).*$/i, '').trim();
+            if (cleanObs.startsWith('{')) {
+                const obsObj = JSON.parse(cleanObs);
+                if (obsObj.pagamentos && Array.isArray(obsObj.pagamentos)) metodosPag = obsObj.pagamentos;
+            }
+        } catch (e) {}
+
+        if (metodosPag.length === 0 && v.payments_info) {
+            try { metodosPag = typeof v.payments_info === 'string' ? JSON.parse(v.payments_info) : v.payments_info; } catch (e) {}
+        }
+        if (!Array.isArray(metodosPag) || metodosPag.length === 0) {
+            metodosPag = [{ method: v.metodo_pagamento || v.pagamento || 'Dinheiro', amount: v.total_pago }];
+        }
+
+        return metodosPag.some(p => {
+            const m = String(p.method || p.tipo || '').toLowerCase();
+            const c = String(p.code || '');
+            return m.includes('pix') || m.includes('credit') || m.includes('crédito') || m.includes('credito') ||
+                   m.includes('debit') || m.includes('débito') || m.includes('debito') ||
+                   m.includes('cartao') || m.includes('cartão') || ['03', '04', '17'].includes(c);
+        });
+    },
+
+    // 🛡️ SINCRONIZADOR DE LISTA DE VENDAS (Usado antes de abrir o Fechamento de Caixa e pelo Guardião em background)
+    sincronizarNotasPendentesLista: async (listaVendas, silencioso = false) => {
+        if (!Array.isArray(listaVendas) || listaVendas.length === 0) return 0;
+        const pendentes = listaVendas.filter(v => Fiscal._vendaPrecisaSefaz(v));
+        if (pendentes.length === 0) return 0;
+
+        if (!silencioso && window.App?.utils?.toast) {
+            App.utils.toast(`🛡️ Sincronizando ${pendentes.length} nota(s) pendente(s) com a SEFAZ...`, "info");
+        }
+        console.log(`🛡️ [Guardião SEFAZ] Encontradas ${pendentes.length} venda(s) pendentes de emissão/XML.`);
+
+        let emitidasComSucesso = 0;
+        for (const v of pendentes) {
+            try {
+                const res = await Fiscal._enqueueEmission(() => Fiscal._chamarApiEmitirComRetry({
+                    order_id: v.id,
+                    store_id: v.store_id || App.state?.storeId
+                }, 2));
+                if (res && (res.sucesso || res.status === 'autorizado')) {
+                    emitidasComSucesso++;
+                    console.log(`✅ [Guardião SEFAZ] Venda ${v.id} autorizada e XML salvo automaticamente!`);
+                }
+            } catch (e) {
+                console.warn(`⚠️ [Guardião SEFAZ] Falha ao sincronizar venda ${v.id}:`, e);
+            }
+        }
+
+        if (!silencioso && emitidasComSucesso > 0 && window.App?.utils?.toast) {
+            App.utils.toast(`✅ ${emitidasComSucesso} nota(s) emitida(s) automaticamente na SEFAZ!`, "success");
+        }
+        return emitidasComSucesso;
+    },
+
+    // 🛡️ GUARDIÃO SEFAZ AUTOMÁTICO EM BACKGROUND (Verifica a cada 90s se alguma comanda solicitada ou de Cartão/Pix ficou sem emitir no dia)
+    iniciarGuardiaoSefaz: () => {
+        if (Fiscal.state._guardiaoTimer) clearInterval(Fiscal.state._guardiaoTimer);
+
+        const cicloGuardiao = async () => {
+            if (Fiscal.state._guardiaoRunning) return;
+            if (!window._sb || !window.App?.state?.storeId) return;
+
+            Fiscal.state._guardiaoRunning = true;
+            try {
+                // Verifica as vendas das últimas 24 horas da loja ativa
+                const desde = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+                const { data: vendasRecentes, error } = await _sb.from('orders')
+                    .select('id, store_id, status, status_sefaz, xml_arquivo, total_pago, metodo_pagamento, observacao, payments_info, created_at')
+                    .eq('store_id', App.state.storeId)
+                    .eq('status', 'concluido')
+                    .gte('created_at', desde)
+                    .order('created_at', { ascending: true })
+                    .limit(300);
+
+                if (!error && vendasRecentes && vendasRecentes.length > 0) {
+                    // Filtra apenas vendas criadas há mais de 25 segundos (para não concorrer com uma emissão que acabou de iniciar na tela)
+                    const limiteSeguranca = Date.now() - 25000;
+                    const candidatas = vendasRecentes.filter(v => new Date(v.created_at).getTime() < limiteSeguranca && Fiscal._vendaPrecisaSefaz(v));
+                    if (candidatas.length > 0) {
+                        await Fiscal.sincronizarNotasPendentesLista(candidatas, true);
+                    }
+                }
+            } catch (e) {
+                console.warn("⚠️ [Guardião SEFAZ] Erro no ciclo de verificação:", e);
+            } finally {
+                Fiscal.state._guardiaoRunning = false;
+            }
+        };
+
+        // Executa a primeira verificação após 12 segundos do carregamento e depois a cada 90 segundos
+        setTimeout(cicloGuardiao, 12000);
+        Fiscal.state._guardiaoTimer = setInterval(cicloGuardiao, 90000);
     },
 
     // =========================================================================
@@ -464,13 +647,7 @@ const Fiscal = {
     // =========================================================================
 
     emitirNFCe: async (orderId, totalOriginal = null, paymentsPayload = null, itemsPayload = null, extra = {}) => {
-        if (Fiscal.state.isProcessing) {
-            App.utils.toast("⚠️ Já existe uma emissão em andamento...", "warning");
-            return;
-        }
-
         try {
-            Fiscal.state.isProcessing = true;
             console.log("🚀 Iniciando emissão via API para Order:", orderId);
 
             // 1. Identificação do Cliente (Opcional) - Agora em um único modal para agilizar
@@ -538,47 +715,42 @@ const Fiscal = {
 
             App.utils.toast("🚀 Enviando para SEFAZ...", "info");
 
-            // ⚠️ FIX: Determina o endpoint correto (Local ou Cloud)
-            let apiBase = '';
-            if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-                apiBase = (App.payment && App.payment.getConfig) ? App.payment.getConfig() : 'https://naxiosoftware.vercel.app';
-            }
-
-            // 2. Chama a API robusta
-            const res = await fetch(`${apiBase}/api/emitir_fiscal`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    order_id: orderId,
-                    store_id: App.state.storeId,
-                    cpf_nota: cpfCompleto || null,
-                    nome_nota: nomeNota || null,
-                    items_payload: itemsPayload || null,
-                    payments_payload: paymentsPayload || null
-                })
+            // 2. Chama a API robusta através da fila sequencial + retry automático
+            const data = await Fiscal._enqueueEmission(async () => {
+                Fiscal.state.isProcessing = true;
+                try {
+                    return await Fiscal._chamarApiEmitirComRetry({
+                        order_id: orderId,
+                        store_id: App.state.storeId,
+                        cpf_nota: cpfCompleto || null,
+                        nome_nota: nomeNota || null,
+                        items_payload: itemsPayload || null,
+                        payments_payload: paymentsPayload || null
+                    }, 3);
+                } finally {
+                    Fiscal.state.isProcessing = false;
+                }
             });
 
-            const data = await res.json();
-
-            if (data.sucesso || data.status === 'autorizado') {
+            if (data && (data.sucesso || data.status === 'autorizado')) {
                 App.utils.toast("✅ NFC-e AUTORIZADA!", "success");
                 if (data.pdf) {
                     Fiscal.exibirPreviewDanfe(data.pdf, data.chave || '');
                 } else if (data.url_pdf) {
                     Fiscal.exibirPreviewDanfe(data.url_pdf, data.chave || '');
-                } else {
+                } else if (!data.ja_emitida) {
                     await NaxioUI.alert('✅ Sucesso', `Nota autorizada! Mas o PDF não foi gerado automaticamente. Você pode baixá-lo no menu Fiscal.`, 'success');
                 }
                 return { success: true, data };
             } else {
                 console.error("❌ Erro SEFAZ:", JSON.stringify(data, null, 2));
                 // Monta mensagem detalhada incluindo erros de validação específicos
-                let msgErro = data.motivo_sefaz || data.message || data.error || "Erro desconhecido na emissão.";
-                if (data.validation_errors && data.validation_errors.length > 0) {
+                let msgErro = data?.motivo_sefaz || data?.message || data?.error || "Erro desconhecido na emissão.";
+                if (data?.validation_errors && data.validation_errors.length > 0) {
                     const detalhes = data.validation_errors.map(e => `• ${e.field || e.path || 'campo'}: ${e.message || e.msg || JSON.stringify(e)}`).join('\n');
                     msgErro += `\n\nCampos com problema:\n${detalhes}`;
                 }
-                await NaxioUI.alert('❌ Erro na Emissão', `A SEFAZ retornou um erro:\n\n${msgErro}`, 'error');
+                await NaxioUI.alert('❌ Erro na Emissão', `A SEFAZ retornou um erro:\n\n${msgErro}\n\n🛡️ O Guardião Fiscal continuará tentando reemitir esta nota automaticamente em segundo plano.`, 'error');
                 return { success: false, erro: msgErro };
             }
 
@@ -586,8 +758,6 @@ const Fiscal = {
             console.error("❌ Erro fatal na chamada da API Fiscal:", e);
             App.utils.toast("Erro ao comunicar com servidor fiscal", "error");
             return { success: false, erro: e.message };
-        } finally {
-            Fiscal.state.isProcessing = false;
         }
     },
 
@@ -936,4 +1106,11 @@ const Fiscal = {
 window.Fiscal = Fiscal;
 if (typeof App !== 'undefined') {
     App.fiscal = Object.assign(App.fiscal || {}, Fiscal);
+}
+if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => Fiscal.iniciarGuardiaoSefaz());
+    } else {
+        Fiscal.iniciarGuardiaoSefaz();
+    }
 }
