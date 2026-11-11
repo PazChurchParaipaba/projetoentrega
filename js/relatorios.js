@@ -566,21 +566,32 @@ const RelatoriosEnterprise = {
         const startOfDay = new Date(openingDate.getFullYear(), openingDate.getMonth(), openingDate.getDate()).toISOString();
         const adjustedStart = (start > startOfDay) ? startOfDay : start;
 
-        let { data: vendas, error } = await _sb.from('orders')
-            .select('*, products(nome)')
-            .eq('store_id', caixa.store_id || App.state.storeId)
-            .not('status', 'in', '(cancelado,cancelada,devolvido,devolvida,CANCELADO,CANCELADA,DEVOLVIDO,DEVOLVIDA,estornado,ESTORNADO)')
-            // 🔥 MUDANÇA CRÍTICA: Para bater com o Dashboard (calcTotals), mostramos TUDO no intervalo do caixa.
-            // Isso resolve o problema de vendas com session_id errado ou nulo por causa de múltiplos terminais.
-            .gte('created_at', adjustedStart)
-            .lte('created_at', fim)
-            .order('created_at', { ascending: true });
+        const colsCaixaDet = 'id, store_id, session_id, status, status_sefaz, total_pago, metodo_pagamento, observacao, payments_info, created_at, products(nome)';
+        let vendas = [];
+        let error = null;
+        let pDet = 0;
+        while (true) {
+            const resDet = await _sb.from('orders')
+                .select(colsCaixaDet)
+                .eq('store_id', caixa.store_id || App.state.storeId)
+                .not('status', 'in', '(cancelado,cancelada,devolvido,devolvida,CANCELADO,CANCELADA,DEVOLVIDO,DEVOLVIDA,estornado,ESTORNADO)')
+                // 🔥 MUDANÇA CRÍTICA: Para bater com o Dashboard (calcTotals), mostramos TUDO no intervalo do caixa.
+                // Isso resolve o problema de vendas com session_id errado ou nulo por causa de múltiplos terminais.
+                .gte('created_at', adjustedStart)
+                .lte('created_at', fim)
+                .order('created_at', { ascending: true })
+                .range(pDet * 1000, (pDet + 1) * 1000 - 1);
+            if (resDet.error) { error = resDet.error; break; }
+            if (resDet.data) vendas = vendas.concat(resDet.data);
+            if (!resDet.data || resDet.data.length < 1000) break;
+            pDet++;
+        }
 
         if (error) {
             console.error("Erro ao buscar vendas do caixa:", error);
             // Fallback caso o PostgREST não suporte o 'and' aninhado no 'or' em algumas versões
             let q = _sb.from('orders')
-                .select('*, products(nome)')
+                .select(colsCaixaDet)
                 .eq('store_id', caixa.store_id || App.state.storeId)
                 .not('status', 'in', '(cancelado,cancelada,devolvido,devolvida,CANCELADO,CANCELADA,DEVOLVIDO,DEVOLVIDA,estornado,ESTORNADO)')
                 .order('created_at', { ascending: true });
@@ -888,59 +899,98 @@ const RelatoriosEnterprise = {
 
         App.utils.toast("Buscando dados do período...", "info");
 
-        // 🔥 FIX: Paginação para evitar limite de 1000 registros do Supabase
+        // 🔥 FIX: Busca SOMENTE as colunas necessárias (sem xml_arquivo e sem join de products),
+        // usando paginação por cursor (created_at > lastCursor) com retry automático para nunca dar timeout nem em períodos de 1 ano!
+        const colsRelatorio = 'id, store_id, status, status_sefaz, total_pago, metodo_pagamento, observacao, payments_info, created_at';
         let vendas = [];
         let erroVendas = null;
-        let p = 0;
+        let cursorStart = adjustedStart;
+        const seenIds = new Set();
+        const pageSize = 1000;
+        let pageNum = 0;
+
         while(true) {
-            let res = await _sb.from('orders')
-                .select('*, products(nome)')
+            let res = null;
+            for (let attempt = 1; attempt <= 3; attempt++) {
+                res = await _sb.from('orders')
+                    .select(colsRelatorio)
+                    .eq('store_id', App.state.storeId)
+                    .gte('created_at', cursorStart)
+                    .lte('created_at', fim)
+                    .order('created_at', { ascending: true })
+                    .limit(pageSize);
+                if (!res.error) break;
+                await new Promise(r => setTimeout(r, attempt * 1000));
+            }
+            if (res.error) { erroVendas = res.error; break; }
+            const rows = res.data || [];
+            let newAdded = 0;
+            for (const row of rows) {
+                if (!seenIds.has(row.id)) {
+                    seenIds.add(row.id);
+                    vendas.push(row);
+                    newAdded++;
+                }
+            }
+            pageNum++;
+            if (pageNum > 1 && pageNum % 3 === 0) {
+                App.utils.toast(`Carregando vendas... (${vendas.length} registros)`, "info");
+            }
+            if (rows.length < pageSize || newAdded === 0) break;
+            cursorStart = rows[rows.length - 1].created_at;
+        }
+            
+        let movimentos = [];
+        let pMov = 0;
+        while(true) {
+            let resMov = await _sb.from('cash_movements')
+                .select('id, store_id, type, amount, method, created_at')
                 .eq('store_id', App.state.storeId)
                 .gte('created_at', adjustedStart)
                 .lte('created_at', fim)
-                .range(p * 1000, (p + 1) * 1000 - 1);
-            if (res.error) { erroVendas = res.error; break; }
-            if (res.data) vendas = vendas.concat(res.data);
-            if (!res.data || res.data.length < 1000) break;
-            p++;
+                .range(pMov * pageSize, (pMov + 1) * pageSize - 1);
+            if (resMov.error) break;
+            if (resMov.data) movimentos = movimentos.concat(resMov.data);
+            if (!resMov.data || resMov.data.length < pageSize) break;
+            pMov++;
         }
             
-        let { data: movimentos } = await _sb.from('cash_movements')
-            .select('*')
-            .eq('store_id', App.state.storeId)
-            .gte('created_at', adjustedStart)
-            .lte('created_at', fim);
-            
-        let { data: sessoes } = await _sb.from('cash_sessions')
-            .select('*')
-            .eq('store_id', App.state.storeId)
-            .gte('created_at', adjustedStart)
-            .lte('created_at', fim);
+        let sessoes = [];
+        let pSes = 0;
+        while(true) {
+            let resSes = await _sb.from('cash_sessions')
+                .select('id, store_id, valor_inicial, created_at')
+                .eq('store_id', App.state.storeId)
+                .gte('created_at', adjustedStart)
+                .lte('created_at', fim)
+                .range(pSes * pageSize, (pSes + 1) * pageSize - 1);
+            if (resSes.error) break;
+            if (resSes.data) sessoes = sessoes.concat(resSes.data);
+            if (!resSes.data || resSes.data.length < pageSize) break;
+            pSes++;
+        }
 
         if (erroVendas) {
             console.error("Erro ao buscar vendas:", erroVendas);
-            await NaxioUI.alert('Erro', 'Erro ao buscar dados.', 'error');
+            await NaxioUI.alert('Erro', 'Erro ao buscar dados: ' + (erroVendas.message || ''), 'error');
             return;
         }
 
-        // 🔥 Sincroniza automaticamente quaisquer notas de Cartão/Pix pendentes antes de montar os totais SEFAZ!
+        // 🔥 Sincroniza automaticamente notas de Cartão/Pix pendentes das últimas 48h (para não travar relatórios de meses/ano inteiro)
         if (window.Fiscal && typeof window.Fiscal.sincronizarNotasPendentesLista === 'function') {
-            const qtdSinc = await window.Fiscal.sincronizarNotasPendentesLista(vendas || []);
+            const limiteSync48h = Date.now() - 48 * 60 * 60 * 1000;
+            const candidatasRecentes = (vendas || []).filter(v => new Date(v.created_at).getTime() >= limiteSync48h);
+            const qtdSinc = await window.Fiscal.sincronizarNotasPendentesLista(candidatasRecentes);
             if (qtdSinc > 0) {
-                // Recarrega vendas atualizadas após emitir as pendentes
-                vendas = [];
-                let pSync = 0;
-                while(true) {
-                    let resSync = await _sb.from('orders')
-                        .select('*, products(nome)')
-                        .eq('store_id', App.state.storeId)
-                        .gte('created_at', adjustedStart)
-                        .lte('created_at', fim)
-                        .range(pSync * 1000, (pSync + 1) * 1000 - 1);
-                    if (resSync.error) break;
-                    if (resSync.data) vendas = vendas.concat(resSync.data);
-                    if (!resSync.data || resSync.data.length < 1000) break;
-                    pSync++;
+                // Atualiza apenas o status_sefaz das vendas sincronizadas na lista em memória
+                const { data: atualizadas } = await _sb.from('orders')
+                    .select(colsRelatorio)
+                    .eq('store_id', App.state.storeId)
+                    .gte('created_at', new Date(limiteSync48h).toISOString())
+                    .lte('created_at', fim);
+                if (atualizadas && atualizadas.length > 0) {
+                    const mapAtu = new Map(atualizadas.map(a => [a.id, a]));
+                    vendas = vendas.map(v => mapAtu.get(v.id) || v);
                 }
             }
         }

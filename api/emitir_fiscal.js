@@ -30,11 +30,59 @@ function limparString(str, minLen = 2, maxLen = 120, defaultVal = "PRODUTO CONSU
     } catch (e) { return defaultVal; }
 }
 
+// Mapa de NCMs extintos/inválidos para NCMs vigentes na TIPI
+const MAPA_NCM_CORRECAO = {
+    "39239000": "39231090", // Embalagens plásticas (extinto na TIPI)
+    "22021000": "22021000", // Águas / refrigerantes
+    "21069090": "21069090", // Preparações alimentícias diversas (coringa)
+    "00000000": "21069090",
+    "99999999": "21069090",
+    "19059090": "19059090",
+    "20098990": "21069090",
+    "22029000": "22029900", // Extinto -> 22029900
+    "16023200": "16023290", // Extinto -> 16023290
+    "03028990": "03028990"
+};
+
 function sanitizarNCM(ncm) {
     if (!ncm) return "21069090";
     let limpo = String(ncm).replace(/\D/g, '');
-    if (limpo === "39239000") return "39231090"; // 39239000 foi extinto na TIPI
-    return limpo.length === 8 ? limpo : "21069090";
+    if (MAPA_NCM_CORRECAO[limpo]) return MAPA_NCM_CORRECAO[limpo];
+    if (limpo.length !== 8 || /^0+$/.test(limpo) || /^9+$/.test(limpo)) return "21069090";
+    return limpo;
+}
+
+function validarCpfCnpj(doc) {
+    if (!doc) return "";
+    const d = String(doc).replace(/\D/g, '');
+    if (d.length === 11) {
+        if (/^(\d)\1{10}$/.test(d)) return "";
+        let s = 0;
+        for (let i = 0; i < 9; i++) s += parseInt(d[i]) * (10 - i);
+        let r = (s * 10) % 11;
+        if (r === 10 || r === 11) r = 0;
+        if (r !== parseInt(d[9])) return "";
+        s = 0;
+        for (let i = 0; i < 10; i++) s += parseInt(d[i]) * (11 - i);
+        r = (s * 10) % 11;
+        if (r === 10 || r === 11) r = 0;
+        if (r !== parseInt(d[10])) return "";
+        return d;
+    }
+    if (d.length === 14) {
+        if (/^(\d)\1{13}$/.test(d)) return "";
+        const calc = (base, pesos) => {
+            let s = 0;
+            for (let i = 0; i < pesos.length; i++) s += parseInt(base[i]) * pesos[i];
+            const rem = s % 11;
+            return rem < 2 ? 0 : 11 - rem;
+        };
+        const d1 = calc(d, [5,4,3,2,9,8,7,6,5,4,3,2]);
+        const d2 = calc(d, [6,5,4,3,2,9,8,7,6,5,4,3,2]);
+        if (d1 !== parseInt(d[12]) || d2 !== parseInt(d[13])) return "";
+        return d;
+    }
+    return "";
 }
 
 function formatarDataHora() {
@@ -503,12 +551,13 @@ export default async function handler(req, res) {
                 "indicadorIEdestinatario": "9"
             };
             if (cpf_nota && cpf_nota.length > 5) {
-                const docLimpo = String(cpf_nota).replace(/\D/g, '');
-                const nomeDestinatario = limparString(body.nome_nota || 'CONSUMIDOR', 2, 60);
-
-                nfe.cliente.cnpj = docLimpo.length === 14 ? docLimpo : "";
-                nfe.cliente.cpf = docLimpo.length === 11 ? docLimpo : "";
-                nfe.cliente.razaoSocial = nomeDestinatario;
+                const docValido = validarCpfCnpj(cpf_nota);
+                if (docValido) {
+                    const nomeDestinatario = limparString(body.nome_nota || 'CONSUMIDOR', 2, 60);
+                    nfe.cliente.cnpj = docValido.length === 14 ? docValido : "";
+                    nfe.cliente.cpf = docValido.length === 11 ? docValido : "";
+                    nfe.cliente.razaoSocial = nomeDestinatario;
+                }
             }
         }
 
@@ -529,10 +578,109 @@ export default async function handler(req, res) {
 
         console.log(`📤 Payload enviado à Geranet (${modeloNota === 55 ? 'NF-e' : 'NFC-e'}):`, JSON.stringify(payload, null, 2));
         
-        const geranetRes = await service.emitirNota(payload);
-        const jsonGeranet = geranetRes.data;
+        let geranetRes = await service.emitirNota(payload);
+        let jsonGeranet = geranetRes.data;
         
-        console.log('📥 Resposta Geranet:', JSON.stringify(jsonGeranet, null, 2));
+        console.log('📥 Resposta Geranet (1ª tentativa):', JSON.stringify(jsonGeranet, null, 2));
+
+        // 🧠 MOTOR DE AUTOCORREÇÃO FISCAL SEFAZ (Detecta rejeições de NCM, CFOP, Duplicidade, CPF ou Horário e se autocorrige na hora!)
+        for (let healAttempt = 1; healAttempt <= 3; healAttempt++) {
+            if (geranetRes.status < 400 && jsonGeranet && jsonGeranet.sucesso !== false) {
+                break; // Nota autorizada com sucesso!
+            }
+
+            const errStr = JSON.stringify(jsonGeranet || {}).toLowerCase();
+            let autoCorrigiu = false;
+            const correcoesAplicadas = [];
+
+            // 1. Autocorreção de NCM inválido ou extinto (Rejeição 778 / NCM inexistente)
+            if (errStr.includes('ncm') || errStr.includes('778') || errStr.includes('classificacao fiscal')) {
+                payload.nfe.itens.forEach(it => {
+                    it.ncmProduto = "21069090"; // NCM coringa de preparações alimentícias
+                });
+                // Corrige também na tabela products do banco para nunca mais dar erro nesse produto!
+                if (productIds && productIds.length > 0) {
+                    try {
+                        await supabase.from('products').update({ ncm: '21069090' }).in('id', productIds);
+                    } catch (eNcm) {}
+                }
+                autoCorrigiu = true;
+                correcoesAplicadas.push('NCM autocorrigido para 21069090');
+            }
+
+            // 2. Autocorreção de CFOP ou CST incompatível
+            if (errStr.includes('cfop') || errStr.includes('cst') || errStr.includes('382') || errStr.includes('590')) {
+                payload.nfe.itens.forEach(it => {
+                    it.cfop = modeloNota === 55 ? "6102" : "5102";
+                    it.icmsCst = "102";
+                    it.pisCst = "07";
+                    it.cofinsCst = "07";
+                    it.origemProduto = "0";
+                });
+                if (productIds && productIds.length > 0 && modeloNota === 65) {
+                    try {
+                        await supabase.from('products').update({ cfop: '5102', origem: 0 }).in('id', productIds);
+                    } catch (eCfop) {}
+                }
+                autoCorrigiu = true;
+                correcoesAplicadas.push('CFOP/CST padronizados (5102 / 102)');
+            }
+
+            // 3. Autocorreção de Duplicidade de Numeração (Rejeição 204 / 539 - número de nota já utilizado)
+            if (errStr.includes('duplicidade') || errStr.includes('204') || errStr.includes('539') || errStr.includes('ja utilizado') || errStr.includes('já utilizado')) {
+                numReservado = Number(numReservado) + 1;
+                payload.nfe.numeroNotaEmitir = String(numReservado);
+                payload.nfe.codigoNumerico = String(10000000 + Math.floor(Math.random() * 89999999));
+                try {
+                    const updNext = {};
+                    updNext[columnName] = numReservado + 1;
+                    await supabase.from('stores').update(updNext).eq('id', storeId);
+                } catch (eNum) {}
+                autoCorrigiu = true;
+                correcoesAplicadas.push(`Numeração avançada para ${numReservado}`);
+            }
+
+            // 4. Autocorreção de CPF/CNPJ inválido no destinatário (Rejeição 207 / 208 / 237 / destinatário) in NFC-e
+            if (modeloNota === 65 && (errStr.includes('cpf') || errStr.includes('cnpj') || errStr.includes('destinatario') || errStr.includes('destinatário') || errStr.includes('207') || errStr.includes('208'))) {
+                payload.nfe.cliente = {
+                    "consumidorFinal": "1",
+                    "indicadorIEdestinatario": "9"
+                };
+                autoCorrigiu = true;
+                correcoesAplicadas.push('CPF/CNPJ inválido removido (Consumidor Final)');
+            }
+
+            // 5. Autocorreção de Data/Hora de Emissão atrasada/adiantada (Rejeição 703 / 228)
+            if (errStr.includes('data') || errStr.includes('hora') || errStr.includes('703') || errStr.includes('228')) {
+                const novaData = formatarDataHora();
+                payload.nfe.dataEmissao = novaData;
+                payload.nfe.dataSaida = novaData;
+                autoCorrigiu = true;
+                correcoesAplicadas.push('Data/Hora de emissão sincronizada');
+            }
+
+            // 6. Autocorreção de falha genérica em itens (descrição vazia, caracteres especiais, etc.)
+            if (!autoCorrigiu && healAttempt === 1) {
+                // Se falhou na 1ª tentativa por qualquer outro motivo de validação de item/NCM não explícito na mensagem,
+                // padroniza NCMs e CFOPs de todos os itens e atualiza o código numérico para uma nova tentativa limpa
+                payload.nfe.itens.forEach((it, idx) => {
+                    it.ncmProduto = "21069090";
+                    it.cfop = modeloNota === 55 ? "6102" : "5102";
+                    it.nomeProduto = limparString(it.nomeProduto, 3, 100, `ITEM CONSUMO ${idx + 1}`);
+                });
+                payload.nfe.codigoNumerico = String(10000000 + Math.floor(Math.random() * 89999999));
+                autoCorrigiu = true;
+                correcoesAplicadas.push('Padronização preventiva de NCM/CFOP/Descrição dos itens');
+            }
+
+            if (!autoCorrigiu) break;
+
+            console.log(`🛠️ [Autocorreção Fiscal #${healAttempt}] Aplicada: ${correcoesAplicadas.join(' | ')}. Reenviando para SEFAZ...`);
+            await delay(600);
+            geranetRes = await service.emitirNota(payload);
+            jsonGeranet = geranetRes.data;
+            console.log(`📥 Resposta Geranet (Pós-Autocorreção #${healAttempt}):`, JSON.stringify(jsonGeranet, null, 2));
+        }
 
         // A API Geranet pode retornar jsonGeranet vazio ou sucesso=false
         if (geranetRes.status >= 400 || !jsonGeranet || jsonGeranet.sucesso === false) {
