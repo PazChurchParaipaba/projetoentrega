@@ -946,10 +946,9 @@ const RelatoriosEnterprise = {
         }
 
         let breakdownVendas = { dinheiro: 0, pix: 0, credito: 0, debito: 0 };
+        let breakdownSefaz = { dinheiro: 0, pix: 0, credito: 0, debito: 0 };
         let vendasHoje = 0;
         let totalSefaz = 0;
-        let sefazCartaoPix = 0;
-        let sefazDinheiroMisto = 0;
         let cardPixSemSefaz = 0;
         
         (vendas || []).forEach(v => {
@@ -964,11 +963,10 @@ const RelatoriosEnterprise = {
             
             // Se o pedido foi cancelado no sistema, não entra nas contas do CAIXA LOCAL
             const statusOrd = (v.status || '').toLowerCase();
-            if (['cancelado', 'cancelada', 'devolvido', 'devolvida', 'estornado'].includes(statusOrd)) {
-                return;
+            const isCancelada = ['cancelado', 'cancelada', 'devolvido', 'devolvida', 'estornado'].includes(statusOrd);
+            if (!isCancelada) {
+                vendasHoje += valorPago;
             }
-
-            vendasHoje += valorPago;
             
             let metodosPag = [];
             try {
@@ -986,42 +984,49 @@ const RelatoriosEnterprise = {
                 metodosPag = [{ method: v.metodo_pagamento || v.pagamento || 'Dinheiro', amount: valorPago }];
             }
 
-            let ordCardPix = 0;
+            let ordPix = 0;
+            let ordCred = 0;
+            let ordDeb = 0;
             let ordCash = 0;
             metodosPag.forEach(p => {
                  let method = (p.method || p.tipo || '').toLowerCase();
                  let code = String(p.code || '');
                  let val = parseFloat(p.amount || p.val || 0);
                  if (method.includes('dinheiro') || method === 'din' || code === '01') {
-                     breakdownVendas.dinheiro += val;
+                     if (!isCancelada) breakdownVendas.dinheiro += val;
                      ordCash += val;
                  } else if (method.includes('pix') || code === '17') {
-                     breakdownVendas.pix += val;
-                     ordCardPix += val;
+                     if (!isCancelada) breakdownVendas.pix += val;
+                     ordPix += val;
                  } else if (method.includes('credit') || method.includes('crédito') || method.includes('credito') || code === '03') {
-                     breakdownVendas.credito += val;
-                     ordCardPix += val;
+                     if (!isCancelada) breakdownVendas.credito += val;
+                     ordCred += val;
                  } else if (method.includes('debit') || method.includes('débito') || method.includes('debito') || code === '04') {
-                     breakdownVendas.debito += val;
-                     ordCardPix += val;
+                     if (!isCancelada) breakdownVendas.debito += val;
+                     ordDeb += val;
                  } else if (method.includes('cartao') || method.includes('cartão')) {
-                     breakdownVendas.credito += val;
-                     ordCardPix += val;
+                     if (!isCancelada) breakdownVendas.credito += val;
+                     ordCred += val;
                  } else {
-                     breakdownVendas.dinheiro += val;
+                     if (!isCancelada) breakdownVendas.dinheiro += val;
                      ordCash += val;
                  }
             });
 
             if (isSefazAut) {
-                sefazCartaoPix += ordCardPix;
-                sefazDinheiroMisto += ordCash;
-            } else if (ordCardPix > 0) {
-                cardPixSemSefaz += ordCardPix;
+                breakdownSefaz.pix += ordPix;
+                breakdownSefaz.credito += ordCred;
+                breakdownSefaz.debito += ordDeb;
+                breakdownSefaz.dinheiro += ordCash;
+            } else if (!isCancelada && (ordPix + ordCred + ordDeb) > 0) {
+                cardPixSemSefaz += (ordPix + ordCred + ordDeb);
             }
         });
         
         const totalCartaoPix = breakdownVendas.pix + breakdownVendas.credito + breakdownVendas.debito;
+        const sefazTotalCartao = breakdownSefaz.credito + breakdownSefaz.debito;
+        const sefazTotalPix = breakdownSefaz.pix;
+        const sefazCartaoPix = sefazTotalCartao + sefazTotalPix;
         
         let breakdownAnteriores = { dinheiro: 0, pix: 0, credito: 0, debito: 0 };
         let totalEntradas = 0;
@@ -1072,11 +1077,19 @@ const RelatoriosEnterprise = {
                 ${linha('Crédito:', breakdownVendas.credito)}
                 ${linha('Débito:', breakdownVendas.debito)}
                 <div style="margin-top:5px; border-top:1px dashed #ddd; padding-top:5px;"></div>
+                ${linha('TOTAL CARTÃO (Créd+Déb):', breakdownVendas.credito + breakdownVendas.debito)}
                 ${linha('TOTAL CARTÃO + PIX:', totalCartaoPix)}
                 ${linha('TOTAL SISTEMA (Real):', vendasHoje)}
+                ${div}
+                <div style="text-decoration:underline; font-size:14px; margin-bottom:4px;">EMITIDOS SEFAZ (NFC-e)</div>
+                ${linha('Emit. SEFAZ (Só Cartão):', sefazTotalCartao)}
+                <div style="font-size:11px; color:#333; margin-bottom:2px; padding-left:6px;">↳ Crédito: ${fmt(breakdownSefaz.credito)} | Débito: ${fmt(breakdownSefaz.debito)}</div>
+                ${linha('Emit. SEFAZ (Só Pix):', sefazTotalPix)}
+                ${linha('Emit. SEFAZ (Cartão+Pix):', sefazCartaoPix)}
+                ${breakdownSefaz.dinheiro > 0 ? linha('Emit. SEFAZ (Dinheiro):', breakdownSefaz.dinheiro) : ''}
+                <div style="margin-top:4px; border-top:1px dashed #ddd; padding-top:4px;"></div>
                 ${linha('TOTAL EMIT. SEFAZ:', totalSefaz)}
-                ${sefazDinheiroMisto > 0 ? `<div style="font-size:11px; color:#333;">(Cartão/Pix: ${fmt(sefazCartaoPix)} | Din: ${fmt(sefazDinheiroMisto)})</div>` : ''}
-                ${cardPixSemSefaz > 0 ? `<div style="font-size:11px; color:#b91c1c;">⚠️ Cartão/Pix Pendente SEFAZ: ${fmt(cardPixSemSefaz)}</div>` : ''}
+                ${cardPixSemSefaz > 0 ? `<div style="font-size:11px; color:#b91c1c; margin-top:2px;">⚠️ Cartão/Pix Pendente SEFAZ: ${fmt(cardPixSemSefaz)}</div>` : ''}
                 <div style="font-size:10px; text-align:right; color:#555; margin-bottom:5px;">*Apenas Notas Autorizadas</div>
                 ${div}
                 
@@ -1118,11 +1131,14 @@ const RelatoriosEnterprise = {
     exibirModal: (titulo, subtitulo, linhas, total) => {
         RelatoriosEnterprise.dadosRelatorioAtual = { titulo, subtitulo, linhas, total };
 
+        // Remove modal anterior de relatório (evita IDs duplicados de #caixa-table-container no DOM)
+        document.querySelectorAll('.modal-relatorio-enterprise').forEach(el => el.remove());
+
         // Nome da loja para exibir no topo
         const nomeLoja = (App.state.currentStore?.nome_loja) || App.state.profile?.nome_loja || '';
 
         const modal = document.createElement('div');
-        modal.className = 'modal-overlay';
+        modal.className = 'modal-overlay modal-relatorio-enterprise';
         modal.style.cssText = 'display: flex !important; justify-content: center !important; align-items: center !important; z-index: 10005; background: rgba(0,0,0,0.8); position: fixed; top: 0; left: 0; width: 100%; height: 100vh;';
 
         const isFullHtml = typeof linhas === 'string' && (linhas.trim().startsWith('<table') || linhas.trim().startsWith('<div'));
@@ -1203,12 +1219,20 @@ const RelatoriosEnterprise = {
             let linhasParaImprimir = dados.linhas;
             let subtituloParaImprimir = dados.subtitulo;
 
-            // 🔥 Se a tabela de Detalhes do Caixa estiver aberta na tela, clona o DOM vivo e remove TODAS as linhas/badges ocultas pelo filtro!
-            const liveContainer = document.getElementById('caixa-table-container');
-            if (liveContainer && liveContainer.querySelectorAll('.row-venda-caixa').length > 0) {
+            // 🔥 Se a tabela de Detalhes do Caixa estiver aberta na tela, busca a instância mais recente no DOM e remove TODAS as linhas/badges ocultas pelo filtro!
+            const allContainers = document.querySelectorAll('#caixa-table-container');
+            let liveContainer = null;
+            for (let i = allContainers.length - 1; i >= 0; i--) {
+                if (allContainers[i].querySelectorAll('.row-venda-caixa').length > 0) {
+                    liveContainer = allContainers[i];
+                    break;
+                }
+            }
+            if (liveContainer) {
                 const clone = liveContainer.cloneNode(true);
-                const filtroAtivo = liveContainer.getAttribute('data-filtro-ativo') || 'todos';
-                const filtroLabel = liveContainer.getAttribute('data-filtro-label') || 'Todos os Recebimentos';
+                const selectEl = liveContainer.querySelector('#select-filtro-detalhes-caixa') || liveContainer.querySelector('select');
+                const filtroAtivo = (selectEl && selectEl.value) || liveContainer.getAttribute('data-filtro-ativo') || 'todos';
+                const filtroLabel = (selectEl && selectEl.options[selectEl.selectedIndex]?.text) || liveContainer.getAttribute('data-filtro-label') || 'Todos os Recebimentos';
 
                 // Remove controles de filtro e coluna de botões (Ação)
                 clone.querySelectorAll('.no-print-filter').forEach(el => el.remove());

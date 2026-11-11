@@ -3,7 +3,7 @@
  * Sistema Híbrido: Cache-First para velocidade, Network-First para Hub Local.
  */
 
-const CACHE_NAME = 'naxio-extreme-v2';
+const CACHE_NAME = 'naxio-extreme-v20261110b';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
@@ -12,12 +12,6 @@ const ASSETS_TO_CACHE = [
     '/css/naxio-ui.css',
     '/css/enhancements.css',
     '/css/animations.css',
-    '/js/core.js',
-    '/js/garçom.js',
-    '/js/caixa_modules.js',
-    '/js/stability_manager.js',
-    '/js/modules.js',
-    '/js/comandas.js',
     '/logo.png'
 ];
 
@@ -56,18 +50,16 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // 3. Estratégia Stale-While-Revalidate para Assets
+    // 3. Estratégia Network-First (Rede Primeiro, Cache como Fallback Offline) para garantir versão sempre atualizada
     event.respondWith(
-        caches.match(event.request).then((cached) => {
-            const networked = fetch(event.request)
-                .then((response) => {
+        fetch(event.request)
+            .then((response) => {
+                if (response && response.status === 200 && event.request.method === 'GET') {
                     const copy = response.clone();
                     caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
-                    return response;
-                })
-                .catch(() => cached);
-
-            return cached || networked;
-        })
+                }
+                return response;
+            })
+            .catch(() => caches.match(event.request))
     );
 });
