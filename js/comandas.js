@@ -4045,14 +4045,12 @@ Object.assign(App.store, {
             ' style="border:2px solid; border-radius:10px; padding:10px; cursor:pointer; text-align:center; position:relative; ' + style + ' user-select:none; transition:transform 0.1s;"' +
             ' onmousedown="this.style.transform=\'scale(0.95)\'" onmouseup="this.style.transform=\'scale(1)\'">' +
             labelTag +
-            (guide ? '<div style="position:absolute; top:5px; right:5px; font-size:10px; background:#000; color:#fff; padding:2px 4px; border-radius:4px;">' + guide + '</div>' : '') +
             (guide ? '<div title="' + guide.replace(/"/g, '&quot;') + '" style="position:absolute; top:2px; left:4px; right:' + (isLivre ? '18px' : '4px') + '; font-size:7px; line-height:1.1; background:rgba(0,0,0,0.85); color:#fff; padding:1px 3px; border-radius:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:none;">' + guide + '</div>' : '') +
             // Botão X para limpar individualmente (apenas se estiver livre para evitar acidentes)
             (isLivre ? '<div onclick="App.store.limparComandaUnica(event, \'' + c.id + '\', \'' + c.numero + '\')" ' +
                 'style="position:absolute; top:-8px; right:-8px; background:#ef4444; color:white; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.2); z-index:5; border:2px solid #fff;">' +
                 '<i class="ri-close-line"></i>' +
                 '</div>' : '') +
-            '<div style="font-size:1.8rem; font-weight:bold; color:#1e293b; margin-top:' + (!isLivre ? '14' : '0') + 'px;">' + c.numero + '</div>' +
             '<div style="font-size:1.8rem; font-weight:bold; color:#1e293b; margin-top:' + (!isLivre || guide ? '12' : '0') + 'px;">' + c.numero + '</div>' +
             '<div style="font-size:0.8rem; font-weight:bold; color:#374151;">' + statusTxt + '</div>' +
             (!isLivre ? '<div style="margin-top:5px; font-weight:bold; color:#334155;">R$ ' + total.toFixed(2) + '</div>' : '') +
@@ -4523,24 +4521,29 @@ App.fiscal.emitirNFCeComanda = async (orderId, storeId, items, payments, cpf = n
         console.log("📤 Enviando para backend (com Fila + Retry Automático):", JSON.stringify(payload, null, 2));
 
         let result;
-        if (window.Fiscal && typeof window.Fiscal._enqueueEmission === 'function' && typeof window.Fiscal._chamarApiEmitirComRetry === 'function') {
-            result = await window.Fiscal._enqueueEmission(() => window.Fiscal._chamarApiEmitirComRetry(payload, 3));
-        } else {
-            // Fallback caso Fiscal._chamarApiEmitirComRetry não esteja disponível
-            let apiBase = '';
-            if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-                apiBase = (App.payment && App.payment.getConfig) ? App.payment.getConfig() : 'https://naxiosoftware.vercel.app';
+        try {
+            if (window.Fiscal && typeof window.Fiscal._enqueueEmission === 'function' && typeof window.Fiscal._chamarApiEmitirComRetry === 'function') {
+                result = await window.Fiscal._enqueueEmission(() => window.Fiscal._chamarApiEmitirComRetry(payload, 3));
+            } else {
+                // Fallback caso Fiscal._chamarApiEmitirComRetry não esteja disponível
+                let apiBase = '';
+                if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+                    apiBase = (App.payment && App.payment.getConfig) ? App.payment.getConfig() : 'https://naxiosoftware.vercel.app';
+                }
+                if (window._sb && orderId) {
+                    try { await _sb.from('orders').update({ status_sefaz: 'processando' }).eq('id', orderId); } catch (e) {}
+                }
+                const response = await fetch(`${apiBase}/api/emitir_fiscal`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const responseText = await response.text();
+                result = JSON.parse(responseText);
             }
-            if (window._sb && orderId) {
-                try { await _sb.from('orders').update({ status_sefaz: 'processando' }).eq('id', orderId); } catch (e) {}
-            }
-            const response = await fetch(`${apiBase}/api/emitir_fiscal`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const responseText = await response.text();
-            result = JSON.parse(responseText);
+        } catch (e) {
+            console.error("❌ ERRO AO PARSEAR JSON:", e);
+            throw new Error("Resposta inválida do servidor: " + (e.message || 'Erro desconhecido'));
         }
 
         console.log("📥 Resposta fiscal completa:", result);
