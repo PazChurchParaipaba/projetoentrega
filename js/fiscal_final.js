@@ -912,28 +912,49 @@ const Fiscal = {
     // 🛠️ AÇÕES EXTRAS (CANCELAMENTO, CONTINGÊNCIA, XML)
     // =========================================================================
 
+    // 🛡️ Cancela na SEFAZ (em segundo plano) a NFC-e de vendas estornadas/reabertas. O Agente Fiscal garante o resto.
+    cancelarNfceAuto: (orderIds, motivo) => {
+        const ids = (Array.isArray(orderIds) ? orderIds : [orderIds]).filter(Boolean);
+        let apiBase = '';
+        if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+            apiBase = (window.App?.payment?.getConfig) ? App.payment.getConfig() : 'https://naxiosoftware.vercel.app';
+        }
+        ids.forEach(id => {
+            fetch(`${apiBase}/api/cancelar_fiscal`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order_id: id, motivo: motivo || 'Venda estornada/reaberta no PDV' })
+            }).then(r => r.json()).then(r => {
+                console.log('🧾 Cancelamento NFC-e', id, r);
+                if (r && r.sucesso && !r.semNota && window.App?.utils?.toast) App.utils.toast('🧾 NFC-e da venda estornada cancelada na SEFAZ.', 'success');
+            }).catch(e => console.warn('Cancelamento NFC-e pendente (o Agente Fiscal tentará):', e));
+        });
+    },
+
     cancelarNota: async (orderId, chaveAcesso) => {
         App.utils.customInput("Cancelar Nota Fiscal", "Motivo (Min. 15 caracteres)", async (motivo) => {
             if (!motivo || motivo.length < 15) return alert("Motivo muito curto. Descreva melhor (mínimo 15 letras).");
 
-            App.utils.toast("Processando cancelamento...", "info");
+            App.utils.toast("Cancelando na SEFAZ...", "info");
 
             try {
-                // Atualiza status no banco
-                const { error } = await _sb.from('orders')
-                    .update({
-                        status_sefaz: 'cancelado',
-                        motivo_cancelamento: motivo
-                    })
-                    .eq('id', orderId);
+                let apiBase = '';
+                if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+                    apiBase = (window.App?.payment?.getConfig) ? App.payment.getConfig() : 'https://naxiosoftware.vercel.app';
+                }
+                const resp = await fetch(`${apiBase}/api/cancelar_fiscal`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ order_id: orderId, motivo })
+                });
+                const r = await resp.json();
+                if (!r.sucesso) throw new Error(r.mensagem || r.error || 'SEFAZ recusou o cancelamento');
 
-                if (error) throw error;
-
-                alert("✅ Solicitação de cancelamento registrada!");
+                alert("✅ Nota cancelada na SEFAZ!");
                 Fiscal.openModal(); // Atualiza a lista
 
             } catch (e) {
-                alert("Erro ao registrar cancelamento: " + e.message);
+                alert("Erro ao cancelar na SEFAZ: " + e.message);
             }
         });
     },

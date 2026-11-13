@@ -158,6 +158,11 @@ export default async function handler(req, res) {
         if (!store.cnpj) throw new Error("CNPJ da loja não cadastrado.");
         if (!store.cidade || !store.endereco) throw new Error("Endereço da loja incompleto.");
 
+        // 🛡️ Nunca emite nota de venda estornada/cancelada
+        if (['cancelado', 'cancelada', 'estornado'].includes(String(order.status || '').toLowerCase())) {
+            return res.status(200).json({ sucesso: false, status: 'cancelado', message: "Venda cancelada/estornada: emissão bloqueada." });
+        }
+
         const apiKeyGeranet = process.env.GERANET_API_KEY || "gn_l53W1f4YIv46aQC5H2jrmIVgIwKrOBSygutikYEzqq5FiJuSZtV39bHW6Qdg";
         
         const modeloNota = modelo === 55 ? 55 : 65;

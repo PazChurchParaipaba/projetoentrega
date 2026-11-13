@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/agente_fiscal.js": { "maxDuration": 60 },
+    "api/emitir_fiscal.js": { "maxDuration": 60 },
+    "api/cancelar_fiscal.js": { "maxDuration": 60 }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",

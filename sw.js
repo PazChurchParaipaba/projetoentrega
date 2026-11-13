@@ -1,9 +1,9 @@
-/**
+﻿/**
  * 🚀 NAXIO PRO — TOTAL ANTI-FALLOUT SERVICE WORKER
  * Sistema Híbrido: Cache-First para velocidade, Network-First para Hub Local.
  */
 
-const CACHE_NAME = 'naxio-extreme-v20261111a';
+const CACHE_NAME = 'naxio-extreme-v20261112a';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',

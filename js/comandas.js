@@ -482,6 +482,7 @@ Object.assign(App.store, {
                         }
                         await _sb.from('orders').update(payloadCancel).eq('id', oid);
                     }
+                    if (window.Fiscal && Fiscal.cancelarNfceAuto) Fiscal.cancelarNfceAuto(idsParaCancelar, 'Mesa reaberta no PDV - venda estornada');
 
                     // DEVOLVE ESTOQUE (Multiplica por -1 para simular o reverso do 'descontar_estoque')
                     if (itensRestaurados.length > 0) {
@@ -4334,6 +4335,7 @@ Object.assign(App.store, {
 
             if (!cancelError) {
                 App.utils.toast("Vendas anteriores canceladas no financeiro!", "info");
+                if (window.Fiscal && Fiscal.cancelarNfceAuto) Fiscal.cancelarNfceAuto(orderIds, 'Comanda reaberta no PDV - venda estornada');
             } else {
                 console.error("Erro ao cancelar ordens:", cancelError);
             }
@@ -4379,6 +4381,7 @@ Object.assign(App.store, {
                     observacao: (lastOrder.observacao || '') + ' [ESTORNADA E REABERTA NO PDV]'
                 }).eq('id', lastOrder.id);
                 App.utils.toast("Venda anterior cancelada no financeiro (fallback)!", "info");
+                if (window.Fiscal && Fiscal.cancelarNfceAuto) Fiscal.cancelarNfceAuto(lastOrder.id, 'Comanda reaberta no PDV - venda estornada');
             }
         }
 
