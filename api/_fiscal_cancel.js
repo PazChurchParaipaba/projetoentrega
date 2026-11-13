@@ -92,3 +92,4 @@ export async function cancelarNfceDoPedido(supabase, orderId, motivo) {
     const erro = (ultimo && ultimo.data && (ultimo.data.mensagem || JSON.stringify(ultimo.data))) || 'Falha desconhecida';
     return { ok: false, mensagem: String(erro).substring(0, 400) };
 }
+

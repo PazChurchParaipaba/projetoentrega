@@ -4,8 +4,9 @@
 -- Cartão/Pix, inclusive misturadas com dinheiro, e cancela na SEFAZ as notas de
 -- vendas estornadas/reabertas/canceladas).
 --
--- ANTES: troque SEU_SEGREDO pelo mesmo valor que você colocar na variável
--- AGENT_SECRET da Vercel (Settings > Environment Variables) e faça redeploy.
+-- Não precisa de nenhuma configuração extra: é só rodar este arquivo inteiro.
+-- (Opcional: para proteger a rota, defina AGENT_SECRET na Vercel e adicione
+--  "x-agent-secret":"SEU_SEGREDO" nos headers abaixo.)
 -- ============================================================================
 
 create extension if not exists pg_cron;
@@ -24,7 +25,7 @@ select cron.schedule(
   $job$
   select net.http_post(
     url := 'https://naxiosoftware.vercel.app/api/agente_fiscal',
-    headers := '{"Content-Type":"application/json","x-agent-secret":"SEU_SEGREDO"}'::jsonb,
+    headers := '{"Content-Type":"application/json"}'::jsonb,
     body := '{}'::jsonb,
     timeout_milliseconds := 55000
   );
@@ -36,3 +37,4 @@ select cron.schedule(
 --   select status_code, content::text, created from net._http_response order by created desc limit 5;
 -- Parar o agente:
 --   select cron.unschedule('naxio_agente_fiscal');
+
