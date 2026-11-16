@@ -35,7 +35,24 @@ export async function cancelarNfceDoPedido(supabase, orderId, motivo) {
 
     const st = String(order.status_sefaz || '').toLowerCase();
     if (st === 'cancelado') return { ok: true, jaCancelada: true, mensagem: 'Nota já cancelada.' };
-    if (st !== 'autorizado' || !order.chave_acesso) {
+    
+    // Se chave_acesso não estiver preenchida diretamente, extrai do xml_arquivo
+    let chave = order.chave_acesso || '';
+    if (!chave && order.xml_arquivo) {
+        try {
+            let raw = String(order.xml_arquivo);
+            if (raw.startsWith('\\x')) raw = raw.slice(2);
+            let xml = raw;
+            if (/^[0-9A-Fa-f]+$/.test(raw)) {
+                const b1 = Buffer.from(raw, 'hex').toString('utf8');
+                xml = /^[0-9A-Fa-f]+$/.test(b1) ? Buffer.from(b1, 'hex').toString('utf8') : b1;
+            }
+            const m = xml.match(/Id="NFe([0-9]{44})"/i) || xml.match(/chNFe>([0-9]{44})</i);
+            if (m) chave = m[1];
+        } catch (e) {}
+    }
+
+    if (st !== 'autorizado' || !chave) {
         return { ok: true, semNota: true, mensagem: 'Pedido sem NFC-e autorizada. Nada a cancelar.' };
     }
 
@@ -55,8 +72,8 @@ export async function cancelarNfceDoPedido(supabase, orderId, motivo) {
         modelo: '65',
         ufEmitente: uf,
         cnpj: String(store.cnpj || '').replace(/\D/g, ''),
-        chave: order.chave_acesso,
-        chaveAcesso: order.chave_acesso,
+        chave: chave,
+        chaveAcesso: chave,
         idNota: order.id_nuvem || '',
         justificativa,
         motivo: justificativa

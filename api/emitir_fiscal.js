@@ -709,7 +709,22 @@ export default async function handler(req, res) {
         }
 
         const statusNota = jsonGeranet.status || 'autorizado';
-        const chaveAcesso = jsonGeranet.chaveAcesso || jsonGeranet.chave_acesso || '';
+        let chaveAcesso = jsonGeranet.chaveAcesso || jsonGeranet.chave_acesso || jsonGeranet.chave || '';
+        
+        // Se a Geranet não retornou a chave direta mas retornou o XML, extrai os 44 dígitos do XML
+        if (!chaveAcesso && jsonGeranet.xml) {
+            try {
+                let xmlStr = String(jsonGeranet.xml);
+                if (xmlStr.startsWith('\\x')) xmlStr = xmlStr.slice(2);
+                if (/^[0-9A-Fa-f]+$/.test(xmlStr)) {
+                    const dec = Buffer.from(xmlStr, 'hex').toString('utf8');
+                    xmlStr = /^[0-9A-Fa-f]+$/.test(dec) ? Buffer.from(dec, 'hex').toString('utf8') : dec;
+                }
+                const mCh = xmlStr.match(/Id="NFe([0-9]{44})"/i) || xmlStr.match(/chNFe>([0-9]{44})</i);
+                if (mCh) chaveAcesso = mCh[1];
+            } catch (e) {}
+        }
+
         const pdf = jsonGeranet.pdf || jsonGeranet.linkPdf || jsonGeranet.url_pdf_danfe;
         const idGeranet = jsonGeranet.id || ''; 
         
