@@ -3,7 +3,7 @@
  * Sistema Híbrido: Cache-First para velocidade, Network-First para Hub Local.
  */
 
-const CACHE_NAME = 'naxio-extreme-v20261112a';
+const CACHE_NAME = 'naxio-extreme-v20261120a';
 const ASSETS_TO_CACHE = [
     '/',
     '/index.html',

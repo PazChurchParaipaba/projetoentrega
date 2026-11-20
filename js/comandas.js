@@ -4046,13 +4046,13 @@ Object.assign(App.store, {
             ' style="border:2px solid; border-radius:10px; padding:10px; cursor:pointer; text-align:center; position:relative; ' + style + ' user-select:none; transition:transform 0.1s;"' +
             ' onmousedown="this.style.transform=\'scale(0.95)\'" onmouseup="this.style.transform=\'scale(1)\'">' +
             labelTag +
-            (guide ? '<div title="' + guide.replace(/"/g, '&quot;') + '" style="position:absolute; top:2px; left:4px; right:' + (isLivre ? '18px' : '4px') + '; font-size:7px; line-height:1.1; background:rgba(0,0,0,0.85); color:#fff; padding:1px 3px; border-radius:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:none;">' + guide + '</div>' : '') +
+            (guide ? '<div title="' + guide.replace(/"/g, '&quot;') + '" style="position:absolute; top:3px; left:4px; right:' + (isLivre ? '18px' : '4px') + '; font-size:11px; font-weight:700; line-height:1.2; background:rgba(0,0,0,0.88); color:#fff; padding:2px 5px; border-radius:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; pointer-events:none; box-shadow:0 1px 3px rgba(0,0,0,0.3); letter-spacing:0.3px;">' + guide + '</div>' : '') +
             // Botão X para limpar individualmente (apenas se estiver livre para evitar acidentes)
             (isLivre ? '<div onclick="App.store.limparComandaUnica(event, \'' + c.id + '\', \'' + c.numero + '\')" ' +
                 'style="position:absolute; top:-8px; right:-8px; background:#ef4444; color:white; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.2); z-index:5; border:2px solid #fff;">' +
                 '<i class="ri-close-line"></i>' +
                 '</div>' : '') +
-            '<div style="font-size:1.8rem; font-weight:bold; color:#1e293b; margin-top:' + (!isLivre || guide ? '12' : '0') + 'px;">' + c.numero + '</div>' +
+            '<div style="font-size:1.8rem; font-weight:bold; color:#1e293b; margin-top:' + (!isLivre || guide ? '16' : '0') + 'px;">' + c.numero + '</div>' +
             '<div style="font-size:0.8rem; font-weight:bold; color:#374151;">' + statusTxt + '</div>' +
             (!isLivre ? '<div style="margin-top:5px; font-weight:bold; color:#334155;">R$ ' + total.toFixed(2) + '</div>' : '') +
             '</div>';
