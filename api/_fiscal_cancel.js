@@ -36,9 +36,10 @@ export async function cancelarNfceDoPedido(supabase, orderId, motivo) {
     const st = String(order.status_sefaz || '').toLowerCase();
     if (st === 'cancelado') return { ok: true, jaCancelada: true, mensagem: 'Nota já cancelada.' };
     
-    // Se chave_acesso não estiver preenchida diretamente, extrai do xml_arquivo
+    // Se chave_acesso ou numero_protocolo não estiverem preenchidos diretamente, extrai do xml_arquivo
     let chave = order.chave_acesso || '';
-    if (!chave && order.xml_arquivo) {
+    let protocolo = order.numero_protocolo || '';
+    if (order.xml_arquivo) {
         try {
             let raw = String(order.xml_arquivo);
             if (raw.startsWith('\\x')) raw = raw.slice(2);
@@ -47,8 +48,14 @@ export async function cancelarNfceDoPedido(supabase, orderId, motivo) {
                 const b1 = Buffer.from(raw, 'hex').toString('utf8');
                 xml = /^[0-9A-Fa-f]+$/.test(b1) ? Buffer.from(b1, 'hex').toString('utf8') : b1;
             }
-            const m = xml.match(/Id="NFe([0-9]{44})"/i) || xml.match(/chNFe>([0-9]{44})</i);
-            if (m) chave = m[1];
+            if (!chave) {
+                const m = xml.match(/Id="NFe([0-9]{44})"/i) || xml.match(/chNFe>([0-9]{44})</i);
+                if (m) chave = m[1];
+            }
+            if (!protocolo) {
+                const mProt = xml.match(/<nProt>([0-9]+)<\/nProt>/i);
+                if (mProt) protocolo = mProt[1];
+            }
         } catch (e) {}
     }
 
@@ -74,6 +81,9 @@ export async function cancelarNfceDoPedido(supabase, orderId, motivo) {
         cnpj: String(store.cnpj || '').replace(/\D/g, ''),
         chave: chave,
         chaveAcesso: chave,
+        protocolo: protocolo,
+        numeroProtocolo: protocolo,
+        nProt: protocolo,
         idNota: order.id_nuvem || '',
         justificativa,
         motivo: justificativa
